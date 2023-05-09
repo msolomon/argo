@@ -1,0 +1,53 @@
+{
+  "data": {
+    "hero": {
+      "name": "R2-D2",
+      "friends": [
+        {
+          "name": "Luke Skywalker",
+          "secretBackstory": null
+        },
+        {
+          "name": "Han Solo",
+          "secretBackstory": null
+        },
+        {
+          "name": "Leia Organa",
+          "secretBackstory": null
+        }
+      ]
+    }
+  },
+  "errors": [
+    {
+      "message": "secretBackstory is secret.",
+      "locations": [
+        {
+          "line": 7,
+          "column": 15
+        }
+      ],
+      "path": ["hero", "friends", 0, "secretBackstory"]
+    },
+    {
+      "message": "secretBackstory is secret.",
+      "locations": [
+        {
+          "line": 7,
+          "column": 15
+        }
+      ],
+      "path": ["hero", "friends", 1, "secretBackstory"]
+    },
+    {
+      "message": "secretBackstory is secret.",
+      "locations": [
+        {
+          "line": 7,
+          "column": 15
+        }
+      ],
+      "path": ["hero", "friends", 2, "secretBackstory"]
+    }
+  ]
+}

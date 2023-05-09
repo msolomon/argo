@@ -1,0 +1,38 @@
+# https://gist.github.com/yozlet/e3626b407102b9276fad285f4c1c80ec
+{
+  nodes(ids: ["MDEyOk9yZ2FuaXphdGlvbjYyMzM5OTQ=", "MDEyOk9yZ2FuaXphdGlvbjY0MzA3MA=="]) {
+    id
+    ... on Organization {
+      name
+
+      repositories(first: 100, privacy: PUBLIC) {
+        nodes {
+          name
+          createdAt
+          url
+          homepageUrl
+          languages(first:5) {
+            nodes {
+              name
+            }
+          }
+          pullRequests(first:5, states:[OPEN]) {
+            nodes {
+              author {
+                login
+              }
+              title
+            }
+          }
+        }
+      }
+    }
+  }
+
+  rateLimit {
+    limit
+    cost
+    remaining
+    resetAt
+  }
+}

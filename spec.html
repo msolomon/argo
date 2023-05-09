@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<!-- Built with spec-md https://spec-md.com -->
+<html>
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Cedar</title>
+<style>/** * prism.js default theme for JavaScript, CSS and HTML * Based on dabblet (http://dabblet.com) * @author Lea Verou */ code[class*="language-"], pre[class*="language-"] { 	color: black; 	background: none; 	text-shadow: 0 1px white; 	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; 	font-size: 1em; 	text-align: left; 	white-space: pre; 	word-spacing: normal; 	word-break: normal; 	word-wrap: normal; 	line-height: 1.5; 	-moz-tab-size: 4; 	-o-tab-size: 4; 	tab-size: 4; 	-webkit-hyphens: none; 	-moz-hyphens: none; 	-ms-hyphens: none; 	hyphens: none; } pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection, code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection { 	text-shadow: none; 	background: #b3d4fc; } pre[class*="language-"]::selection, pre[class*="language-"] ::selection, code[class*="language-"]::selection, code[class*="language-"] ::selection { 	text-shadow: none; 	background: #b3d4fc; } @media print { 	code[class*="language-"], 	pre[class*="language-"] { 		text-shadow: none; 	} } /* Code blocks */ pre[class*="language-"] { 	padding: 1em; 	margin: .5em 0; 	overflow: auto; } :not(pre) > code[class*="language-"], pre[class*="language-"] { 	background: #f5f2f0; } /* Inline code */ :not(pre) > code[class*="language-"] { 	padding: .1em; 	border-radius: .3em; 	white-space: normal; } .token.comment, .token.prolog, .token.doctype, .token.cdata { 	color: slategray; } .token.punctuation { 	color: #999; } .token.namespace { 	opacity: .7; } .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { 	color: #905; } .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { 	color: #690; } .token.operator, .token.entity, .token.url, .language-css .token.string, .style .token.string { 	color: #9a6e3a; 	/* This background color was intended by the author of this theme. */ 	background: hsla(0, 0%, 100%, .5); } .token.atrule, .token.attr-value, .token.keyword { 	color: #07a; } .token.function, .token.class-name { 	color: #DD4A68; } .token.regex, .token.important, .token.variable { 	color: #e90; } .token.important, .token.bold { 	font-weight: bold; } .token.italic { 	font-style: italic; } .token.entity { 	cursor: help; }</style>
+<style>:root{color:#333;font-family:Cambria,"Palatino Linotype",Palatino,"Liberation Serif",serif;font-size:15px;line-height:1.5;--mono-font-size: 13px;--indent: 1rem;--list-indent: 1.5rem;--dfn-indent: 0rem}@media (min-width: 720px){:root{font-size:17px;--mono-font-size: 15px;--indent: 2rem;--list-indent: 2rem;--dfn-indent: 2rem}}body{margin:3rem 0 3rem}article{margin:0 1rem}@media (min-width: 720px){body{margin:6rem auto 3rem;max-width:800px;padding-left:75px;padding-right:clamp(0px,calc((100vw - 800px) * .25),75px)}}.source-link{display:none}@media screen and (min-width: 720px){.source-link{display:block;position:absolute;width:18px;fill:#ccc;opacity:.3}.source-link:hover{opacity:1}}.outdated-selection-link,.selection-link{position:absolute;display:block;color:#fff;--selection-background-color: #cacee0;background:var(--selection-background-color);border-radius:4px;font-size:36px;height:23px;line-height:48px;text-align:center;text-decoration:none;width:25px;user-select:none;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none}.outdated-selection-link:hover,.selection-link:hover{text-decoration:none}.outdated-selection-link:before,.selection-link:before{border:5px solid transparent;content:"";height:0;margin-top:-5px;margin-right:-5px;position:absolute;right:1px;top:50%;width:0}@media (max-width: 719px){.outdated-selection-link:before,.selection-link:before{border-bottom-color:var(--selection-background-color);border-top:0;right:50%;top:1px}}@media (min-width: 720px){.outdated-selection-link:before,.selection-link:before{border-left-color:var(--selection-background-color);border-right:0;right:1px;top:50%}}.selection-link:hover{--selection-background-color: #3b5998}.outdated-selection-link{--selection-background-color: #f0babe;font-size:21px;font-weight:800;line-height:27px}.outdated-selection-link:hover:after{content:"This selection content has changed since this link was created.";font:9pt/11pt Cambria,"Palatino Linotype",Palatino,"Liberation Serif",serif;position:absolute;display:block;white-space:nowrap;padding:2px 5px 1px;top:-20px;background:black;color:#fff}a{color:#3b5998;text-decoration:none}a:hover{text-decoration:underline}img{max-width:100%}dl{margin:1rem 0 1rem var(--dfn-indent)}dd{margin:.25em 0 .5em var(--indent)}dd+dd{margin-top:1rem}dfn,.spec-ref{font-style:italic}dfn>a,.spec-ref>a{color:inherit}h1,h2,h3,h4,h5,h6{font-weight:bold;margin:3em 0 1em;position:relative}@media (min-width: 720px){header>h1{margin:6em 0 3em}}h1{font-size:1.5em;margin-top:5em}h2,h3{font-size:1.25em}h4,h5,h6{font-size:1em}section{padding-top:1rem;margin-top:-1rem}section.subsec>h6{margin-top:2em}section.subsec>h6>a{color:#333}section .spec-secid{margin-right:1ex}@media (min-width: 720px){section .spec-secid{position:absolute;right:100%;text-align:right;white-space:nowrap}}footer{font-size:75%;opacity:.5;text-align:center;margin-top:12rem}.spec-toc{margin:1rem 0 3rem}.spec-toc .title{content:"Contents";display:block;font-weight:bold;margin:5em 0 1em}.spec-toc .spec-secid{margin-right:1ex}.spec-toc ol{list-style:none;padding-left:0;margin-top:0;margin-bottom:0}.spec-toc ol ol{list-style:none;padding-left:2ex;margin-bottom:.25em}.spec-toc li{position:relative;padding:5px 0 0 30px;margin:-5px 0 0 -30px}.spec-toc a{color:#333}.spec-toc a:hover{text-decoration:none}.spec-toc a .spec-secid{color:#3b5998}.spec-toc a:hover .spec-secid{text-decoration:underline}.spec-toc .toggle{display:none}.spec-toc .toggle+label{cursor:pointer;left:6px;opacity:1;padding:5px 6px 5px 7px;position:absolute;top:6px;transform:rotate(0deg);transition:all .18s ease-in-out}.spec-toc .toggle+label:after{border-color:transparent transparent transparent #bbc;border-style:solid;border-width:6px 0 6px 7px;content:" ";display:block;height:0;width:0}@media (pointer: fine){.spec-toc .toggle+label{left:10px;padding:3px 5px 3px 6px;top:8px}}.spec-toc .toggle:checked+label{transform:rotate(90deg)}@media (hover: hover){.spec-toc li:not(:hover)>.toggle:checked+label{opacity:0}}.spec-toc .toggle:not(:checked)~ol{max-height:0;overflow:hidden;margin:0}.spec-sidebar-toggle{display:none}.spec-sidebar-toggle+label>.spec-sidebar-button{position:fixed;right:0;top:0;padding:10px 15px;font-size:30px;color:#000000b3;z-index:2;cursor:pointer;user-select:none;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none}.spec-sidebar-toggle:checked+label:after{content:"";position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0}.spec-sidebar{display:none;position:fixed;right:0;top:0;width:min(320px,calc(100vw - 48px));font-size:14px;line-height:1.75;overflow-y:scroll;height:100%;padding:0 0 5rem 30px;box-sizing:border-box;background:#f0f0f0;box-shadow:inset 1px 0 rgba(0,0,0,.05),-4px 0 8px -2px rgba(0,0,0,.04);overscroll-behavior:contain}.spec-sidebar{user-select:none;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none}.spec-sidebar-toggle:checked~.spec-sidebar{display:block}.spec-sidebar .viewing>a:after{color:#8b9;content:"\2022";margin-left:1ex}@media (min-width: 1220px){.spec-sidebar-toggle+label{display:none}.spec-sidebar{display:block;box-shadow:inset 1px 0 rgba(0,0,0,.05),inset 4px 0 8px -2px rgba(0,0,0,.08)!important}body{padding-right:345px}}.spec-note{background:#FEFEF3;border-left:solid 4px #F4E925;margin:1rem -1rem;min-width:70vw;padding:8px 1rem 12px calc(1rem - 4px);width:-moz-fit-content;width:-webkit-fit-content;width:fit-content}@media (min-width: 720px){.spec-note{min-width:416px}}.spec-note>a:first-child{color:#6c6613;display:block;font:italic 11pt/18pt Cambria,"Palatino Linotype",Palatino,"Liberation Serif",serif;opacity:.6;user-select:none}.spec-todo{color:#666;margin:1em 0 1em 5em;min-height:1em}.spec-todo::before{content:"todo";display:block;float:left;margin-left:-5em;text-transform:uppercase}.spec-index ol{list-style-type:none;margin:0 0 0 var(--indent);padding:0;column-width:210px;column-gap:var(--indent)}.spec-index ol li{width:min-content;white-space:nowrap}pre,code{font-family:Consolas,Monaco,"Andale Mono","Ubuntu Mono",monospace;font-size:var(--mono-font-size);font-weight:inherit}code{background:rgba(0,0,0,.03);margin:-2px -1px;padding:3px 3px;white-space:pre-wrap}pre>code{background:none;font-weight:inherit;margin:0;padding:0;white-space:pre}pre{background:#FAFAFA;border-left:solid 4px #E9E9E9;margin:1rem -1rem;min-width:70vw;padding:12px 1rem 12px calc(1rem - 4px);width:-moz-fit-content;width:-webkit-fit-content;width:fit-content;max-width:calc(100vw - 2rem);overflow-y:scroll}@media (min-width: 720px){pre{min-width:40ch}}.spec-example{background:#FAFAFF;border-left:solid 4px #BBBBFF;padding-top:8px}.spec-counter-example{background:#FFFAFA;border-left:solid 4px #FFBBBB;padding-top:8px}.spec-example>a,.spec-counter-example>a{display:block;font:italic 11pt/18pt Cambria,"Palatino Linotype",Palatino,"Liberation Serif",serif;opacity:.6;user-select:none}.spec-counter-example>a{color:#98593b}table{border-collapse:collapse}th{background-color:#f9f9f9}td,th{border:1px solid #D0D0D0;padding:.4em;vertical-align:baseline}ol,ul{padding-left:var(--list-indent)}li>ol,li>ul{margin-top:.25em;margin-bottom:.5em}li+li{margin-top:.25em}li.task{list-style-type:none;position:relative}li.task>input:first-child{margin-left:0;position:absolute;transform:translateX(calc(-100% - 1ch))}ins{background-color:#00c81e14;text-decoration:none}del{background-color:#c8000014}.spec-added,.spec-removed{border-left:4px solid;margin-left:-18px;padding-left:14px}.spec-added{border-color:#396}.spec-removed{border-color:#933;text-decoration:line-through}.spec-keyword{font-weight:bold}.spec-string{font-family:Consolas,Monaco,monospace;font-size:85%;white-space:pre}var{font-style:italic}*[data-name]{transition:.15s background ease-out;border-radius:2px;padding:0 3px;margin:0 -3px}.spec-semantic,.spec-algo{margin:1rem 0 1rem var(--dfn-indent)}.spec-semantic>.spec-nt::after,.spec-algo>.spec-call:first-child::after{content:":";font-style:normal;font-weight:bold;margin-left:1ex}.spec-semantic ol,.spec-semantic ol ol ol ol,.spec-algo ol,.spec-algo ol ol ol ol{list-style-type:decimal}.spec-semantic ol ol,.spec-semantic ol ol ol ol ol,.spec-algo ol ol,.spec-algo ol ol ol ol ol{list-style-type:lower-alpha}.spec-semantic ol ol ol,.spec-semantic ol ol ol ol ol ol,.spec-algo ol ol ol,.spec-algo ol ol ol ol ol ol{list-style-type:lower-roman}.spec-call>a{color:inherit}.spec-production{margin:1rem 0 1rem var(--dfn-indent)}.spec-production>.spec-nt::after{content:":";font-style:normal;font-weight:bold;margin:0 1ex}.spec-semantic.d2>.spec-nt::after,.spec-production.d2>.spec-nt::after{content:"::"}.spec-semantic.d3>.spec-nt::after,.spec-production.d3>.spec-nt::after{content:":::"}.spec-production>.spec-rhs{line-height:1.1;margin:.25em 0 .5em calc(2 * var(--indent));text-indent:calc(-1 * var(--indent))}.spec-semantic>.spec-rhs{display:inline-block;text-indent:calc(-1 * var(--indent));margin-left:calc(1ex + var(--indent))}.spec-rhs>*{text-indent:0}.spec-oneof{display:inline}.spec-oneof::before{content:"one of";font-style:normal;font-weight:bold}.spec-oneof-grid{max-width:calc(100vw - 2rem);overflow:scroll;margin:-1ex -1rem;padding:1ex 1rem}.spec-oneof-grid>table{margin-left:var(--indent)}.spec-oneof .spec-rhs{border:none;margin:0;padding:0 0 0 1rem;vertical-align:baseline;white-space:pre}.spec-oneof .spec-rhs:first-child{padding:0}.spec-rhs .spec-constrained:not(:first-child),.spec-rhs .spec-quantified:not(:first-child),.spec-rhs .spec-nt:not(:first-child),.spec-rhs .spec-t:not(:first-child),.spec-rhs .spec-rx:not(:first-child),.spec-rhs .spec-prose:not(:first-child),.spec-rhs .spec-empty:not(:first-child),.spec-rhs .spec-lookahead:not(:first-child){margin-left:1ex;display:inline-block}.spec-condition{font-size:85%}.spec-condition::before{content:"[if "}.spec-condition.not::before{content:"[if not "}.spec-condition::after{content:"]"}.spec-empty,.spec-prose{color:#666}.spec-nt{font-style:italic}.spec-nt>a{color:inherit}.spec-quantifiers,.spec-params{font-size:65%;font-style:normal;vertical-align:sub}.spec-quantifier.list{color:#3348d3}.spec-quantifier.optional{color:#83238e}.spec-params,.spec-condition{color:#1c7758}.spec-params::before{content:"["}.spec-params::after{content:"]"}.spec-quantifier:not(:last-child)::after,.spec-param:not(:last-child)::after{color:#666;content:", "}.spec-param.conditional::before{content:"?"}.spec-param.negated::before{content:"!"}.spec-t,.spec-rx{color:#333;font-family:monospace;font-weight:bold}.spec-butnot::before{color:#666;content:"but not";font-family:Cambria,"Palatino Linotype",Palatino,"Liberation Serif",serif;font-weight:normal;margin-right:1ex}.spec-butnot>*:not(:first-child)::before{color:#666;content:"or";font-family:Cambria,"Palatino Linotype",Palatino,"Liberation Serif",serif;font-weight:normal;margin-right:1ex}.spec-rhs .spec-oneof::before,.spec-rhs .spec-butnot::before{margin-left:1ex}.spec-lookahead>*{margin:0!important}.spec-lookahead>*:not(:first-child)::before{color:#666;content:", ";font-family:Cambria,"Palatino Linotype",Palatino,"Liberation Serif",serif;font-style:normal;font-weight:normal}.spec-lookahead::before{color:#666;content:"[lookahead = ";font-family:Cambria,"Palatino Linotype",Palatino,"Liberation Serif",serif;font-style:normal;font-weight:normal}.spec-lookahead.not::before{content:"[lookahead \2260  "}.spec-lookahead.set::before{content:"[lookahead \2208  {";margin-right:0}.spec-lookahead.set.not::before{content:"[lookahead \2209  {"}.spec-lookahead.ntset::before{content:"[lookahead \2208  ";margin-right:0}.spec-lookahead.ntset.not::before{content:"[lookahead \2209  "}.spec-lookahead::after{color:#666;content:"]"}.spec-lookahead.set::after{content:"}]"}.token.atrule,.token.attr-value,.token.keyword,.token.property,.token.selector,.token.attr-name,.token.builtin,.token.entity,.token.url,.token.inserted{color:#1b1994b0;background:none}.token.tag,.token.boolean,.token.number,.token.string,.token.char,.token.constant,.token.symbol,.token.regex,.token.important,.token.variable,.token.function,.token.class-name,.token.deleted{color:#a20764bd}.token.comment,.token.prolog,.token.doctype,.token.cdata,.token.description{color:inherit;opacity:.3}.token.punctuation{color:inherit;opacity:.5}.token.operator,.token.namespace{color:inherit;opacity:.7}</style>
+<script>(function(){var r,a=[];document.addEventListener("readystatechange",function(){document.readyState==="interactive"&&u()});function u(){var n=document.querySelector('label[for="spec-sidebar-toggle"]');n.addEventListener("scroll",o),n.addEventListener("touchmove",o);function o(d){d.preventDefault()}for(var t=document.getElementsByTagName("section"),e=0;e<t.length;e++)t[e].getAttribute("secid")&&a.push(t[e]);var i=window.scrollY,c=!1;window.addEventListener("scroll",function(d){i=window.scrollY,c||(c=!0,window.requestAnimationFrame(function(){s(i),c=!1}))})}function s(n){for(var o=n+document.documentElement.clientHeight/4,t,e=a.length-1;e>=0;e--)if(a[e].offsetTop<o){t=a[e];break}var i=t&&t.getAttribute("secid");i!==r&&(r&&l(r,!1),i&&l(i,!0),r=i)}function l(n,o){document.getElementById("_sidebar_"+n).className=o?"viewing":"";for(var t=n.split(".");t.length;){var e=document.getElementById("_toggle_"+t.join("."));e&&(e.checked=o),t.pop()}}s(window.scrollY);})();</script>
+<script>(function(){var n=document.getElementsByTagName("style")[0].sheet,e;function u(){e&&(n.deleteRule(e),e=void 0)}function d(t){u(),e=n.insertRule('*[data-name="'+t+'"] { background: rgba(230,215,0,0.12); }',n.cssRules.length)}document.documentElement.addEventListener("mouseover",function(t){var a=t.target.attributes["data-name"];a&&d(a.value)});document.documentElement.addEventListener("mouseout",u);})();</script>
+<script>(function(){var R="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",o,p,r,g;document.addEventListener("selectionchange",E);window.addEventListener("resize",C);window.addEventListener("hashchange",x);window.addEventListener("load",x);function S(n){y(new URL(n.target.href))}function x(){y(window.location)}function y(n){var e=n.hash.match(/^#sel-([A-Za-z0-9-_]+)$/);if(!!e){g=e[1],r=k(g);var t=r.getBoundingClientRect(),d=Math.max(20,Math.floor((window.innerHeight-t.height)*.4));window.scrollTo(0,window.scrollY+t.y-d);var c=document.getSelection();c.empty(),c.addRange(r),C()}}function E(n){var e=document.getSelection();if(e.isCollapsed)o&&(o.parentNode.removeChild(o),o=null);else{var t=e.getRangeAt(0);(!r||t.compareBoundaryPoints(Range.START_TO_START,r)!==0||t.compareBoundaryPoints(Range.END_TO_END,r)!==0)&&(r=t,g=B(r),C())}}function C(){if(!!r){p||(p=document.getElementsByTagName("article")[0]),o||(o=document.createElement("a"),document.body.appendChild(o)),o.href="#sel-"+g,o.onclick=S,o.className=r.isOutdated?"outdated-selection-link":"selection-link",o.innerText=r.isOutdated?"!":"\u201F";var n=window.innerWidth<720,e=r.getBoundingClientRect();if(n)o.style.left=Math.floor(e.x+e.width/2+window.scrollX-13)+"px",o.style.top=Math.floor(e.bottom+window.scrollY+10)+"px";else{var t=p.getBoundingClientRect().x;o.style.left=Math.floor(t+window.scrollX-37)+"px",o.style.top=Math.floor(e.y+window.scrollY-3)+"px"}}}function B(n){var e="",t=N(n.startContainer),d=N(n.endContainer),c=M(t,d);return l(c),l(t.slice(c.length).concat(n.startOffset)),l(d.slice(c.length).concat(n.endOffset)),i(L(n.toString())),e;function i(a){do e+=R[a&31|(a>31?32:0)],a>>=5;while(a>0)}function l(a){i(a.length);for(var h=0;h<a.length;h++)i(a[h])}}function k(n){for(var e=new Array(64),t=0;t<64;t++)e[R.charCodeAt(t)]=t;var d=0,c=m(),i=m(),l=m(),a=w(),h=i.pop(),P=O(c.concat(i)),T=l.pop(),A=O(c.concat(l)),u=document.createRange();return u.setStart(P,h),u.setEnd(A,T),u.isOutdated=a!==void 0&&a!==L(u.toString()),u;function w(){for(var s=0,v=0;d<n.length;){var f=e[n.charCodeAt(d++)];if(s|=(f&31)<<v,v+=5,f<32)return s}}function m(){var s=w();if(s!=null){for(var v=new Array(s),f=0;f<s;f++)v[f]=w();return v}}}function N(n){for(var e=[];n!=document.body;){var t=n.parentNode;e.push(Array.prototype.indexOf.call(t.childNodes,n)),n=t}return e.reverse()}function O(n){for(var e=document.body,t=0;t<n.length&&e;t++)e=e.childNodes[n[t]];return e}function M(n,e){for(var t=0;t<n.length&&t<e.length&&n[t]===e[t];)t++;return n.slice(0,t)}function L(n){for(var e=2166136261,t=0;t<n.length;++t)e^=n.charCodeAt(t),e+=(e<<1)+(e<<4)+(e<<7)+(e<<8)+(e<<24);return(e>>15^e)&32767}})();</script>
+</head>
+<body><article>
+<header>
+<h1>Cedar</h1>
+<section id="intro">
+<p><em>Version 0.1 DRAFT</em>. <em>Compatible with <a href="https://spec.graphql.org/October2021">GraphQL October 2021 Edition</a>.</em></p>
+<p>Cedar is a compact, streamable, binary serialization format for <a href="https://graphql.org">GraphQL</a>. It aims to:</p>
+<ul>
+<li><strong>Minimize end-to-end latency</strong> of GraphQL responses<ul>
+<li>Including serialization, transport, and deserialization</li>
+</ul>
+</li>
+<li><strong>Minimize bytes on the wire</strong>, even before compression</li>
+<li><strong>Support <em>streaming</em></strong>: reading (or writing) data before reaching the end of a response</li>
+<li>Be easy to implement</li>
+</ul>
+<p>Cedar:</p>
+<ul>
+<li>Takes the place of JSON in GraphQL</li>
+<li>Usually meets the needs of mobile clients better than web clients</li>
+</ul>
+</section>
+<nav class="spec-toc">
+<div class="title">Contents</div>
+<ol>
+<li><a href="#sec-Notes-TODO-remove-"><span class="spec-secid">1</span>Notes (TODO: remove)</a></li>
+<li><a href="#sec-Problems-TODO-remove-"><span class="spec-secid">2</span>Problems (TODO: remove)</a></li>
+<li><a href="#sec-Introduction"><span class="spec-secid">3</span>Introduction</a></li>
+<li><a href="#sec-Background"><span class="spec-secid">4</span>Background</a></li>
+<li><a href="#sec-Types"><span class="spec-secid">5</span>Types</a><ol>
+<li><a href="#sec-GraphQL-types"><span class="spec-secid">5.1</span>GraphQL types</a></li>
+<li><a href="#sec-Response-types"><span class="spec-secid">5.2</span>Response types</a></li>
+<li><a href="#sec-Wire-types"><span class="spec-secid">5.3</span>Wire types</a></li>
+</ol>
+</li>
+<li><a href="#sec-Wire-schema"><span class="spec-secid">6</span>Wire schema</a></li>
+<li><a href="#sec-Binary-encoding"><span class="spec-secid">7</span>Binary encoding</a><ol>
+<li><a href="#sec-Message"><span class="spec-secid">7.1</span>Message</a><ol>
+<li><a href="#sec-Flags"><span class="spec-secid">7.1.1</span>Flags</a></li>
+<li><a href="#sec-Primitive-Types"><span class="spec-secid">7.1.2</span>Primitive Types</a></li>
+</ol>
+</li>
+<li><a href="#sec-LABELs"><span class="spec-secid">7.2</span>LABELs</a></li>
+<li><a href="#sec-Backreferences"><span class="spec-secid">7.3</span>Backreferences</a><ol>
+<li><a href="#sec-Write-side"><span class="spec-secid">7.3.1</span>Write-side</a></li>
+<li><a href="#sec-Read-side"><span class="spec-secid">7.3.2</span>Read-side</a></li>
+<li><a href="#sec-Types-which-support-backreferences"><span class="spec-secid">7.3.3</span>Types which support backreferences</a></li>
+<li><a href="#sec-Disabling-backreferences-for-a-given-type-in-a-message"><span class="spec-secid">7.3.4</span>Disabling backreferences for a given type in a message</a></li>
+</ol>
+</li>
+<li><a href="#sec-Complex-types"><span class="spec-secid">7.4</span>Complex types</a></li>
+<li><a href="#sec-Nullable-types"><span class="spec-secid">7.5</span>Nullable types</a></li>
+<li><a href="#sec-Objects"><span class="spec-secid">7.6</span>Objects</a></li>
+<li><a href="#sec-Enums"><span class="spec-secid">7.7</span>Enums</a></li>
+<li><a href="#sec-Lists"><span class="spec-secid">7.8</span>Lists</a></li>
+<li><a href="#sec-Unions"><span class="spec-secid">7.9</span>Unions</a></li>
+<li><a href="#sec-Fixed"><span class="spec-secid">7.10</span>Fixed</a></li>
+<li><a href="#sec-Errors"><span class="spec-secid">7.11</span>Errors</a></li>
+</ol>
+</li>
+<li><a href="#sec-Design-notes"><span class="spec-secid">8</span>Design notes</a></li>
+<li><a href="#sec-Legal"><span class="spec-secid">9</span>Legal</a><ol>
+<li><a href="#sec-Copyright-notice"><span class="spec-secid">9.1</span>Copyright notice</a></li>
+<li><a href="#sec-License"><span class="spec-secid">9.2</span>License</a></li>
+</ol>
+</li>
+<li><a href="#sec-Formal"><span class="spec-secid">10</span>Formal</a><ol>
+<li><a href="#sec-Conformance"><span class="spec-secid">10.1</span>Conformance</a></li>
+<li><a href="#sec-Versioning"><span class="spec-secid">10.2</span>Versioning</a></li>
+</ol>
+</li>
+<li><a href="#sec-Authors-and-contributors"><span class="spec-secid">11</span>Authors and contributors</a></li>
+<li><a href="#index"><span class="spec-secid">§</span>Index</a></li>
+</ol>
+</nav>
+</header>
+<section id="sec-Notes-TODO-remove-" secid="1">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Notes-TODO-remove-">1</a></span>Notes (TODO: remove)</h1>
+<ul>
+<li>Idea: Compact Paths to values to represent errors. A series of tags.<ul>
+<li>If errors inlined, path up to propagation stop is implicit. The path from there down into any initiating non-nullable field would need to be explicit though, need to account for</li>
+</ul>
+</li>
+<li>need to handle input vs output types: arguments in particular<ul>
+<li>First version: output types only?</li>
+</ul>
+</li>
+<li>i32, i64 are useful. but what about just a fixed length byte block in general? could represent that in the type system as well.</li>
+<li>idea: null collapsing. nullable fields would normally start w/ a zero byte if null, 1 otherwise. for enum &amp; union types, this could be collapsed into just the length, if we never used 0 in the type of an enum or union. is that worth it?</li>
+<li>idea: we could explicitly mark values which have backrefs inline by using negative identifiers the first time. however, this would make encoding two-pass.</li>
+<li>Idea. Directive on an object type or fragment to mark it as likely to repeat. Then both sides can keep back refs to it as elsewhere. This is free for nullable and unions, but need an extra byte for non nullable objects. I guess valid on custom scalars.</li>
+<li>Idea: default values, should they have an implicit ref Identifier?</li>
+<li>Document: defend against invalid back references (too low ids)</li>
+<li>Document: limit read length allocations which exceed content size (if known) or a configurable limit, default 64MB</li>
+<li>Idea: default backrefs for common strings: <code>__typename</code>, message, id, locations, line, column, path?</li>
+<li>Problem: error extensions assumes self-describing format. so need to define that too</li>
+<li>Idea: never backref empty string? or more generally, when encoding, check if backref length + value &le; backref id size. may also combine w: -1 backref = empty string, which avoids separate representations of null + empty string, and can use a single reflen instead</li>
+<li>Idea: as an optional flag, could return error extensions as a json string. this prevents the need for a custom decoder.</li>
+<li>Question: can errors have entries that don&rsquo;t correspond to places in the response? If so need to figure out how to encode. nope, spec doesn&rsquo;t allow it</li>
+<li>Todo: interfaces?</li>
+</ul>
+</section>
+<section id="sec-Problems-TODO-remove-" secid="2">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Problems-TODO-remove-">2</a></span>Problems (TODO: remove)</h1>
+<ul>
+<li>Adding an enum: can&rsquo;t produce a reliable tag based on ordering, if the server adds a new enum value before the end, or removes one entirely</li>
+<li>TODO: make sure the bounds of using 64bit varint can encode all the enums etc. that we need TODO: JSON encoding. or, should it simply be a view on the binary encoding? Named because it sounds sort of like</li>
+<li>@encoding annotation isn&rsquo;t backwards compatible :(</li>
+<li>de-dup all objects as soon as one object type is marked? on the reader, i think you have to, on the writer, seems crazy? i don&rsquo;t see any way around it though, without a verbose communcation of which types opted in... maybe we could do query-only, and ignore schema annotations? kinda anoying too</li>
+<li>TODO: where to interfaces fit in? kinda just tagged selection sets</li>
+</ul>
+</section>
+<section id="sec-Introduction" secid="3">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Introduction">3</a></span>Introduction</h1>
+<p>This document defines Cedar. It is intended to be the authoritative specification. Implementations of Cedar must adhere to this document.</p>
+</section>
+<section id="sec-Background" secid="4">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Background">4</a></span>Background</h1>
+<div class="spec-todo">
+</div>
+<p>Cedar typically works like this</p>
+<p>Given a GraphQL <code>schema</code>, and a GraphQL <code>query</code> on it:</p>
+<div class="spec-algo" id="CedarAlgorithm()">
+<span class="spec-call"><a href="#CedarAlgorithm()" data-name="CedarAlgorithm">CedarAlgorithm</a>(<var data-name="schema">schema</var>, <var data-name="query">query</var>)</span><ol>
+<li>Walk over the <code>schema</code> to get each type. At each <code>type</code>:<ol>
+<li>Produce a corresponding <a href="#sec-Wire-types">wire type</a>, accounting for any <code>@encoding</code> directives</li>
+</ol>
+</li>
+<li>Store the resulting <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">wire schema</a></span></li>
+<li>Walk over the <code>query</code> to get the type of everything selected. At each selection, look up the corresponding wire type in the wire schema produced above:<ol>
+<li>For each selection set, produce a new wire type which is a subset of the object <code>type</code></li>
+<li>For leaf selections, copy the corresponding wire type</li>
+<li>Account for any <code>@encoding</code> directives</li>
+</ol>
+</li>
+</ol>
+</div>
+</section>
+<section id="sec-Types" secid="5">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Types">5</a></span>Types</h1>
+<p>GraphQL uses two type systems: <span class="spec-ref"><a href="#graphql-types" data-name="graphql-types">GraphQL types</a></span>, which may appear in any given GraphQL Schema, and <span class="spec-ref"><a href="#response-types" data-name="response-types">response types</a></span>, which are used when serializing responses. Cedar introduces a third, called <span class="spec-ref"><a href="#wire-types" data-name="wire-types">wire types</a></span>, used when [de]serializing to or from byte streams.</p>
+<section id="sec-GraphQL-types" secid="5.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-GraphQL-types">5.1</a></span>GraphQL types</h2>
+<p><dfn id="graphql-types"><a href="#graphql-types" data-name="graphql-types">GraphQL types</a></dfn> refers to the <a href="https://spec.graphql.org/October2021/#sec-Types">types defined in the GraphQL spec</a>. Briefly, these are:</p>
+<ul>
+<li><code>Scalar</code>, <code>Enum</code>, <code>Object</code>, <code>Input Object</code>, <code>Interface</code>, <code>Union</code>, <code>List</code></li>
+<li>Scalar includes, at minimum: <code>Int</code>, <code>Float</code>, <code>String</code>, <code>Boolean</code>, <code>ID</code></li>
+</ul>
+<p>GraphQL also allows for <a href="https://spec.graphql.org/October2021/#sec-Scalars.Custom-Scalars">custom scalars</a>. Cedar supports this, though an <code>@encoding</code> directive is required to tell Cedar how to represent it on the wire.</p>
+</section>
+<section id="sec-Response-types" secid="5.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Response-types">5.2</a></span>Response types</h2>
+<p><dfn id="response-types"><a href="#response-types" data-name="response-types">Response types</a></dfn> refers to the <a href="https://spec.graphql.org/October2021/#sec-Serialization-Format">serialization types sketched in the GraphQL spec</a>. These do not have rigorous definitions in the GraphQL spec. These include (but are not limited to):</p>
+<ul>
+<li><code>Map</code>, <code>List</code>, <code>String</code>, <code>Null</code></li>
+</ul>
+</section>
+<section id="sec-Wire-types" secid="5.3">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Wire-types">5.3</a></span>Wire types</h2>
+<div class="spec-todo">
+make this section more useful</div>
+<p><dfn id="wire-types"><a href="#wire-types" data-name="wire-types">Wire types</a></dfn> are used by Cedar to encode GraphQL values as bytes.</p>
+<p>The set of primitive type wire type names is:</p>
+<ul>
+<li><code>NULL</code>: represents no value</li>
+<li><code>VARINT</code>: boolean, int, enum, lenref</li>
+<li><code>LABEL</code>: string, arrays, objects</li>
+<li><code>BLOCK</code></li>
+<li><code>FIXED64</code>: floats</li>
+<li><code>TAG</code>: for self-describing data</li>
+</ul>
+<p>Cedar supports six kinds of complex types:</p>
+<ul>
+<li><code>RECORD</code> # object</li>
+<li><code>ARRAY</code> # list</li>
+<li><code>TABLE</code> # map</li>
+<li><code>VARIANT</code> # union</li>
+</ul>
+</section>
+</section>
+<section id="sec-Wire-schema" secid="6">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Wire-schema">6</a></span>Wire schema</h1>
+<p>GraphQL uses a Schema to capture the names and types of data. GraphQL queries select a portion of data from that Schema. Given a Schema and a query on it, Cedar produces a <dfn id="wire-schema"><a href="#wire-schema" data-name="wire-schema">wire schema</a></dfn> with all the information needed to [de]serialize data powering that query against a compatible GraphQL Schema.</p>
+<div id="note-3dadc" class="spec-note">
+<a href="#note-3dadc">Note</a>
+In a client-server architecture, GraphQL schemas frequently change on the server according to certain compatibility rules. Therefore, while Cedar <em>cannot</em> assume the Schema used for serializing data is the Schema used for deserializing, it <em>does</em> assume they are compatible with each other (i.e. no <a href="https://spec.graphql.org/October2021/#sel-EALJDCAgICCAogH">breaking changes</a> have been made).</div>
+<p>The wire schema</p>
+<div class="spec-production" id="Idea">
+<span class="spec-nt"><a href="#Idea" data-name="Idea">Idea</a></span><div class="spec-rhs"><span class="spec-t">take</span><span class="spec-nt"><span data-name="SDL">SDL</span></span><span class="spec-t">,</span><span class="spec-t">possibly</span><span class="spec-t">with</span><span class="spec-t">some</span><span class="spec-t">directives</span><span class="spec-t">such</span><span class="spec-t">an</span><span class="spec-t">@encode(</span><span class="spec-prose">fixed64</span><span class="spec-t">)</span><span class="spec-t">or</span><span class="spec-t">@encode(</span><span class="spec-prose">string</span><span class="spec-t">).</span><span class="spec-nt"><span data-name="Also">Also</span></span><span class="spec-t">take</span><span class="spec-t">a</span><span class="spec-t">query</span><span class="spec-t">,</span><span class="spec-t">possibly</span><span class="spec-t">with</span><span class="spec-t">directives.</span><span class="spec-nt"><span data-name="Transform">Transform</span></span><span class="spec-t">this</span><span class="spec-t">into</span><span class="spec-t">a</span><span class="spec-t">wire</span><span class="spec-t">schema.</span><span class="spec-nt"><span data-name="Use">Use</span></span><span class="spec-t">the</span><span class="spec-t">wire</span><span class="spec-t">schema</span><span class="spec-t">to</span><span class="spec-t">generate</span><span class="spec-t">a</span><span class="spec-t">codec.</span></div>
+</div>
+<p>A Schema is represented in JSON by one of:</p>
+<ul>
+<li>A JSON string, naming a defined type.</li>
+<li>A JSON object, of the form: <code>{"type": "typeName" ...attributes...}</code> where typeName is either a primitive or derived type name, as defined below. Attributes not defined in this document are permitted as metadata, but must not affect the format of serialized data.</li>
+<li>A JSON array, representing a union of embedded types.</li>
+</ul>
+<p>Primitive Types The set of primitive type names is taken from the GraphQL spec.</p>
+<ul>
+<li>null: no value</li>
+<li>boolean: a binary value</li>
+<li>int: 32-bit signed integer</li>
+<li>float: double precision (64-bit) IEEE 754 floating-point number</li>
+<li>bytes: sequence of 8-bit unsigned bytes</li>
+<li>string: utf8 character sequence Primitive types have no specified attributes. Primitive type names are also defined type names. Thus, for example, the schema &ldquo;string&rdquo; is equivalent to: <code>{"type": "string"}</code></li>
+</ul>
+</section>
+<section id="sec-Binary-encoding" secid="7">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Binary-encoding">7</a></span>Binary encoding</h1>
+<p>Cedar&rsquo;s binary encoding does not include field names, self-contained information about the types of individual bytes, nor field or record separators. Therefore readers are wholly reliant on the wire schema used when the data was encoded (or any compatible wire schema), along with any information about custom scalar encodings.</p>
+<section id="sec-Message" secid="7.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Message">7.1</a></span>Message</h2>
+<div class="spec-todo">
+flags, then values etc,</div>
+<section id="sec-Flags" secid="7.1.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Flags">7.1.1</a></span>Flags</h3>
+<p>Every response starts with a flags byte. From most to least significant bits: 0: 1 if backreferences may be used for string values in this message, else 0 1: 1 if backreferences may be used for object values in this message, else 0 1: 1 if backreferences may be used for array values in this message, else 0 ...</p>
+<div id="note-98e03" class="spec-note">
+<a href="#note-98e03">Note</a>
+that backreferences are always enabled for enum values.</div>
+</section>
+<section id="sec-Primitive-Types" secid="7.1.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Primitive-Types">7.1.2</a></span>Primitive Types</h3>
+<p>Primitive types are encoded in binary as follows:</p>
+<ul>
+<li><code>Null</code> is written as zero bytes</li>
+<li><code>Int</code>, <code>Boolean</code>, and <code>LABEL</code> values are written using variable-length zig-zag coding. For <code>Boolean</code>, 0 is false and 1 is true.</li>
+<li><code>Float</code> is written as <code>FIXED64</code>, a fixed-length 8-byte little-endian, same as <code>memcpy</code> of equivalent C type <code>int64_t</code></li>
+<li><code>String</code>, <code>ID</code>, <code>Enum</code>, and custom scalars barked as <code>BLOCK</code> are encoded as <code>BLOCK</code>. <code>BLOCK</code> is encoded as a <code>LABEL</code>, possibly followed by data. If a backreference is being used, or if the value is <code>Null</code> or an error, the <code>LABEL</code> must be written according to the corresponding <a href="#sec-LABELs">Label encoding</a>. Otherwise, the <code>LABEL</code> specifies how many bytes of data follow for this value. It is then immediately followed by the bytes of the value. <code>String</code>, <code>ID</code>, and <code>Enum</code> data bytes MUST be UTF-8 encoded.</li>
+<li><code>Union</code>, interfaces, unions are represented as <code>VARIANT</code>. <code>VARIANT</code> is a <code>LABEL</code> where each member is numbered and identified by its order of appearance in the query (starting at 0), followed by corresponding object encoded as usual.</li>
+<li>Interfaces? same as objects?</li>
+</ul>
+</section>
+</section>
+<section id="sec-LABELs" secid="7.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-LABELs">7.2</a></span>LABELs</h2>
+<p>Cedar uses a multipurpose binary marker called a <code>LABEL</code> which combines several use cases into one representation. A <code>LABEL</code> is written using variable-length zig-zag coding. A <code>LABEL</code> is essentially a number which should be interpreted differently according to its value.</p>
+<p>Non-negative numbers &ge; 0 are interpreted one of two ways depending on context.</p>
+<p>For variable-length data, such as a string or list, it represents the length of the data that is to follow. The units depend on the data: string lengths are in bytes, while list lengths are in entries.</p>
+<p>Non-negative numbers are also used to mark which member of a union selection is to follow. These are numbered starting at 0 and counting up.</p>
+<p>Cedar reserves a few special negative values for certain purposes:</p>
+<ol>
+<li>-1 represents a <code>null</code> value, particularly for fields</li>
+<li>-2 represents an error</li>
+</ol>
+<p>All other negative numbers are used for <dfn id="backreferences"><a href="#backreferences" data-name="backreferences">backreferences</a></dfn>. Backreferences are identification numbers which refer to values which appeared previously in the response. See <a href="#sec-Backreferences">Backreferences</a> for more.</p>
+<div id="note-8e01a" class="spec-note">
+<a href="#note-8e01a">Note</a>
+that <code>String</code> pre-fills certain backreference IDs.</div>
+<div class="spec-todo">
+spell out bootstrap values for strings</div>
+<ol>
+<li>Marking the length of a byte sequence</li>
+</ol>
+</section>
+<section id="sec-Backreferences" secid="7.3">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Backreferences">7.3</a></span>Backreferences</h2>
+<p>Cedar reduces data size on the wire by avoiding repeated values. Whenever a potentially-large value is read or written for the first time, it is stored in an array and given the next available backreference ID number (which is always negative). When it is next used, it can be identified by the backreference ID, eliminating the need to send the entire value again.</p>
+<div id="note-c219f" class="spec-note">
+<a href="#note-c219f">Note</a>
+This is similar to how lossless compression algorithms use a <a href="https://en.wikipedia.org/wiki/Huffman_coding">Huffman coding</a>, but simpler and less effective. The upshot is that Cedar representations can remain small even after decompression, in contrast to JSON.</div>
+<section id="sec-Write-side" secid="7.3.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Write-side">7.3.1</a></span>Write-side</h3>
+<p>On the write-side, backreferences SHOULD be supported.</p>
+<p>Before writing a response, a writer SHOULD create several lists (called <dfn id="memo-lists"><a href="#memo-lists" data-name="memo-lists">memo lists</a></dfn>, one for each type which is eligible for backreferences (see below). Then, the array for <code>String</code>s should insert the bootstrap values (see below), [TODO: and lists for all types with defaults should insert their defaults? does this break schema evolution?]. Memo lists are indexed by backreference ID, starting at -3 (the first non-reserved value) and counting down.</p>
+<div class="spec-production" id="Algorithm">
+<span class="spec-nt"><a href="#Algorithm" data-name="Algorithm">Algorithm</a></span><div class="spec-rhs"><span class="spec-nt"><span data-name="Whenever">Whenever</span></span><span class="spec-t">a</span><span class="spec-t">type</span><span class="spec-t">which</span><span class="spec-t">supports</span><span class="spec-t">backreferences</span><span class="spec-t">is</span><span class="spec-t">to</span><span class="spec-t">be</span><span class="spec-t">written</span><span class="spec-t">,</span><span class="spec-t">the</span><span class="spec-t">writer</span><span class="spec-nt"><span data-name="MAY">MAY</span></span><span class="spec-t">first</span><span class="spec-t">look</span><span class="spec-t">for</span><span class="spec-t">an</span><span class="spec-t">identical</span><span class="spec-t">value</span><span class="spec-t">in</span><span class="spec-t">the</span><span class="spec-t">corresponding</span><span class="spec-t">memo</span><span class="spec-t">list.</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">it</span><span class="spec-t">finds</span><span class="spec-t">a</span><span class="spec-t">value</span><span class="spec-t">,</span><span class="spec-t">it</span><span class="spec-nt"><span data-name="MAY">MAY</span></span><span class="spec-t">write</span><span class="spec-t">out</span><span class="spec-t">the</span><span class="spec-t">backreference</span><span class="spec-nt"><span data-name="ID">ID</span></span><span class="spec-t">in</span><span class="spec-t">lieu</span><span class="spec-t">of</span><span class="spec-t">the</span><span class="spec-t">value</span><span class="spec-t">as</span><span class="spec-t">usual.</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">it</span><span class="spec-t">does</span><span class="spec-t">not</span><span class="spec-t">,</span><span class="spec-t">or</span><span class="spec-t">if</span><span class="spec-t">it</span><span class="spec-t">chooses</span><span class="spec-t">not</span><span class="spec-t">to</span><span class="spec-t">(perhaps</span><span class="spec-t">for</span><span class="spec-t">simplicity)</span><span class="spec-t">,</span><span class="spec-t">it</span><span class="spec-t">writes</span><span class="spec-t">out</span><span class="spec-t">the</span><span class="spec-t">full</span><span class="spec-t">value</span><span class="spec-t">as</span><span class="spec-t">usual</span><span class="spec-t">(all</span><span class="spec-t">types</span><span class="spec-t">which</span><span class="spec-t">support</span><span class="spec-t">backreferences</span><span class="spec-t">begin</span><span class="spec-t">with</span><span class="spec-t">a</span><span class="spec-t">LABEL</span><span class="spec-t">).</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">it</span><span class="spec-t">did</span><span class="spec-t">not</span><span class="spec-t">write</span><span class="spec-t">out</span><span class="spec-t">a</span><span class="spec-t">backreference</span><span class="spec-t">,</span><span class="spec-t">it</span><span class="spec-nt"><span data-name="MUST">MUST</span></span><span class="spec-t">increment</span><span class="spec-t">the</span><span class="spec-t">highest</span><span class="spec-t">backreference</span><span class="spec-nt"><span data-name="ID">ID</span></span><span class="spec-t">for</span><span class="spec-t">the</span><span class="spec-t">corresponding</span><span class="spec-t">type</span><span class="spec-t">,</span><span class="spec-t">typically</span><span class="spec-t">by</span><span class="spec-t">inserting</span><span class="spec-t">the</span><span class="spec-t">value</span><span class="spec-t">into</span><span class="spec-t">the</span><span class="spec-t">memo</span><span class="spec-t">list.</span></div>
+</div>
+<p>The writer MAY choose to write out full values when their representation is smaller than the backreference ID representation.</p>
+<div id="note-2bf5e" class="spec-note">
+<a href="#note-2bf5e">Note</a>
+Backreference IDs are not unique across types: a backreference ID -5 refers to a different value for <code>String</code> than it does for <code>Enum</code>.</div>
+</section>
+<section id="sec-Read-side" secid="7.3.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Read-side">7.3.2</a></span>Read-side</h3>
+<p>On the read-side, backreferences MUST be supported.</p>
+<p>Before reading a response, a writer MUST create several lists (called <dfn id="memo-lists"><a href="#memo-lists" data-name="memo-lists">memo lists</a></dfn>, one for each type which is eligible for backreferences (see below). Then, the array for <code>String</code>s should insert the bootstrap values (see below), [TODO: and lists for all types with defaults should insert their defaults? does this break schema evolution?]. Memo lists are indexed by backreference ID, starting at -3 (the first non-reserved value) and counting down.</p>
+<div class="spec-production" id="Algorithm">
+<span class="spec-nt"><a href="#Algorithm" data-name="Algorithm">Algorithm</a></span><div class="spec-rhs"><span class="spec-nt"><span data-name="Whenever">Whenever</span></span><span class="spec-t">a</span><span class="spec-t">type</span><span class="spec-t">which</span><span class="spec-t">supports</span><span class="spec-t">backreferences</span><span class="spec-t">is</span><span class="spec-t">to</span><span class="spec-t">be</span><span class="spec-t">read</span><span class="spec-t">,</span><span class="spec-t">the</span><span class="spec-t">reader</span><span class="spec-t">will</span><span class="spec-t">first</span><span class="spec-t">read</span><span class="spec-t">a</span><span class="spec-t">LABEL</span><span class="spec-t">(see</span><span class="spec-t">[Labels</span><span class="spec-t">](#sec-Labels)</span><span class="spec-t">for</span><span class="spec-t">details).</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">the</span><span class="spec-t">label</span><span class="spec-t">is</span><span class="spec-t">a</span><span class="spec-t">length</span><span class="spec-t">(and</span><span class="spec-t">will</span><span class="spec-t">therefore</span><span class="spec-t">be</span><span class="spec-t">followed</span><span class="spec-t">by</span><span class="spec-t">a</span><span class="spec-t">normal</span><span class="spec-t">value)</span><span class="spec-t">,</span><span class="spec-t">the</span><span class="spec-t">value</span><span class="spec-t">should</span><span class="spec-t">be</span><span class="spec-t">read</span><span class="spec-t">as</span><span class="spec-t">usual</span><span class="spec-t">,</span><span class="spec-t">then</span><span class="spec-t">stored</span><span class="spec-t">in</span><span class="spec-t">the</span><span class="spec-t">corresponding</span><span class="spec-t">memo</span><span class="spec-t">list</span><span class="spec-t">according</span><span class="spec-t">to</span><span class="spec-t">its</span><span class="spec-t">type</span><span class="spec-t">and</span><span class="spec-t">be</span><span class="spec-t">given</span><span class="spec-t">the</span><span class="spec-t">next</span><span class="spec-t">backreference</span><span class="spec-nt"><span data-name="ID">ID</span></span><span class="spec-t">.</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">the</span><span class="spec-t">label</span><span class="spec-t">is</span><span class="spec-t">instead</span><span class="spec-t">a</span><span class="spec-t">backreference</span><span class="spec-t">,</span><span class="spec-t">the</span><span class="spec-t">reader</span><span class="spec-nt"><span data-name="MUST">MUST</span></span><span class="spec-t">look</span><span class="spec-t">up</span><span class="spec-t">the</span><span class="spec-t">value</span><span class="spec-t">in</span><span class="spec-t">the</span><span class="spec-t">corresponding</span><span class="spec-t">type's</span><span class="spec-t">memo</span><span class="spec-t">list</span><span class="spec-t">using</span><span class="spec-t">the</span><span class="spec-nt"><span data-name="ID">ID</span></span><span class="spec-t">and</span><span class="spec-t">yield</span><span class="spec-t">that</span><span class="spec-t">value.</span></div>
+</div>
+</section>
+<section id="sec-Types-which-support-backreferences" secid="7.3.3">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Types-which-support-backreferences">7.3.3</a></span>Types which support backreferences</h3>
+<p>In order to maintain a compact data representation, backreferences are only supported for certain types:</p>
+<ul>
+<li>Supported: <code>Enum</code>, <code>Object</code>, <code>Input Object</code>, <code>Interface</code>, <code>Union</code>, <code>List</code>, <code>String</code>, <code>ID</code>. Nullable <code>Int</code> and <code>Float</code> also support backreferences, even though their non-nullable counterparts do not.</li>
+<li>Unsupported: <code>Int</code>, <code>Float</code>, <code>Boolean</code></li>
+</ul>
+<div class="spec-todo">
+should we support them for optional fields? mayhap</div>
+</section>
+<section id="sec-Disabling-backreferences-for-a-given-type-in-a-message" secid="7.3.4">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Disabling-backreferences-for-a-given-type-in-a-message">7.3.4</a></span>Disabling backreferences for a given type in a message</h3>
+<p>While many types support backreferences, checking for equality in the writer can increase serialization costs without reducing response sizes. Writers MAY therefore choose not to de-duplicate data using backreferences, and they SHOULD communicate these choices to readers using <a href="#sec-Message-flags">Message flags</a>. Writers MAY also mark these features as unused in response flags whenever they chose not to for a given response, though this may require serializing most of the message first.</p>
+<p>By default, we recommend enabling backreference-based deduplication <em>only</em> for the following types in the writer:</p>
+<ul>
+<li><code>String</code>, <code>ID</code>, and <code>Enum</code> (all strongly recommended)</li>
+<li>Any type marked with the <code>@deduplicate</code> directive in the schema or query</li>
+</ul>
+</section>
+</section>
+<section id="sec-Complex-types" secid="7.4">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Complex-types">7.4</a></span>Complex types</h2>
+</section>
+<section id="sec-Nullable-types" secid="7.5">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Nullable-types">7.5</a></span>Nullable types</h2>
+<div class="spec-todo">
+lenref. -1 value means null, -2 means error. other negatives = backrefs, other non-negatives = length, if that makes sense. the upshot is lengths don&rsquo;t need to be repeated if required. because of this, all lenrefs should probably reserve -1, -2.</div>
+</section>
+<section id="sec-Objects" secid="7.6">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Objects">7.6</a></span>Objects</h2>
+<p>An object (technically, a <em>selection set</em>) is encoded by encoding the values of its selected fields in the order that they are selected in a query. In other words, an object is encoded as just the concatenation of the encodings of its selected fields. Field values are encoded per their schema. For example, the query:</p>
+<pre id="example-f789b" class="spec-example" data-language="graphql"><a href="#example-f789b">Example № 1</a><code><span class="token keyword">type</span> <span class="token class-name">Test</span> <span class="token punctuation">{</span>
+  <span class="token attr-name">a</span><span class="token punctuation">:</span> <span class="token scalar">Int</span>
+  <span class="token attr-name">b</span><span class="token punctuation">:</span> <span class="token scalar">String</span>
+  <span class="token attr-name">c</span><span class="token punctuation">:</span> <span class="token scalar">ID</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">query</span> <span class="token punctuation">{</span>
+  <span class="token object">test</span> <span class="token punctuation">{</span>
+    <span class="token property">a</span>
+    <span class="token property">b</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>An instance of this record whose a field has value 27 (encoded as hex 36) and whose b field has value &ldquo;foo&rdquo; (encoded as hex bytes 06 66 6f 6f), would be encoded simply as the concatenation of these, namely the hex byte sequence: 36 06 66 6f 6f</p>
+</section>
+<section id="sec-Enums" secid="7.7">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Enums">7.7</a></span>Enums</h2>
+<p>An enum is represented exactly as a string (or due to the lenref, a reference to a previous string).</p>
+<p>Backreferences are always used for enums (i.e. there is no header flag to skip this feature). All enums share the same backreference ID space.</p>
+<div id="note-c650c" class="spec-note">
+<a href="#note-c650c">Note</a>
+you might expect an integer representation for enums. Unfortunately, we cannot guarantee the writer&rsquo;s view of the enum type matches the reader&rsquo;s, because the schema may have changed: in the writer&rsquo;s schema, if an enum value has been added before the end, or an enum value has been removed, the reader and writer do not have enough information to agree on the correct numbering.</div>
+</section>
+<section id="sec-Lists" secid="7.8">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Lists">7.8</a></span>Lists</h2>
+<p>Lists are encoded as a series of blocks. Each block consists of a lenref, followed by that many array items. A block with count zero indicates the end of the array. Each item is encoded per the array&rsquo;s item schema. The blocked representation permits one to read and write arrays without first fully beffering in memory, since one can start writing items without knowing the full length of the array.</p>
+</section>
+<section id="sec-Unions" secid="7.9">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Unions">7.9</a></span>Unions</h2>
+<p>A union is encoded by first writing an int value indicating the 0-based position within the union of the schema of its value. The value is then encoded per the indicated schema within the union. [question: should we reserve 0 for null, even in non-nullable types?] For example, the union schema <code>["null","string"]</code> would encode:</p>
+<ul>
+<li>null as zero (the index of &ldquo;null&rdquo; in the union):</li>
+<li>the string &ldquo;a&rdquo; as one (the index of &ldquo;string&rdquo; in the union, encoded as hex 02), followed by the serialized string:02 02 61</li>
+</ul>
+</section>
+<section id="sec-Fixed" secid="7.10">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Fixed">7.10</a></span>Fixed</h2>
+<p>Fixed instances are encoded using the number of bytes declared in the schema.</p>
+</section>
+<section id="sec-Errors" secid="7.11">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Errors">7.11</a></span>Errors</h2>
+<p>Errors have a very special representation for two reasons:</p>
+<ol>
+<li>Errors are inlined with data</li>
+<li>This makes them available for distinguishing between null and an error, and also makes their representation more compact.</li>
+<li>The &ldquo;extensions&rdquo; portion of each errors object must be self-describing. This is in contrast to all other data: we don&rsquo;t know the schema/types of &ldquo;extensions&rdquo; data, and it may vary between objects.</li>
+<li>Note: this spec does not allow for direction extension to error objects outside of the extensions field, even though the GraphQL spec allows for (but discourages) it. This is on the grounds that it is very easy to recover this information by simply moving it to the extensions field when migrating to this data format, and it simplifies this spec.</li>
+</ol>
+<p>Nullable fields are the only valid location for errors. See &ldquo;Nullable fields&rdquo; for details on how nullable fields may mark the presence of an error.</p>
+<p>Error objects have this schema:</p>
+<pre data-language="graphql"><code><span class="token keyword">type</span> <span class="token class-name">Location</span> <span class="token punctuation">{</span>
+    <span class="token attr-name">line</span><span class="token punctuation">:</span> <span class="token scalar">Int</span><span class="token operator">!</span>
+  <span class="token attr-name">column</span><span class="token punctuation">:</span> <span class="token scalar">Int</span><span class="token operator">!</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">type</span> <span class="token class-name">Error</span> <span class="token punctuation">{</span>
+    <span class="token attr-name">message</span><span class="token punctuation">:</span> <span class="token scalar">String</span><span class="token operator">!</span>
+  <span class="token attr-name">location</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token class-name">Location</span><span class="token operator">!</span><span class="token punctuation">]</span>
+  <span class="token attr-name">path</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token scalar">String</span> <span class="token operator">|</span> <span class="token scalar">Int</span><span class="token punctuation">]</span>
+  <span class="token attr-name">extensions</span><span class="token punctuation">:</span> <span class="token class-name">ExtensionsMap</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<div id="note-d2211" class="spec-note">
+<a href="#note-d2211">Note</a>
+that path and extensions are not representable as normal GraphQL responses:</div>
+<ol>
+<li>path mixes String and Int primitive values, which GraphQL forbids for data</li>
+<li>extensions must be a map, and has no other restrictions. Based on path&rsquo;s behavior (which violates GraphQL&rsquo;s typing rules), this seems to include values only representable in the transport layer (like JSON, or this spec). There is no information about the extensions map in the schema or any query.</li>
+</ol>
+<p>Errors are encoded as an object with the schema above, ignoring the path and extensions fields. Then, the representations of path and extensions are respectively concatenated after it.</p>
+<p>Path is represented on the wire as a nullable array of unions with schema: [&ldquo;string&rdquo;, &ldquo;int&rdquo;]. The reader&rsquo;s code generator may choose a helpful representation for this.</p>
+<p>Extensions are more complex because they must be self-describing. They are encoded according to the following section.</p>
+<p>Self-describing data for error extensions Data in extensions must be a map. This is represented as an array of key value pairs, where all keys are strings, and values are self-describing.</p>
+<p>Maps, a new data type, are allowed in extensions. Maps are encoded as a series of blocks. Each block consists of a lenref value, followed by that many key/value pairs. A block with count zero indicates the end of the map.</p>
+<ul>
+<li>The blocked representation permits one to read and write maps larger than can be buffered in memory, since one can start writing items without knowing the full length of the map.</li>
+</ul>
+<p>Each key is a string. Each value is a union with the following schema: [&ldquo;Null&rdquo;, &ldquo;String&rdquo;, &ldquo;Int&rdquo;, &ldquo;Boolean&rdquo;, &ldquo;Float&rdquo;, &ldquo;List&rdquo;, &ldquo;Map&rdquo;] This tells us the type, which is then decoded as usual. Before values of List are written, an additional union marker is written to indicate the type of all following values in the list. Therefore, all lists must be homogeneous.</p>
+<p>Therefore, each key/value pair is written like this: [key][value type][value] where [key] is a string as serialized everywhere, [value type] is a lenref union marker (iff it marks a List, it is then followed by a second lenref union marker marking the value type).</p>
+</section>
+</section>
+<section id="sec-Design-notes" secid="8">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Design-notes">8</a></span>Design notes</h1>
+<ul>
+<li>Cedar is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as <code>JSON.parse</code>. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Cedar. A codec in WASM might meet performance needs. A Cedar interpreter (instead of a code-generated codec) might reduce the download size.</li>
+<li>Byte alignment (instead of bit or word alignment) was chosen primarily for ease of implementation (e.g. no need to pack together consecutive booleans) balanced against the resulting size. Most GraphQL responses are unlikely to majorly benefit from bit packing anyway, and the use cases which would are probably better off using a custom scalar binary representation.</li>
+<li>Null vs. present fields are marked with <code>LABEL</code> per-field instead of using a bitmask for an entire object. This is a tad easier to implement on both sides, and also eases streaming writers because the the end may not yet be known.</li>
+<li>Errors are represented inline for a few reasons:<ul>
+<li>It is easier to implement for a streaming writer</li>
+<li>In a streaming reader, after reading a field you are guaranteed to know whether there was an error or just a null</li>
+<li>We know most of the <code>path</code> in the current response from our location, and do not need to write it explicitly, saving space</li>
+</ul>
+</li>
+<li>Perhaps surprisingly, <code>Enum</code>s can&rsquo;t be safely represented as small numbers, since schema evolution rules allow for changes which would alter the number one side but not the other.</li>
+</ul>
+</section>
+<section id="sec-Legal" secid="9">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Legal">9</a></span>Legal</h1>
+<section id="sec-Copyright-notice" secid="9.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Copyright-notice">9.1</a></span>Copyright notice</h2>
+<p>Copyright © 2022, Michael Solomon</p>
+<p>THESE MATERIALS ARE PROVIDED &ldquo;AS IS.&rdquo; The parties expressly disclaim any warranties (express, implied, or otherwise), including implied warranties of merchantability, non-infringement, fitness for a particular purpose, or title, related to the materials. The entire risk as to implementing or otherwise using the materials is assumed by the implementer and user. IN NO EVENT WILL THE PARTIES BE LIABLE TO ANY OTHER PARTY FOR LOST PROFITS OR ANY FORM OF INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS DELIVERABLE OR ITS GOVERNING AGREEMENT, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND WHETHER OR NOT THE OTHER MEMBER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+</section>
+<section id="sec-License" secid="9.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-License">9.2</a></span>License</h2>
+<p>This specification is licensed under <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0">OWFa 1.0</a>.</p>
+</section>
+</section>
+<section id="sec-Formal" secid="10">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Formal">10</a></span>Formal</h1>
+<section id="sec-Conformance" secid="10.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Conformance">10.1</a></span>Conformance</h2>
+<p>A conforming implementation of Cedar must fulfill all normative requirements. Conformance requirements are described in this document via both descriptive assertions and key words with clearly defined meanings.</p>
+<p>The key words &ldquo;MUST&rdquo;, &ldquo;MUST NOT&rdquo;, &ldquo;REQUIRED&rdquo;, &ldquo;SHALL&rdquo;, &ldquo;SHALL NOT&rdquo;, &ldquo;SHOULD&rdquo;, &ldquo;SHOULD NOT&rdquo;, &ldquo;RECOMMENDED&rdquo;, &ldquo;MAY&rdquo;, and &ldquo;OPTIONAL&rdquo; in the normative portions of this document are to be interpreted as described in <a href="https://www.rfc-editor.org/rfc/rfc2119">IETF RFC 2119</a>. These key words may appear in lowercase and still retain their meaning unless explicitly declared as non-normative.</p>
+<p>A conforming implementation of Cedar may provide additional functionality, but must not where explicitly disallowed or would otherwise result in non-conformance.</p>
+</section>
+<section id="sec-Versioning" secid="10.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Versioning">10.2</a></span>Versioning</h2>
+<p>Cedar is versioned using <a href="https://semver.org/spec/v2.0.0.html">SemVer 2.0.0</a>. Each version of Cedar explicitly targets one version of the GraphQL spec, which is usually the latest at time of writing.</p>
+</section>
+</section>
+<section id="sec-Authors-and-contributors" secid="11">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Authors-and-contributors">11</a></span>Authors and contributors</h1>
+<p>Cedar is authored by Michael Solomon. </p>
+</section>
+<section id="index" secid="index" class="spec-index">
+<h1>
+<span class="spec-secid" title="link to the index"><a href="#index">§</a></span>Index</h1>
+<ol>
+<li><a href="#Algorithm">Algorithm</a></li>
+<li><a href="#backreferences">backreferences</a></li>
+<li><a href="#CedarAlgorithm()">CedarAlgorithm</a></li>
+<li><a href="#graphql-types">GraphQL types</a></li>
+<li><a href="#Idea">Idea</a></li>
+<li><a href="#memo-lists">memo lists</a></li>
+<li><a href="#response-types">Response types</a></li>
+<li><a href="#wire-schema">wire schema</a></li>
+<li><a href="#wire-types">Wire types</a></li>
+</ol>
+</section>
+</article>
+<footer>
+Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</footer>
+<input hidden class="spec-sidebar-toggle" type="checkbox" id="spec-sidebar-toggle" aria-hidden /><label for="spec-sidebar-toggle" aria-hidden><div class="spec-sidebar-button">&#x2630;</div></label>
+<div class="spec-sidebar" aria-hidden>
+<div class="spec-toc">
+<div class="title"><a href="#">Cedar</a></div>
+<ol><li id="_sidebar_1"><a href="#sec-Notes-TODO-remove-"><span class="spec-secid">1</span>Notes (TODO: remove)</a></li>
+<li id="_sidebar_2"><a href="#sec-Problems-TODO-remove-"><span class="spec-secid">2</span>Problems (TODO: remove)</a></li>
+<li id="_sidebar_3"><a href="#sec-Introduction"><span class="spec-secid">3</span>Introduction</a></li>
+<li id="_sidebar_4"><a href="#sec-Background"><span class="spec-secid">4</span>Background</a></li>
+<li id="_sidebar_5"><a href="#sec-Types"><span class="spec-secid">5</span>Types</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_5" /><label for="_toggle_5"></label>
+<ol>
+<li id="_sidebar_5.1"><a href="#sec-GraphQL-types"><span class="spec-secid">5.1</span>GraphQL types</a></li>
+<li id="_sidebar_5.2"><a href="#sec-Response-types"><span class="spec-secid">5.2</span>Response types</a></li>
+<li id="_sidebar_5.3"><a href="#sec-Wire-types"><span class="spec-secid">5.3</span>Wire types</a></li>
+</ol>
+</li>
+<li id="_sidebar_6"><a href="#sec-Wire-schema"><span class="spec-secid">6</span>Wire schema</a></li>
+<li id="_sidebar_7"><a href="#sec-Binary-encoding"><span class="spec-secid">7</span>Binary encoding</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_7" /><label for="_toggle_7"></label>
+<ol>
+<li id="_sidebar_7.1"><a href="#sec-Message"><span class="spec-secid">7.1</span>Message</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_7.1" /><label for="_toggle_7.1"></label>
+<ol>
+<li id="_sidebar_7.1.1"><a href="#sec-Flags"><span class="spec-secid">7.1.1</span>Flags</a></li>
+<li id="_sidebar_7.1.2"><a href="#sec-Primitive-Types"><span class="spec-secid">7.1.2</span>Primitive Types</a></li>
+</ol>
+</li>
+<li id="_sidebar_7.2"><a href="#sec-LABELs"><span class="spec-secid">7.2</span>LABELs</a></li>
+<li id="_sidebar_7.3"><a href="#sec-Backreferences"><span class="spec-secid">7.3</span>Backreferences</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_7.3" /><label for="_toggle_7.3"></label>
+<ol>
+<li id="_sidebar_7.3.1"><a href="#sec-Write-side"><span class="spec-secid">7.3.1</span>Write-side</a></li>
+<li id="_sidebar_7.3.2"><a href="#sec-Read-side"><span class="spec-secid">7.3.2</span>Read-side</a></li>
+<li id="_sidebar_7.3.3"><a href="#sec-Types-which-support-backreferences"><span class="spec-secid">7.3.3</span>Types which support backreferences</a></li>
+<li id="_sidebar_7.3.4"><a href="#sec-Disabling-backreferences-for-a-given-type-in-a-message"><span class="spec-secid">7.3.4</span>Disabling backreferences for a given type in a message</a></li>
+</ol>
+</li>
+<li id="_sidebar_7.4"><a href="#sec-Complex-types"><span class="spec-secid">7.4</span>Complex types</a></li>
+<li id="_sidebar_7.5"><a href="#sec-Nullable-types"><span class="spec-secid">7.5</span>Nullable types</a></li>
+<li id="_sidebar_7.6"><a href="#sec-Objects"><span class="spec-secid">7.6</span>Objects</a></li>
+<li id="_sidebar_7.7"><a href="#sec-Enums"><span class="spec-secid">7.7</span>Enums</a></li>
+<li id="_sidebar_7.8"><a href="#sec-Lists"><span class="spec-secid">7.8</span>Lists</a></li>
+<li id="_sidebar_7.9"><a href="#sec-Unions"><span class="spec-secid">7.9</span>Unions</a></li>
+<li id="_sidebar_7.10"><a href="#sec-Fixed"><span class="spec-secid">7.10</span>Fixed</a></li>
+<li id="_sidebar_7.11"><a href="#sec-Errors"><span class="spec-secid">7.11</span>Errors</a></li>
+</ol>
+</li>
+<li id="_sidebar_8"><a href="#sec-Design-notes"><span class="spec-secid">8</span>Design notes</a></li>
+<li id="_sidebar_9"><a href="#sec-Legal"><span class="spec-secid">9</span>Legal</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_9" /><label for="_toggle_9"></label>
+<ol>
+<li id="_sidebar_9.1"><a href="#sec-Copyright-notice"><span class="spec-secid">9.1</span>Copyright notice</a></li>
+<li id="_sidebar_9.2"><a href="#sec-License"><span class="spec-secid">9.2</span>License</a></li>
+</ol>
+</li>
+<li id="_sidebar_10"><a href="#sec-Formal"><span class="spec-secid">10</span>Formal</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_10" /><label for="_toggle_10"></label>
+<ol>
+<li id="_sidebar_10.1"><a href="#sec-Conformance"><span class="spec-secid">10.1</span>Conformance</a></li>
+<li id="_sidebar_10.2"><a href="#sec-Versioning"><span class="spec-secid">10.2</span>Versioning</a></li>
+</ol>
+</li>
+<li id="_sidebar_11"><a href="#sec-Authors-and-contributors"><span class="spec-secid">11</span>Authors and contributors</a></li>
+<li id="_sidebar_index"><a href="#index"><span class="spec-secid">§</span>Index</a></li>
+</ol>
+</div>
+</div>
+</body>
+</html>

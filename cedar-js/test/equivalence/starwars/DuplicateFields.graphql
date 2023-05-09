@@ -1,0 +1,10 @@
+query DuplicateFields {
+  luke: human(id: "1000") {
+    name
+    homePlanet
+  }
+  leia: human(id: "1003") {
+    name
+    homePlanet
+  }
+}

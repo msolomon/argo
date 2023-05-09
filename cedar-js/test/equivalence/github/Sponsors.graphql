@@ -1,0 +1,69 @@
+fragment UserDetails on User {
+  login
+  company
+  isHireable
+  location
+  organizations(first: 40) {
+    nodes {
+      ... on Organization {
+        sponsors(first: 50) {
+          nodes {
+            ... on User {
+              login
+              company
+              isHireable
+              location
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+{
+  organization(login: "rails") {
+    login
+    name
+    repository(name: "rails") {
+      id
+      name
+      description
+      url
+      updatedAt
+      forkCount
+      openGraphImageUrl
+      issues(last: 100) {
+        edges {
+          node {
+            author {
+              ...UserDetails
+            }
+          }
+        }
+      }
+      stargazers(first: 100) {
+        totalCount
+        nodes {
+          ...UserDetails
+        }
+      }
+      readme: object(expression: "master:README.md") {
+        ... on Blob {
+          text
+        }
+      }
+      licenseInfo {
+        id
+      }
+      primaryLanguage {
+        name
+      }
+      languages(first: 100) {
+        nodes {
+          name
+        }
+      }
+    }
+  }
+}

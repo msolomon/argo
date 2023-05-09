@@ -1,0 +1,8 @@
+query FetchLukeAndLeiaAliased {
+  luke: human(id: "1000") {
+    name
+  }
+  leia: human(id: "1003") {
+    name
+  }
+}

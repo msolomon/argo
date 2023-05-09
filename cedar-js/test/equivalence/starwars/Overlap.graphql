@@ -1,0 +1,25 @@
+query OverlapQuery {
+  hero {
+    ...Name
+    friends {
+      appearsIn
+      friends2: friends {
+        friends3: friends {
+          appearsIn
+        }
+      }
+    }
+  }
+}
+
+fragment Name on Character {
+  name
+  friends {
+    name
+    friends2: friends {
+      friends3: friends {
+        name
+      }
+    }
+  }
+}

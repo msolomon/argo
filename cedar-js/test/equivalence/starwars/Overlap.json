@@ -1,0 +1,227 @@
+{
+  "data": {
+    "hero": {
+      "name": "R2-D2",
+      "friends": [
+        {
+          "name": "Luke Skywalker",
+          "friends2": [
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "R2-D2",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            },
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "C-3PO",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "R2-D2",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            },
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "R2-D2",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            },
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            }
+          ],
+          "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+        },
+        {
+          "name": "Han Solo",
+          "friends2": [
+            {
+              "friends3": [
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "C-3PO",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "R2-D2",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            },
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "C-3PO",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "R2-D2",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            },
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            }
+          ],
+          "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+        },
+        {
+          "name": "Leia Organa",
+          "friends2": [
+            {
+              "friends3": [
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "C-3PO",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "R2-D2",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            },
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "R2-D2",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            },
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "R2-D2",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            },
+            {
+              "friends3": [
+                {
+                  "name": "Luke Skywalker",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Han Solo",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                },
+                {
+                  "name": "Leia Organa",
+                  "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+                }
+              ]
+            }
+          ],
+          "appearsIn": ["NEW_HOPE", "EMPIRE", "JEDI"]
+        }
+      ]
+    }
+  }
+}

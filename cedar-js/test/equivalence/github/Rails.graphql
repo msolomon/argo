@@ -1,0 +1,44 @@
+{
+  organization(login: "rails") {
+    name
+    url
+    repository(name: "rails") {
+      name
+      autoMergeAllowed
+      description
+      pullRequests(last: 100, states: [MERGED]) {
+        edges {
+          node {
+            title
+            mergeable
+            comments(last: 100) {
+              totalCount
+              pageInfo{
+                hasNextPage
+                endCursor
+              }
+              nodes {
+                __typename
+                ... on IssueComment {
+                  bodyText
+                  reactionGroups {
+                    content
+                    viewerHasReacted
+                  }
+                  author {
+                    __typename
+                    ... on User {
+                      name
+                      twitterUsername
+                      avatarUrl
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

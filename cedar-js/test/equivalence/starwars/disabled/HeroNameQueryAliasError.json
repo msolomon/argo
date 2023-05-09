@@ -1,0 +1,20 @@
+{
+  "data": {
+    "mainHero": {
+      "name": "R2-D2",
+      "story": null
+    }
+  },
+  "errors": [
+    {
+      "message": "secretBackstory is secret.",
+      "locations": [
+        {
+          "line": 5,
+          "column": 13
+        }
+      ],
+      "path": ["mainHero", "story"]
+    }
+  ]
+}

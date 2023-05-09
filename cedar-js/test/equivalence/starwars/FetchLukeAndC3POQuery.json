@@ -1,0 +1,10 @@
+{
+  "data": {
+    "human": {
+      "name": "Luke Skywalker"
+    },
+    "droid": {
+      "name": "C-3PO"
+    }
+  }
+}

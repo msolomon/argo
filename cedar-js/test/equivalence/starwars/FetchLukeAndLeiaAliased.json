@@ -1,0 +1,10 @@
+{
+  "data": {
+    "luke": {
+      "name": "Luke Skywalker"
+    },
+    "leia": {
+      "name": "Leia Organa"
+    }
+  }
+}

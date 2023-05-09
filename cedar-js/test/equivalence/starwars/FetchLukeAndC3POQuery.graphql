@@ -1,0 +1,8 @@
+query FetchLukeAndC3POQuery {
+  human(id: "1000") {
+    name
+  }
+  droid(id: "2000") {
+    name
+  }
+}

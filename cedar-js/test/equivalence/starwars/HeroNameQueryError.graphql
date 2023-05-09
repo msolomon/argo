@@ -1,0 +1,6 @@
+query HeroNameQuery {
+  hero {
+    name
+    secretBackstory
+  }
+}

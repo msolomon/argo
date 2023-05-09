@@ -1,0 +1,22 @@
+{
+  __schema {
+    queryType {
+      fields {
+        name
+        args {
+          name
+          description
+          type {
+            kind
+            name
+            ofType {
+              kind
+              name
+            }
+          }
+          defaultValue
+        }
+      }
+    }
+  }
+}

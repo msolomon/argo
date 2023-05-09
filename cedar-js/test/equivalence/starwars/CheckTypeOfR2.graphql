@@ -1,0 +1,6 @@
+query CheckTypeOfR2 {
+  hero {
+    __typename
+    name
+  }
+}

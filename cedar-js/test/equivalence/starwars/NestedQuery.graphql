@@ -1,0 +1,12 @@
+query NestedQuery {
+  hero {
+    name
+    friends {
+      name
+      appearsIn
+      friends {
+        name
+      }
+    }
+  }
+}

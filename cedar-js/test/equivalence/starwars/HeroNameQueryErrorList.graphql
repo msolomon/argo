@@ -1,0 +1,9 @@
+query HeroNameQuery {
+  hero {
+    name
+    friends {
+      name
+      secretBackstory
+    }
+  }
+}
