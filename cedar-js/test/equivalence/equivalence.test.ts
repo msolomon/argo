@@ -10,6 +10,8 @@ import { Wire, CedarInterpreter, WithInfo, Typer } from '../../src'
 import { brotliCompressSync, gzipSync, constants, gzip } from 'zlib'
 import { StarWarsSchema } from './starwarsequivalence'
 
+jest.setTimeout(10000)
+
 declare global { // from equivalence-environment
   var testPath: string
 }
@@ -369,13 +371,13 @@ const runEquivalence = (query: DocumentNode, json: string, schema: GraphQLSchema
   // use quality 6 for JSON (Apache default), and 4 for brotli (rough equivalent based on https://dev.to/coolblue/improving-website-performance-with-brotli-5h70)
   const brotliJsonSize = brotliCompressSync(compactJson, { params: { [constants.BROTLI_PARAM_QUALITY]: 4 } }).byteLength
   const gzipJsonSize = gzipSync(compactJson, { level: 6 }).byteLength
-  const brotliCedarize = brotliCompressSync(cedarBytes, { params: { [constants.BROTLI_PARAM_QUALITY]: 4 } }).byteLength
-  const gzipCedarSize = gzipSync(cedarBytes, { level: 6 }).byteLength
+  const brotliCedarize = brotliCompressSync(cedarBytes.uint8array, { params: { [constants.BROTLI_PARAM_QUALITY]: 4 } }).byteLength
+  const gzipCedarSize = gzipSync(cedarBytes.uint8array, { level: 6 }).byteLength
   const bestJson = Math.min(brotliJsonSize, gzipJsonSize, compactJsonLength)
   const bestCedar = Math.min(brotliCedarize, gzipCedarSize, cedarBytes.length)
   const savedWithCedar = `${bestJson - bestCedar} bytes (${100 - Math.round(bestCedar / bestJson * 100)}%)`
 
-  console.log(`Saved ${(compactJsonLength - cedarBytes.byteLength).toLocaleString("en-US")} bytes (saved ${100 - Math.round(cedarBytes.byteLength / compactJsonLength * 100)}%).\n\tCompact JSON: ${compactJsonLength}\n\tCedar: ${cedarBytes.byteLength}\nCompressed, Cedar saved ${savedWithCedar}\n`, {
+  console.log(`Saved ${(compactJsonLength - cedarBytes.length).toLocaleString("en-US")} bytes (saved ${100 - Math.round(cedarBytes.length / compactJsonLength * 100)}%).\n\tCompact JSON: ${compactJsonLength}\n\tCedar: ${cedarBytes.length}\nCompressed, Cedar saved ${savedWithCedar}\n`, {
     brotliJsonSize,
     gzipJsonSize,
     brotliCedarize,

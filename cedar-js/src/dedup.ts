@@ -1,12 +1,12 @@
 import { Label, LabelKind } from './label'
 
-export class BackreferenceWriterTracker<T> {
-  seen: Map<T, bigint> = new Map()
+export class BackreferenceWriterTracker<In> {
+  seen: Map<In, bigint> = new Map()
   lastId: bigint = Label.LowestResevedValue
 
   private nextId() { return --this.lastId }
 
-  labelForValue(v: T): bigint | null {
+  labelForValue(v: In): bigint | null {
     if (v == null) return Label.NullMarker
     const saved = this.seen.get(v)
     if (saved) return saved
@@ -42,17 +42,40 @@ export class BackreferenceReaderTracker<T> {
   }
 }
 
+/** Deduplicates values, storing new values, and returning backreferences for existing values */
 export class ValueDeduplicator<In, Out = void> {
-  backrefs: BackreferenceWriterTracker<In> = new BackreferenceWriterTracker()
+  converted: Map<bigint, Out> = new Map()
+  seen: Map<In, bigint> = new Map()
+  lastId: bigint = Label.LowestResevedValue
+
+  private nextId() { return --this.lastId }
+
+  labelForValue(v: In): bigint | null {
+    if (v == null) return Label.NullMarker
+    const saved = this.seen.get(v)
+    if (saved) return saved
+    this.seen.set(v, this.nextId())
+    return null
+  }
+
+  valueForLabel(label: bigint): Out | undefined {
+    return this.converted.get(label)
+  }
 
   constructor(
     readonly onNew: (v: In) => Out,
-    readonly onRepeat: (backref: bigint, v: In) => Out
+    readonly onRepeat: (backref: bigint, v: In) => void
   ) { }
 
   dedup(v: In): Out {
-    const backref = this.backrefs.labelForValue(v)
-    if (backref == null) return this.onNew(v)
-    else return this.onRepeat(backref, v)
+    const backref = this.labelForValue(v)
+    if (backref == null) {
+      const value = this.onNew(v)
+      this.converted.set(this.lastId, value)
+      return value
+    } else {
+      this.onRepeat(backref, v)
+      return this.converted.get(backref)!
+    }
   }
 }

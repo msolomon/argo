@@ -1,4 +1,5 @@
 import * as VarInt from './varint'
+import { Buf } from './buf'
 
 export enum LabelKind {
   Null,
@@ -68,9 +69,15 @@ export class Label {
     }
   }
 
-  static decode(buf: Uint8Array, offset: number = 0) {
+  static decode(buf: Uint8Array, offset: number) {
     const { result, length } = VarInt.ZigZag.decode(buf, offset)
     return { label: result, length }
+  }
+
+  static read(buf: Buf) {
+    const { result, length } = VarInt.ZigZag.decode(buf.uint8array, buf.position)
+    buf.incrementPosition(length)
+    return result
   }
 
 }

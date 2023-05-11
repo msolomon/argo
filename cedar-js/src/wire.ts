@@ -17,7 +17,7 @@ export namespace Wire {
     | Wire.VARIANT
     | Wire.FIXED
 
-  export type MemoKey = string
+  export type DedupeKey = string
 
   export type STRING = Primitive.STRING
   export type NULL = Primitive.NULL
@@ -25,7 +25,7 @@ export namespace Wire {
   export type INT32 = Primitive.INT32
   export type FLOAT64 = Primitive.FLOAT64
   export type BYTES = Primitive.BYTES
-  export type DEDUPE = { type: "DEDUPE", key: string, of: Wire.Type }
+  export type DEDUPE = { type: "DEDUPE", key: DedupeKey, of: Wire.Type }
   export type ARRAY = { type: "ARRAY", of: Wire.Type }
   export type NULLABLE = { type: "NULLABLE", of: Wire.Type }
   export type RECORD = { type: "RECORD", fields: Wire.Field[] }

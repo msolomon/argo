@@ -6,6 +6,7 @@ import { Label, LabelKind } from './label'
 import { assert } from 'console'
 import { writeFileSync } from 'fs'
 import { BitSet } from './bitset'
+import { Buf } from './buf'
 
 const DEBUG = true
 
@@ -30,23 +31,17 @@ export class CedarDecoder {
   //   }
   // }
 
-  constructor(readonly bytes: Uint8Array) { }
+  constructor(readonly buf: Buf) { }
 
   cedarToJsWithType(wt: Wire.Type): ExecutionResult {
     const cedarThis = this
-    let pos = 0
 
-
-    const dedupers: Map<Wire.MemoKey, BackreferenceReaderTracker<any>> = new Map()
+    const dedupers: Map<Wire.DedupeKey, BackreferenceReaderTracker<any>> = new Map()
     const stringDedup = new BackreferenceReaderTracker<string>()
     const enumDedup = new BackreferenceReaderTracker<string>()
     const idDedup = new BackreferenceReaderTracker<string>()
     const objectTracker = new BackreferenceReaderTracker<object>()
     const listTracker = new BackreferenceReaderTracker<Array<unknown>>()
-    const bump = (numNewBytes: number): number => (
-      pos += numNewBytes
-      // assert(pos < buffer.byteLength, "Ran out of space in buffer")
-    )
     // const tracked: { pos: number, kind: string, value: any, bytes: Uint8Array }[] = []
     const tracked: any[] = []
     const counts: Map<string, number> = new Map()
@@ -54,12 +49,12 @@ export class CedarDecoder {
       const cnt = counts.get(key) || 0
       counts.set(key, cnt + amnt)
     }
-    const track = (kind: string, value: any, length: number, position: number = pos) => {
+    const track = (kind: string, value: any, length: number, position?: number) => {
       if (DEBUG) {
         // const log = { position, kind, value, bytes: new Uint8Array(this.bytes.buffer, position, length) }
         const cnt = counts.get(kind) || 0
         counts.set(kind, cnt + length)
-        const log = { position, kind, value }
+        const log = { position: position ?? this.buf.position, kind, value }
         if (value == null) delete log['value']
         tracked.push(log)
       }
@@ -69,31 +64,29 @@ export class CedarDecoder {
     // }
 
     const readLabel = (): bigint => {
-      const { label, length } = Label.decode(this.bytes, pos)
+      const label = Label.read(this.buf)
       if (DEBUG) track('label', label, length)
       // tracked.push({ pos, 'trace': new Error().stack })
       // console.log('reading label at', pos, new Uint8Array(bytes.buffer, pos, length), ':', label)
-      bump(length)
       return label
     }
 
     const readBytesRaw = (length: number): Uint8Array => {
-      const buf = new Uint8Array(this.bytes.buffer, pos, length)
+      // const buf = new Uint8Array(this.buf.buffer, pos, length)
+      const bytes = this.buf.read(length)
       // if (DEBUG) track('bytes', null, length)
-      bump(length)
-      return buf
+      return bytes
     }
     const readString = (length: number): string => {
       // const buf = readBytesRaw(length)
       // return cedarThis.utf8decode.decode(buf)
-      const buf = new Uint8Array(this.bytes.buffer, pos, length)
-      const str = CedarDecoder.utf8.decode(buf)
+      const bytes = this.buf.read(length)
+      const str = CedarDecoder.utf8.decode(bytes)
       if (DEBUG) track('string', str, length)
-      bump(length)
       return str
     }
 
-    const dedup = (memoKey: Wire.MemoKey | undefined, t: Wire.Type, label: bigint) => {
+    const dedup = (memoKey: Wire.DedupeKey | undefined, t: Wire.Type, label: bigint) => {
       if (Wire.isSTRING(t)) {
         if (memoKey == null) return readString(Number(label))
         let deduper = dedupers.get(memoKey)
@@ -114,16 +107,16 @@ export class CedarDecoder {
     if (DEBUG) track('flags', flags, flags.byteLength)
 
     // console.log(wt)
-    const readCedar = (wt: Wire.Type, memoKey?: Wire.MemoKey): any => {
+    const readCedar = (wt: Wire.Type, memoKey?: Wire.DedupeKey): any => {
       if (Wire.isNULLABLE(wt)) {
         // if (Wire.isNullMasked(wt.of)) {
         //   // don't discard any bytes
         //   count('nullmasked instead')
         // } else 
-        if (this.bytes[pos] == Label.Null[0]) {
+        if (this.buf.get() == Label.Null[0]) {
           count('marker: null')
           track('NULL', true, 1)
-          pos++
+          this.buf.incrementPosition()
           return null
           // } else if (this.bytes[pos] != Label.NonNull[0]) {
           //   track('invalid non-null', Wire.print(wt.of) + " " + this.bytes[pos], 1)
@@ -136,19 +129,19 @@ export class CedarDecoder {
         } else if (!Wire.isLabeled(wt.of)) {
           count('marker: non-null')
           // count('marker: non-null ' + Wire.print(wt.of))
-          track('Non-NULL', Wire.print(wt.of) + " " + this.bytes[pos], 1)
-          if (this.bytes[pos] != Label.NonNull[0]) {
-            track('invalid non-null', Wire.print(wt.of) + " " + this.bytes[pos], 1)
-            throw 'invalid non-null ' + this.bytes[pos] + '\n' + Wire.print(wt)
+          track('Non-NULL', Wire.print(wt.of) + " " + this.buf.get(), 1)
+          if (this.buf.get() != Label.NonNull[0]) {
+            track('invalid non-null', Wire.print(wt.of) + " " + this.buf.get(), 1)
+            throw 'invalid non-null ' + this.buf.get() + '\n' + Wire.print(wt)
           }
-          pos++ // discard non-null marker
+          this.buf.incrementPosition() // discard non-null marker
         }
         return readCedar(wt.of)
       } else if (Wire.isDEDUPE(wt)) {
         return readCedar(wt.of, wt.key)
       } else if (Wire.isRECORD(wt)) {
         count('records read')
-        const posBefore = pos
+        const posBefore = this.buf.position
         // const label = readLabel()
         // if (Label.isError(label)) {
         //   throw 'TODO: handle error'
@@ -170,14 +163,13 @@ export class CedarDecoder {
 
 
           if (omittable) {
-            const { label, length } = Label.decode(this.bytes, pos)
+            const label = Label.read(this.buf)
             if (Label.isError(label)) { throw 'TODO: handle error' }
-            if (!Wire.isLabeled(type) && label == Label.NonNullMarker) bump(length)
+            if (!Wire.isLabeled(type) && label == Label.NonNullMarker) this.buf.incrementPosition(length)
             if (Label.isAbsent(label)) {
               track('field omitted', name, 0)
               obj[name] = undefined
               // if (!Wire.isLabeled(type)) { bump(length) }
-              bump(length)
               continue
             }
           }
@@ -186,31 +178,29 @@ export class CedarDecoder {
           // }
           i++
         }
-        track('RECORD', obj, pos - posBefore, posBefore)
+        track('RECORD', obj, this.buf.position - posBefore, posBefore)
         return obj
       } else if (Wire.isSTRING(wt)) {
-        const posBefore = pos
+        const posBefore = this.buf.position
         const label = readLabel()
         if (Label.isError(label)) {
           throw 'TODO: handle error'
         }
-        count('marker: string length', pos - posBefore)
+        count('marker: string length', this.buf.position - posBefore)
         const str = dedup(memoKey, wt, label)
         // console.log('reading', t.name, label, str)
-        track('string', str, pos - posBefore)
+        track('string', str, this.buf.position - posBefore)
         return str
       } else if (Wire.isNULL(wt)) { // read nothing
       } else if (Wire.isBOOLEAN(wt)) {
-        const { label, length } = Label.decode(this.bytes, pos)
-        bump(length)
+        const label = Label.read(this.buf)
         if (label == 0n) return false
         else if (label == 1n) return true
-        else throw "Badly encoded BOOLEAN: " + label + '\n' + Wire.print(wt) + '\n' + pos
+        else throw "Badly encoded BOOLEAN: " + label + '\n' + Wire.print(wt) + '\n' + this.buf.position
       } else if (Wire.isINT32(wt)) {
-        const { label, length } = Label.decode(this.bytes, pos)
+        const label = Label.read(this.buf)
         const int = Number(label)
         track('int', int, length)
-        bump(length)
         return int
         // } else if (Wire.isFLOAT64(wt)) {
         //   encoder.log({ msg: 'Writing float64', value: js })
@@ -222,28 +212,28 @@ export class CedarDecoder {
         //   encoder.log({ msg: 'Writing fixed', length: wt.length, value: js })
         //   encoder.writeBytesRaw(js) // TODO: check the fixed length
       } else if (Wire.isARRAY(wt)) {
-        const posBefore = pos
+        const posBefore = this.buf.position
         const label = readLabel()
         if (Label.isError(label)) {
           throw 'TODO: handle error'
         }
-        count('marker: array length', pos - posBefore)
-        track('going to read child', wt.of, pos - posBefore, posBefore)
+        count('marker: array length', this.buf.position - posBefore)
+        track('going to read child', wt.of, this.buf.position - posBefore, posBefore)
         const readChildren = (length: number) =>
           (new Array(length).fill(undefined).map(() => readCedar(wt.of)))
         const list = listTracker.valueForLabel(label, readChildren)
-        track('ARRAY', list, pos - posBefore, posBefore)
+        track('ARRAY', list, this.buf.position - posBefore, posBefore)
         return list
       } else if (Wire.isVARIANT(wt)) {
         // TODO: variant is only enum, build this in?
-        const posBefore = pos
+        const posBefore = this.buf.position
         const label = readLabel()
         if (Label.isError(label)) {
           throw 'TODO: handle error'
         }
         const str = enumDedup.valueForLabel(label, readString)
         // console.log('reading', t.name, label, str)
-        track('VARIANT', str, pos - posBefore)
+        track('VARIANT', str, this.buf.position - posBefore)
         return str
       } else {
         console.log("Cannot yet handle wire type", wt)

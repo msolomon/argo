@@ -10,6 +10,7 @@ import { BackreferenceReaderTracker, BackreferenceWriterTracker, ValueDeduplicat
 import { Typer, Wire } from './wire'
 import { WriteStream } from 'fs'
 import { ZigZag } from './varint'
+import { Buf } from './buf'
 
 
 type AbstractTypeInfo = {
@@ -409,16 +410,17 @@ export class CedarInterpreter {
   //   return visitResult
   // }
 
-  jsToCedar(js: object): Uint8Array {
+  jsToCedar(js: object): Buf {
     const encoder = new CedarEncoder()
     // console.log('@@ root wire', Wire.print(this.typer.rootWireType()))
     // console.log('@@ root wire', JSON.stringify(this.typer.rootWireType()))
+    encoder.startMessage()
     encoder.jsToCedarWithType(js, this.typer.rootWireType(), encoder)
     // console.log('write log', encoder.tracked)
     return encoder.getResult()
   }
 
-  cedarToJs(bytes: Uint8Array): ExecutionResult {
+  cedarToJs(bytes: Buf): ExecutionResult {
     const decoder = new CedarDecoder(bytes)
     return decoder.cedarToJsWithType(this.typer.rootWireType())
   }
