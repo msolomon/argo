@@ -43,8 +43,9 @@ export class BackreferenceReaderTracker<T> {
 }
 
 /** Deduplicates values, storing new values, and returning backreferences for existing values */
-export class ValueDeduplicator<In, Out = void> {
-  converted: Map<bigint, Out> = new Map()
+export class ValueDeduplicator<In> {
+  valuesAsBytes: Uint8Array[] = []
+  // converted: Map<bigint, Out> = new Map()
   seen: Map<In, bigint> = new Map()
   lastId: bigint = Label.LowestResevedValue
 
@@ -58,24 +59,19 @@ export class ValueDeduplicator<In, Out = void> {
     return null
   }
 
-  valueForLabel(label: bigint): Out | undefined {
-    return this.converted.get(label)
-  }
-
   constructor(
-    readonly onNew: (v: In) => Out,
-    readonly onRepeat: (backref: bigint, v: In) => void
+    readonly onNew: (v: In, out: Uint8Array) => void,
+    readonly onRepeat: (backref: bigint, v: In) => void,
+    readonly valueToBytes: (v: In) => Uint8Array,
   ) { }
 
-  dedup(v: In): Out {
+  dedup(v: In): void {
     const backref = this.labelForValue(v)
     if (backref == null) {
-      const value = this.onNew(v)
-      this.converted.set(this.lastId, value)
-      return value
+      const bytes = this.valueToBytes(v)
+      this.onNew(v, bytes)
     } else {
       this.onRepeat(backref, v)
-      return this.converted.get(backref)!
     }
   }
 }

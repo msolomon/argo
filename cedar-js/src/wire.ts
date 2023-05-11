@@ -29,8 +29,8 @@ export namespace Wire {
   export type ARRAY = { type: "ARRAY", of: Wire.Type }
   export type NULLABLE = { type: "NULLABLE", of: Wire.Type }
   export type RECORD = { type: "RECORD", fields: Wire.Field[] }
-  export type VARIANT = { type: "VARIANT", members: Wire.Member[] }
-  export type FIXED = { type: "FIXED", length: number }
+  export type VARIANT = { type: "VARIANT", members: Wire.Member[] } // TODO: use?
+  export type FIXED = { type: "FIXED", length: number } // TODO: use?
 
   export enum Primitive {
     STRING = "STRING",

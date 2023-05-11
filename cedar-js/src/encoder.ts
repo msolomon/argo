@@ -31,21 +31,38 @@ export class CedarEncoder {
 
   getResult(): Buf {
     let dataBytesNeeded = 0
+    const deduperLengthHeaders = new Map()
+
+    // calculate how much space we need for deduped values, which go in a series of blocks at the start
     for (const deduper of this.dedupers.values()) {
-      for (const value of deduper.converted.values()) {
-        dataBytesNeeded += value.length
+      let deduperBytesNeeded = 0
+      for (const value of deduper.valuesAsBytes) {
+        deduperBytesNeeded += value.length
       }
+      const deduperLengthHeader = Label.encode(BigInt(deduperBytesNeeded))
+      deduperLengthHeaders.set(deduper, deduperLengthHeader)
+      dataBytesNeeded += deduperBytesNeeded // reserve space for data
+      dataBytesNeeded += deduperLengthHeader.length // reserve space for length header
     }
     const buf = new Buf(this.buf.length + dataBytesNeeded)
 
+    // write deduped value blocks
     for (const deduper of this.dedupers.values()) {
-      for (const value of deduper.converted.values()) {
-        buf.write(value)
+      buf.write(deduperLengthHeaders.get(deduper)) // write length of block
+      for (const value of deduper.valuesAsBytes) {
+        buf.write(value) // write each value in the block
       }
     }
-    buf.writeBuf(this.buf)
+    buf.writeBuf(this.buf) // copy non-deduped message data
     if (buf.length != this.buf.length + dataBytesNeeded) throw 'Programmer error: incorrect result length'
     return buf
+
+
+    // TODO: decide what order to write dedupe blocks in. 
+    // it needs to always match on both sides.
+    // perhaps: FLOAT, INT, BYTES, STRING?
+    // basically order of most to least likely to be 0, except keeping bytes and string together
+    // BOOL, NULL, ARRAY, OBJECT never get de-duped.
   }
 
   maybeRewindToOverwriteNonNull = () => {
@@ -99,7 +116,6 @@ export class CedarEncoder {
   // }
   writeString = (str: string): void => {
     const bytes = CedarEncoder.utf8.encode(str)
-    // this.writeBytes(CedarEncoder.utf8.encode(str))
     this.writeVarInt(bytes.length)
     this.buf.write(bytes)
     // console.log(this.pos, bytes)
@@ -107,15 +123,9 @@ export class CedarEncoder {
     // return bytes
   }
 
-  writeStringLength = (str: string): Uint8Array => {
-    const bytes = CedarEncoder.utf8.encode(str)
-    // this.writeBytes(CedarEncoder.utf8.encode(str))
+  writeStringLength = (string: string, bytes: Uint8Array): void => {
     this.writeVarInt(bytes.length)
-    // this.byteArray.set(bytes, this.pos)
-    // console.log(this.pos, bytes)
-    if (DEBUG) this.track('string length', str, bytes.length)
-    // this.bump(bytes.length)
-    return bytes
+    if (DEBUG) this.track('string length', string, bytes.length)
   }
 
   writeLabel = (bytes: ArrayLike<number>): void => {
@@ -137,19 +147,24 @@ export class CedarEncoder {
   }
 
   newStringDeduplicator() {
-    return new ValueDeduplicator<string, Uint8Array>(
-      this.writeStringLength,
+    return new ValueDeduplicator<string>(
+      (string: string, bytes: Uint8Array): Uint8Array => {
+        this.writeStringLength(string, bytes)
+        return bytes
+      },
 
-      (n: bigint | number, v: string): void => {
-        // console.log('saw string before', n, v)
-        // console.log(Error().stack)
-        // console.log(this)
-        this.writeVarInt(n)
-      }
+      // (n: bigint | number, v: string): void => {
+      //   // console.log('saw string before', n, v)
+      //   // console.log(Error().stack)
+      //   // console.log(this)
+      //   this.writeVarInt(n)
+      // },
+      this.writeVarInt,
+      (string: string) => CedarEncoder.utf8.encode(string)
     )
   }
 
-  dedupers: Map<Wire.DedupeKey, ValueDeduplicator<any, Uint8Array>> = new Map()
+  dedupers: Map<Wire.DedupeKey, ValueDeduplicator<any>> = new Map()
 
   dedup(memoKey: Wire.DedupeKey | undefined, t: Wire.Type, value: any): void {
     if (Wire.isSTRING(t)) {
@@ -172,7 +187,8 @@ export class CedarEncoder {
   listTracker = new BackreferenceWriterTracker<Array<unknown>>()
   bytesDedup = new ValueDeduplicator<Uint8Array>(
     (v: Uint8Array) => this.writeBytes(v),
-    this.writeVarInt
+    this.writeVarInt,
+    v => v
   )
 
   jsToCedarWithType(js: any, wt: Wire.Type, encoder: CedarEncoder): void {
