@@ -1,3 +1,8 @@
+/* Variable-length integer encodings */
+
+/**
+ * Variable-length integer encoding for unsigned integers
+ */
 export namespace Unsigned {
   export function bytesNeeded(n: bigint): number {
     if (n <= 0x7fn) return 1
@@ -47,6 +52,10 @@ export namespace Unsigned {
   }
 }
 
+/**
+ * Variable-length integer encoding for unsigned integers using zig-zag. Good for integers near 0.
+ * https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding
+ */
 export namespace ZigZag {
   export function encode(n: bigint | number): Uint8Array {
     return Unsigned.encode(bigintEncode(BigInt(n)))

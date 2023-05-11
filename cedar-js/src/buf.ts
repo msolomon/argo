@@ -8,7 +8,7 @@
  * This makes it convenient for our use cases.
  */
 export class Buf {
-  constructor(private initialSize: number = 256, private readonly growthFactor: number = 2) {
+  constructor(private readonly initialSize: number = 256, private readonly growthFactor: number = 2) {
     if (initialSize < 0) throw new Error('initialSize must be non-negative')
     if (Math.trunc(initialSize) !== initialSize) throw new Error('initialSize must be an integer')
     if (growthFactor <= 1) throw new Error('growthFactor must be greater than 1')
@@ -151,6 +151,7 @@ export class Buf {
 
   // Resize the buffer to the given number of bytes, truncating if necessary
   resizeTo(newSize: number) {
+    if (newSize === this._buffer.byteLength) return
     const newBuffer = new ArrayBuffer(newSize)
     const newBytes = new Uint8Array(newBuffer)
     newBytes.set(this._bytes.slice(0, newSize))
@@ -160,11 +161,6 @@ export class Buf {
 
   /** Resizes the underlying buffers to be as small as possible */
   public compact = (): void => {
-    if (this._end === this._buffer.byteLength) return
-    const newBuffer = new ArrayBuffer(this._end)
-    const newBytes = new Uint8Array(newBuffer)
-    newBytes.set(this._bytes.slice(0, this._end))
-    this._buffer = newBuffer
-    this._bytes = newBytes
+    this.resizeTo(this._end)
   }
 }

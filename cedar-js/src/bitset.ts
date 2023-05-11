@@ -1,4 +1,6 @@
-
+/**
+ * Bitset functions for packing booleans compactly into a bigint.
+ */
 export namespace BitSet {
 
   export function getBit(bs: bigint, index: number): boolean {

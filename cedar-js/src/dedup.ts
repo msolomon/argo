@@ -1,12 +1,12 @@
 import { Label, LabelKind } from './label'
 
 export class BackreferenceWriterTracker<In> {
-  seen: Map<In, bigint> = new Map()
-  lastId: bigint = Label.LowestResevedValue
+  seen: Map<In, Label> = new Map()
+  lastId: Label = Label.LowestResevedValue
 
   private nextId() { return --this.lastId }
 
-  labelForValue(v: In): bigint | null {
+  labelForValue(v: In): Label | null {
     if (v == null) return Label.NullMarker
     const saved = this.seen.get(v)
     if (saved) return saved
@@ -19,7 +19,7 @@ export class BackreferenceReaderTracker<T> {
   seen: T[] = []
   static adjustIndexBy: number = Number(Label.LowestResevedValue) - 1
 
-  valueForLabel(label: bigint, getValue: (number: number) => T): T | null {
+  valueForLabel(label: Label, getValue: (number: number) => T): T | null {
     switch (Label.kind(label)) {
       case LabelKind.Absent: return null
       case LabelKind.Null: return null
@@ -42,16 +42,22 @@ export class BackreferenceReaderTracker<T> {
   }
 }
 
-/** Deduplicates values, storing new values, and returning backreferences for existing values */
+/**
+ * Deduplicates values which will be serialized as bytes.
+ * When values repeat, returns backreferences to them instead.
+ * 
+ * @param onNew Called for side effects when a new value is encountered.
+ * @param onRepeat Called for side effects when a value is repeated.
+ * @param valueToBytes Converts a value to bytes (invoked once per unique value)
+ */
 export class ValueDeduplicator<In> {
   valuesAsBytes: Uint8Array[] = []
-  // converted: Map<bigint, Out> = new Map()
-  seen: Map<In, bigint> = new Map()
-  lastId: bigint = Label.LowestResevedValue
+  seen: Map<In, Label> = new Map()
+  lastId: Label = Label.LowestResevedValue
 
   private nextId() { return --this.lastId }
 
-  labelForValue(v: In): bigint | null {
+  labelForValue(v: In): Label | null {
     if (v == null) return Label.NullMarker
     const saved = this.seen.get(v)
     if (saved) return saved
@@ -61,7 +67,7 @@ export class ValueDeduplicator<In> {
 
   constructor(
     readonly onNew: (v: In, out: Uint8Array) => void,
-    readonly onRepeat: (backref: bigint, v: In) => void,
+    readonly onRepeat: (backref: Label, v: In) => void,
     readonly valueToBytes: (v: In) => Uint8Array,
   ) { }
 

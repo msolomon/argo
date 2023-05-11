@@ -4,7 +4,6 @@ import { Label, LabelKind } from './label'
 import { Wire } from './wire'
 import { BitSet } from './bitset'
 import { writeFileSync } from 'fs'
-import { encode } from 'punycode'
 import { Buf } from './buf'
 
 const DEBUG = true
@@ -30,6 +29,7 @@ export class CedarEncoder {
   constructor(readonly buf: Buf = new Buf()) { }
 
   getResult(): Buf {
+    const header = this.buildHeader()
     let dataBytesNeeded = 0
     const deduperLengthHeaders = new Map()
 
@@ -44,17 +44,24 @@ export class CedarEncoder {
       dataBytesNeeded += deduperBytesNeeded // reserve space for data
       dataBytesNeeded += deduperLengthHeader.length // reserve space for length header
     }
-    const buf = new Buf(this.buf.length + dataBytesNeeded)
 
-    // write deduped value blocks
+    const dataLength = header.length + dataBytesNeeded + this.buf.length
+    const buf = new Buf(dataLength)
+
+    // write the header
+    buf.write(header)
+
+    // write scalar blocks
     for (const deduper of this.dedupers.values()) {
       buf.write(deduperLengthHeaders.get(deduper)) // write length of block
       for (const value of deduper.valuesAsBytes) {
         buf.write(value) // write each value in the block
       }
     }
-    buf.writeBuf(this.buf) // copy non-deduped message data
-    if (buf.length != this.buf.length + dataBytesNeeded) throw 'Programmer error: incorrect result length'
+
+    // write message data
+    buf.writeBuf(this.buf)
+    if (buf.length != buf.capacity) throw 'Programmer error: incorrect result length'
     return buf
 
 
@@ -62,8 +69,32 @@ export class CedarEncoder {
     // it needs to always match on both sides.
     // perhaps: FLOAT, INT, BYTES, STRING?
     // basically order of most to least likely to be 0, except keeping bytes and string together
+    // FLOAT, INT, ID, ENUM, STRING, BYTES
+    // idea: write each built-in block, then write custom blocks (which require a dedup key along with a length header)
     // BOOL, NULL, ARRAY, OBJECT never get de-duped.
+
+
+    /*
+    ideas for scalar block layout
+
+    * in main message, Labeled values always correspond to an in-block entry. if length given,
+    read next value from corresponding block. if backref, use backref from that block. if null, null.
+    * that applies to string, id, bytes, enum, int32 (due to varint encoding), and array.
+    null, bool are always inlined.
+    object is always inlined, simply because it avoids so much re-writing at the end and keeps things simple.
+    nullable values are ALSO written into blocks--this means null/non-null markers are inlined, but the value is not,
+    and this separation makes both halves more compressible.
+    this really just leaves non-null floats (and any future FIXED). these are always inlined.
+    custom scalars get their own dedupers, and therefore their own blocks.
+    we must create the block when we come across the first non-null value in the message,
+    and we don't even know it is present until we arrive at it.
+    i.e. all blocks are written in the order they are first encountered in the message and therefore necessary.
+    so if we come across a string first, the entire first block will be strings.
+    if we then encounter a nullable float, we will create a new block for floats.
+    if we then encounter a custom scalar called Foo, we will create a new block for Foo (based on its type)
+    */
   }
+
 
   maybeRewindToOverwriteNonNull = () => {
     // collapse labels over non-null markers, else we waste ~ 1byte/object
@@ -74,15 +105,11 @@ export class CedarEncoder {
     }
   }
 
-  startMessage() {
-    this.writeHeader()
-  }
-
-  writeHeader(): void {
-    const flagsBytes = 1
-    const flagValue = 0x0
-    this.track('flags', flagValue, flagsBytes)
-    this.buf.writeByte(flagValue) // TODO: support non-default flags
+  buildHeader(): Uint8Array {
+    // TODO: support non-default flags
+    const flags = new Uint8Array(1)
+    this.track('flags', flags.toString(), flags.length)
+    return flags
   }
 
   writeBytesRaw = (bytes: ArrayLike<number>): void => {
@@ -91,7 +118,7 @@ export class CedarEncoder {
     if (DEBUG) this.track('bytes', bytes, bytes.length)
   }
 
-  writeVarInt = (n: bigint | number): void => {
+  writeVarInt = (n: Label | number): void => {
     this.maybeRewindToOverwriteNonNull()
     // console.log('writing', n, 'at', this.pos, VarInt.ZigZag.encode(n))
     if (DEBUG) this.track('varint', n, VarInt.ZigZag.encode(n).length)
@@ -153,7 +180,7 @@ export class CedarEncoder {
         return bytes
       },
 
-      // (n: bigint | number, v: string): void => {
+      // (n: Label | number, v: string): void => {
       //   // console.log('saw string before', n, v)
       //   // console.log(Error().stack)
       //   // console.log(this)
@@ -304,7 +331,7 @@ export class CedarEncoder {
     })
 
     const jsonify = (a: any) => JSON.stringify(a, (key, value) =>
-      typeof value === 'bigint'
+      typeof value === Label.typeOf
         ? value.toString()
         : value // return everything else unchanged
       , 2)

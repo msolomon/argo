@@ -204,7 +204,7 @@ export class CedarInterpreter {
   //     if (DEBUG) tracked.push({ pos, kind, value, bytes: new Uint8Array(bytes.buffer, pos, length) })
   //   }
 
-  //   const readLabel = (): bigint => {
+  //   const readLabel = (): Label => {
   //     const { label, length } = Label.decode(bytes, pos)
   //     if (DEBUG) track(pos, 'label', label, length)
   //     // tracked.push({ pos, 'trace': new Error().stack })
@@ -414,7 +414,6 @@ export class CedarInterpreter {
     const encoder = new CedarEncoder()
     // console.log('@@ root wire', Wire.print(this.typer.rootWireType()))
     // console.log('@@ root wire', JSON.stringify(this.typer.rootWireType()))
-    encoder.startMessage()
     encoder.jsToCedarWithType(js, this.typer.rootWireType(), encoder)
     // console.log('write log', encoder.tracked)
     return encoder.getResult()
