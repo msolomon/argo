@@ -27,7 +27,7 @@ export namespace Wire {
   export type BYTES = Primitive.BYTES
   export type DEDUPE = { type: "DEDUPE", key: DedupeKey, of: Wire.Type }
   export type ARRAY = { type: "ARRAY", of: Wire.Type }
-  export type NULLABLE = { type: "NULLABLE", of: Wire.Type }
+  export type NULLABLE = { type: "NULLABLE", of: Wire.Type, dedupeKey?: DedupeKey } // some types are dedupable _only_ when nullable
   export type RECORD = { type: "RECORD", fields: Wire.Field[] }
   export type VARIANT = { type: "VARIANT", members: Wire.Member[] } // TODO: use?
   export type FIXED = { type: "FIXED", length: number } // TODO: use?
@@ -73,8 +73,11 @@ export namespace Wire {
   export function isNullMasked(wt: Wire.Type): Boolean { // do values start with a Label or null mask?
     return isRECORD(wt) || (isDEDUPE(wt) && isNullMasked(wt.of))
   }
-  export function nullable(wt: Wire.Type): Wire.NULLABLE {
-    return { type: "NULLABLE", of: wt }
+  export function nullable(wt: Wire.Type, dedupeKey?: Wire.DedupeKey): Wire.NULLABLE {
+    return { type: "NULLABLE", of: wt, dedupeKey }
+  }
+  export function deduped(wt: Wire.Type, key: DedupeKey): Wire.DEDUPE {
+    return { type: "DEDUPE", of: wt, key }
   }
   export function print(wt: Wire.Type, indent: number = 0): string {
     const idnt = (plus: number = 0) => " ".repeat(indent + plus)
@@ -191,8 +194,9 @@ export class Typer {
     return groupedFields
   }
 
-  unwrap(t: GraphQLType): graphql.GraphQLType {
-    if (graphql.isWrappingType(t)) return this.unwrap(t.ofType)
+  /** Get an underlying type, discarding List and Non-null wrappers */
+  static unwrap(t: GraphQLType): graphql.GraphQLType {
+    if (graphql.isWrappingType(t)) return Typer.unwrap(t.ofType)
     else return t
   }
 
@@ -219,7 +223,7 @@ export class Typer {
         } else if (selectedBy.kind == Kind.INLINE_FRAGMENT) {
           typeCondition = selectedBy.typeCondition?.name.value
         }
-        const omittable = typeCondition != null && this.unwrap(selectionType).toString() != typeCondition
+        const omittable = typeCondition != null && Typer.unwrap(selectionType).toString() != typeCondition
 
         const f = getField(field.name.value)
         if (field.selectionSet) {
@@ -295,14 +299,18 @@ export class Typer {
   typeToWireType = (t: GraphQLType): Wire.Type => {
     if (graphql.isScalarType(t)) {
       let wtype: Wire.Type
+      let nullableDedupeKey: string | undefined = undefined // only used for deduping nullable types
       switch (t) {
         case graphql.GraphQLString:
-          wtype = { type: "DEDUPE", key: "String", of: Wire.Primitive.STRING }
+          wtype = Wire.deduped(Wire.Primitive.STRING, graphql.GraphQLString.name)
           break
         case graphql.GraphQLID:
-          wtype = { type: "DEDUPE", key: "ID", of: Wire.Primitive.STRING }
+          wtype = Wire.deduped(Wire.Primitive.STRING, graphql.GraphQLID.name)
           break
-        case graphql.GraphQLInt: wtype = Wire.Primitive.INT32; break
+        case graphql.GraphQLInt:
+          wtype = Wire.Primitive.INT32;
+          nullableDedupeKey = graphql.GraphQLInt.name
+          break
         case graphql.GraphQLBoolean: wtype = Wire.Primitive.BOOLEAN; break
         case graphql.GraphQLFloat: wtype = Wire.Primitive.FLOAT64; break
         default:
@@ -313,7 +321,7 @@ export class Typer {
           wtype = { type: "DEDUPE", key: t.toString(), of: Wire.Primitive.STRING }
           break
       }
-      return Wire.nullable(wtype)
+      return Wire.nullable(wtype, nullableDedupeKey)
     } else if (graphql.isListType(t)) {
       return Wire.nullable({ type: "ARRAY", of: this.typeToWireType(t.ofType) })
       // return Wire.nullable(this.typeToWireType(t.ofType))

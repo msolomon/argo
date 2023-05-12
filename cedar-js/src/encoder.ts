@@ -11,10 +11,12 @@ const DEBUG = true
 export class CedarEncoder {
   private static utf8 = new TextEncoder()
 
+  private dedupers: Map<Wire.DedupeKey, ValueDeduplicator<any>> = new Map()
+  public tracked: any[] = []
   private nonNullPos = -1
 
-  // tracked: { pos: number, kind: string, value: any, bytes: Uint8Array }[] = []
-  tracked: any[] = []
+  constructor(readonly buf: Buf = new Buf()) { }
+
   track = (kind: string, value: any, length: number) => {
     if (DEBUG) this.tracked.push({ pos: this.buf.position, kind, value, bytes: this.buf.uint8array })
   }
@@ -25,8 +27,6 @@ export class CedarEncoder {
       else this.tracked.push({ pos: this.buf.position, ...msg })
     }
   }
-
-  constructor(readonly buf: Buf = new Buf()) { }
 
   getResult(): Buf {
     const header = this.buildHeader()
@@ -79,7 +79,7 @@ export class CedarEncoder {
 
     * in main message, Labeled values always correspond to an in-block entry. if length given,
     read next value from corresponding block. if backref, use backref from that block. if null, null.
-    * that applies to string, id, bytes, enum, int32 (due to varint encoding), and array.
+    * that applies to string, id, bytes, enum, int32 (due to varint encoding EDIT: nope, since they can be negative of course), and array.
     null, bool are always inlined.
     object is always inlined, simply because it avoids so much re-writing at the end and keeps things simple.
     nullable values are ALSO written into blocks--this means null/non-null markers are inlined, but the value is not,
@@ -133,19 +133,10 @@ export class CedarEncoder {
     // console.log('position change:', posbefore, '->', this.pos)
   }
 
-  // writeString = (str: ArrayLike<number>): void => {
-  //   const posbefore = this.pos
-  //   // console.log('writing bytes', bytes.length, bytes)
-  //   this.writeVarInt(bytes.length)
-  //   this.writeBytesRaw(bytes)
-  //   // console.log('position change:', posbefore, '->', this.pos)
-
-  // }
   writeString = (str: string): void => {
     const bytes = CedarEncoder.utf8.encode(str)
     this.writeVarInt(bytes.length)
     this.buf.write(bytes)
-    // console.log(this.pos, bytes)
     if (DEBUG) this.track('string', str, bytes.length)
     // return bytes
   }
@@ -160,80 +151,72 @@ export class CedarEncoder {
     this.writeBytesRaw(bytes)
   }
 
-  writeLabelNull = (): void => { this.writeLabel(Label.Null) }
-  writeLabelAbsent = (): void => { this.writeLabel(Label.Absent) }
-  writeLabelError = (): void => { this.writeLabel(Label.Error) }
-  writeLabelTrue = (): void => { this.writeLabel(Label.True) }
-  writeLabelZero = (): void => { this.writeLabel(Label.Zero) }
-  writeLabelFalse = (): void => { this.writeLabel(Label.False) }
-  writeLabelNonNull = (): void => {
-    this.writeLabel(Label.NonNull)
-    // console.log('non-null pos', this.pos)
-    // assert(this.nonNullPos > -1, 'should have been -1', this.nonNullPos)
-    // this.nonNullPos = this.pos
-  }
-
-  newStringDeduplicator() {
-    return new ValueDeduplicator<string>(
-      (string: string, bytes: Uint8Array): Uint8Array => {
-        this.writeStringLength(string, bytes)
-        return bytes
-      },
-
-      // (n: Label | number, v: string): void => {
-      //   // console.log('saw string before', n, v)
-      //   // console.log(Error().stack)
-      //   // console.log(this)
-      //   this.writeVarInt(n)
-      // },
-      this.writeVarInt,
-      (string: string) => CedarEncoder.utf8.encode(string)
-    )
-  }
-
-  dedupers: Map<Wire.DedupeKey, ValueDeduplicator<any>> = new Map()
-
-  dedup(memoKey: Wire.DedupeKey | undefined, t: Wire.Type, value: any): void {
+  makeDeduper(t: Wire.Type): ValueDeduplicator<any> {
     if (Wire.isSTRING(t)) {
-      if (memoKey == null) return this.writeString(value)
-      let deduper = this.dedupers.get(memoKey)
-      if (deduper == null) {
-        deduper = this.newStringDeduplicator()
-        this.dedupers.set(memoKey, deduper)
-      }
-      deduper.dedup(value)
-    } else {
-      throw 'Unsupported dedupe type: ' + t
+      return new ValueDeduplicator<string>(
+        (string: string, bytes: Uint8Array): Uint8Array => {
+          this.writeStringLength(string, bytes)
+          return bytes
+        },
+        this.writeVarInt,
+        (string: string) => CedarEncoder.utf8.encode(string)
+      )
     }
+    if (Wire.isBYTES(t)) {
+      return new ValueDeduplicator<Uint8Array>(
+        (bytes: Uint8Array, bytes2: Uint8Array): Uint8Array => {
+          this.writeVarInt(bytes.length)
+          return bytes
+        },
+        this.writeVarInt,
+        bytes => bytes
+      )
+    }
+    throw 'Unsupported dedupe type ' + t
+  }
+
+  dedup<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type, v: T): void {
+    return this.getDeduper<T>(dedupeKey, this.makeDeduper.bind(this), t).dedup(v)
+  }
+
+  private getDeduper<T>(dedupeKey: Wire.DedupeKey | undefined, mkDeduper: (t: Wire.Type) => ValueDeduplicator<T>, t: Wire.Type): ValueDeduplicator<T> {
+    if (dedupeKey == null) throw 'Cannot write without a dedup key'
+    let deduper = this.dedupers.get(dedupeKey)
+    if (deduper == null) {
+      deduper = mkDeduper(t)
+      this.dedupers.set(dedupeKey, deduper)
+    }
+    return deduper
   }
 
   // stringDedup = this.newStringDeduplicator()
   // enumDedup = this.newStringDeduplicator()
   // idDedup = this.newStringDeduplicator()
-  objectTracker = new BackreferenceWriterTracker<object>()
-  listTracker = new BackreferenceWriterTracker<Array<unknown>>()
-  bytesDedup = new ValueDeduplicator<Uint8Array>(
-    (v: Uint8Array) => this.writeBytes(v),
-    this.writeVarInt,
-    v => v
-  )
+  // objectTracker = new BackreferenceWriterTracker<object>()
+  // listTracker = new BackreferenceWriterTracker<Array<unknown>>()
+  // bytesDedup = new ValueDeduplicator<Uint8Array>(
+  //   (v: Uint8Array) => this.writeBytes(v),
+  //   this.writeVarInt,
+  //   v => v
+  // )
 
   jsToCedarWithType(js: any, wt: Wire.Type, encoder: CedarEncoder): void {
-    const writeCedar = ((js: any, wt: Wire.Type, encoder: CedarEncoder, memoKey?: Wire.DedupeKey): void => {
+    const writeCedar = ((js: any, wt: Wire.Type, encoder: CedarEncoder, dedupeKey?: Wire.DedupeKey): void => {
       // console.log(wt)
       if (Wire.isNULLABLE(wt)) {
         const t = wt.of
         if (js == null) {
           encoder.log('Writing null marker')
-          return encoder.writeLabelNull()
+          return encoder.writeLabel(Label.Null)
         } else if (Wire.isLabeled(t)) {
-          return writeCedar(js, t, encoder)
+          return writeCedar(js, t, encoder, wt.dedupeKey)
         } else {
           encoder.log('Writing non-null marker')
-          encoder.writeLabelNonNull()
+          encoder.writeLabel(Label.NonNull)
         }
         return writeCedar(js, t, encoder)
       } else if (Wire.isDEDUPE(wt)) {
+        if (dedupeKey != null) { throw `Was already deduping '${dedupeKey}', unexpected to switch to '${wt.key}` }
         writeCedar(js, wt.of, encoder, wt.key)
       } else if (Wire.isRECORD(wt)) {
         // let nullMask = 0n
@@ -263,13 +246,13 @@ export class CedarEncoder {
           if (js && name in js && js[name] != null) {
             if (omittable && !Wire.isLabeled(type)) {
               this.track('writing omittable: present', name, 0)
-              encoder.writeLabelNonNull()
+              encoder.writeLabel(Label.NonNull)
             }
             encoder.log({ msg: 'Writing field', field: name, value: js[name] })
             writeCedar(js[name], type, encoder)
           } else if (omittable && js && (!(name in js) || js[name] === undefined)) {
             this.track('writing omittable: absent', name, 0)
-            encoder.writeLabelAbsent()
+            encoder.writeLabel(Label.Absent)
           } else if (Wire.isNULLABLE(type)) {
             // this.track('writting null for field', name, 0)
             // encoder.log({ msg: 'Field was missing from object, writing NULL', field: name })
@@ -292,12 +275,11 @@ export class CedarEncoder {
         encoder.log({ msg: 'Writing string', value: js })
         // encoder.writeString(js)
         // encoder.stringDedup.dedup(js)
-        encoder.dedup(memoKey, wt, js)
+        encoder.dedup(dedupeKey, wt, js)
       } else if (Wire.isNULL(wt)) { // write nothing
       } else if (Wire.isBOOLEAN(wt)) {
         encoder.log({ msg: 'Writing boolean', value: js })
-        if (js) encoder.writeLabelTrue()
-        else encoder.writeLabelFalse()
+        encoder.writeLabel(js ? Label.True : Label.False)
       } else if (Wire.isINT32(wt)) {
         encoder.log({ msg: 'Writing int32', value: js })
         encoder.writeVarInt(js)
@@ -323,7 +305,7 @@ export class CedarEncoder {
       } else if (Wire.isVARIANT(wt)) {
         // TODO: variant is only enum, build this in?
         encoder.log({ msg: 'Writing variant', value: js })
-        encoder.dedup(memoKey, wt, js)
+        encoder.dedup(dedupeKey, wt, js)
         // encoder.enumDedup.dedup(js)
       } else {
         console.log("Cannot yet handle wire type", wt)

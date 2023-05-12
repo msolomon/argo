@@ -13,11 +13,11 @@ export type Label = bigint
 
 export namespace Label {
   export const typeOf = 'bigint'
-  export const NonNullMarker = 0n
-  export const NullMarker = -1n
-  export const AbsentMarker = -2n
-  export const ErrorMarker = -3n
-  export const LowestResevedValue = ErrorMarker
+  export const NonNullMarker: Label = 0n
+  export const NullMarker: Label = -1n
+  export const AbsentMarker: Label = -2n
+  export const ErrorMarker: Label = -3n
+  export const LowestResevedValue: Label = ErrorMarker
 
   // export const Null = new Uint8Array(varint.encode(zzenc(NullMarker)))
   export const Null = VarInt.ZigZag.encode(NullMarker)
@@ -27,7 +27,6 @@ export namespace Label {
   export const NonNull = Zero
   export const False = Zero
   export const True = VarInt.ZigZag.encode(1)
-
 
   export function kind(label: Label): LabelKind {
     if (label >= 0) return LabelKind.Length
@@ -55,19 +54,19 @@ export namespace Label {
     }
   }
 
-  export function encodeInto(label: Label, buf: Buffer, offset: number): number {
+  export function encodeInto(label: Label, buf: { [index: number]: number }, offset: number): number {
     switch (kind(label)) {
       case LabelKind.Length:
       case LabelKind.Backreference:
         return VarInt.ZigZag.encodeInto(label, buf, offset)
       case LabelKind.Null:
-        buf.set(Null, offset)
+        buf[offset] = Null[0]
         return Null.length
       case LabelKind.Absent:
-        buf.set(Absent, offset)
+        buf[offset] = Absent[0]
         return Absent.length
       case LabelKind.Error:
-        buf.set(Error, offset)
+        buf[offset] = Error[0]
         return Error.length
     }
   }
