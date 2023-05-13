@@ -82,8 +82,8 @@ export class CedarEncoder {
     * that applies to string, id, bytes, enum, int32 (due to varint encoding EDIT: nope, since they can be negative of course), and array.
     null, bool are always inlined.
     object is always inlined, simply because it avoids so much re-writing at the end and keeps things simple.
-    nullable values are ALSO written into blocks--this means null/non-null markers are inlined, but the value is not,
-    and this separation makes both halves more compressible.
+    nullable values are ALSO written into blocks--this means null/non-null markers are inlined, but the value is not,DDF
+    and this separation makes both halves more compressible.o
     this really just leaves non-null floats (and any future FIXED). these are always inlined.
     custom scalars get their own dedupers, and therefore their own blocks.
     we must create the block when we come across the first non-null value in the message,
@@ -94,7 +94,6 @@ export class CedarEncoder {
     if we then encounter a custom scalar called Foo, we will create a new block for Foo (based on its type)
     */
   }
-
 
   maybeRewindToOverwriteNonNull = () => {
     // collapse labels over non-null markers, else we waste ~ 1byte/object
@@ -201,24 +200,38 @@ export class CedarEncoder {
   // )
 
   jsToCedarWithType(js: any, wt: Wire.Type, encoder: CedarEncoder): void {
-    const writeCedar = ((js: any, wt: Wire.Type, encoder: CedarEncoder, dedupeKey?: Wire.DedupeKey): void => {
-      // console.log(wt)
-      if (Wire.isNULLABLE(wt)) {
-        const t = wt.of
+    const jsonify = (a: any) => JSON.stringify(a, (key, value) =>
+      typeof value === Label.typeOf
+        ? value.toString()
+        : value // return everything else unchanged
+      , 2)
+
+
+    const result = this.writeCedar(js, wt, encoder)
+    writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
+    // console.log('Read log', this.tracked)
+    return result
+  }
+
+  private writeCedar = (js: any, wt: Wire.Type, encoder: CedarEncoder, dedupeKey?: Wire.DedupeKey): void => {
+    switch (wt.type) {
+      case 'NULLABLE':
         if (js == null) {
           encoder.log('Writing null marker')
           return encoder.writeLabel(Label.Null)
-        } else if (Wire.isLabeled(t)) {
-          return writeCedar(js, t, encoder, wt.dedupeKey)
+        } else if (Wire.isLabeled(wt.of)) {
+          return this.writeCedar(js, wt.of, encoder, wt.dedupeKey)
         } else {
           encoder.log('Writing non-null marker')
           encoder.writeLabel(Label.NonNull)
+          return this.writeCedar(js, wt.of, encoder)
         }
-        return writeCedar(js, t, encoder)
-      } else if (Wire.isDEDUPE(wt)) {
-        if (dedupeKey != null) { throw `Was already deduping '${dedupeKey}', unexpected to switch to '${wt.key}` }
-        writeCedar(js, wt.of, encoder, wt.key)
-      } else if (Wire.isRECORD(wt)) {
+      case 'DEDUPE':
+        if (dedupeKey != null) { throw `Was already deduping '${dedupeKey}', unexpected to switch to '${wt.key}'. ${Wire.print(wt)}.` }
+        return this.writeCedar(js, wt.of, encoder, wt.key)
+      case 'RECORD': {
+
+        /*
         // let nullMask = 0n
         // let i = 0
         // for (const { name, type } of wt.fields) {
@@ -240,6 +253,7 @@ export class CedarEncoder {
         // } else {
         //   encoder.writeBytes(BitSet.writeVarBitSet(nullMask))
         // }
+        */
 
         for (const { name, type, omittable } of wt.fields) {
           // if (omittable) console.log('@ FOUND OMITTABLE', name, 'in', Wire.print(wt))
@@ -249,7 +263,7 @@ export class CedarEncoder {
               encoder.writeLabel(Label.NonNull)
             }
             encoder.log({ msg: 'Writing field', field: name, value: js[name] })
-            writeCedar(js[name], type, encoder)
+            this.writeCedar(js[name], type, encoder)
           } else if (omittable && js && (!(name in js) || js[name] === undefined)) {
             this.track('writing omittable: absent', name, 0)
             encoder.writeLabel(Label.Absent)
@@ -257,7 +271,7 @@ export class CedarEncoder {
             // this.track('writting null for field', name, 0)
             // encoder.log({ msg: 'Field was missing from object, writing NULL', field: name })
             // encoder.writeLabelNull()
-            writeCedar(js[name], type, encoder)
+            this.writeCedar(js[name], type, encoder)
           } else {
             // if (omittable) {
             //   this.track('writing omittable: absent', name, 0)
@@ -271,28 +285,27 @@ export class CedarEncoder {
             // console.log(js, wt); console.log(encoder.tracked[encoder.tracked.length - 1]); throw `Could not extract field ${name}\n\t${wt}`
           }
         }
-      } else if (Wire.isSTRING(wt)) {
-        encoder.log({ msg: 'Writing string', value: js })
-        // encoder.writeString(js)
-        // encoder.stringDedup.dedup(js)
-        encoder.dedup(dedupeKey, wt, js)
-      } else if (Wire.isNULL(wt)) { // write nothing
-      } else if (Wire.isBOOLEAN(wt)) {
+        return
+      }
+      case 'STRING':
+        return encoder.dedup(dedupeKey, wt, js)
+      case 'NULL': return // write nothing
+      case 'BOOLEAN':
         encoder.log({ msg: 'Writing boolean', value: js })
-        encoder.writeLabel(js ? Label.True : Label.False)
-      } else if (Wire.isINT32(wt)) {
+        return encoder.writeLabel(js ? Label.True : Label.False)
+      case 'INT32':
         encoder.log({ msg: 'Writing int32', value: js })
-        encoder.writeVarInt(js)
-      } else if (Wire.isFLOAT64(wt)) {
+        return encoder.writeVarInt(js)
+      case 'FLOAT64':
         encoder.log({ msg: 'Writing float64', value: js })
         throw 'TODO not yet implemented'
-      } else if (Wire.isBYTES(wt)) {
+      case 'BYTES':
         encoder.log({ msg: 'Writing bytes', value: js })
-        encoder.writeBytes(js)
-      } else if (Wire.isFIXED(wt)) {
+        return encoder.writeBytes(js)
+      case 'FIXED':
         encoder.log({ msg: 'Writing fixed', length: wt.length, value: js })
-        encoder.writeBytesRaw(js) // TODO: check the fixed length
-      } else if (Wire.isARRAY(wt)) {
+        return encoder.writeBytesRaw(js) // TODO: check the fixed length
+      case 'ARRAY': {
         encoder.log({ msg: 'Writing array', value: js })
         if (!Array.isArray(js)) {
           console.log(js, '\n\t', JSON.stringify(js), '\n\t', JSON.stringify(wt), '\n', Wire.print(wt))
@@ -301,27 +314,12 @@ export class CedarEncoder {
         }
         const t = wt.of
         encoder.writeVarInt(js.length)
-        js.forEach(v => writeCedar(v, t, encoder))
-      } else if (Wire.isVARIANT(wt)) {
-        // TODO: variant is only enum, build this in?
-        encoder.log({ msg: 'Writing variant', value: js })
-        encoder.dedup(dedupeKey, wt, js)
-        // encoder.enumDedup.dedup(js)
-      } else {
-        console.log("Cannot yet handle wire type", wt)
+        return js.forEach(v => this.writeCedar(v, t, encoder))
       }
-    })
-
-    const jsonify = (a: any) => JSON.stringify(a, (key, value) =>
-      typeof value === Label.typeOf
-        ? value.toString()
-        : value // return everything else unchanged
-      , 2)
-
-
-    const result = writeCedar(js, wt, encoder)
-    writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
-    // console.log('Read log', this.tracked)
-    return result
+      case 'VARIANT':
+        encoder.log({ msg: 'Writing variant', value: js })
+        return encoder.dedup(dedupeKey, wt, js)
+      default: throw `Cannot yet handle wire type ${wt}`
+    }
   }
 }

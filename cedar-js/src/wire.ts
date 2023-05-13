@@ -19,19 +19,6 @@ export namespace Wire {
 
   export type DedupeKey = string
 
-  export type STRING = Primitive.STRING
-  export type NULL = Primitive.NULL
-  export type BOOLEAN = Primitive.BOOLEAN
-  export type INT32 = Primitive.INT32
-  export type FLOAT64 = Primitive.FLOAT64
-  export type BYTES = Primitive.BYTES
-  export type DEDUPE = { type: "DEDUPE", key: DedupeKey, of: Wire.Type }
-  export type ARRAY = { type: "ARRAY", of: Wire.Type }
-  export type NULLABLE = { type: "NULLABLE", of: Wire.Type, dedupeKey?: DedupeKey } // some types are dedupable _only_ when nullable
-  export type RECORD = { type: "RECORD", fields: Wire.Field[] }
-  export type VARIANT = { type: "VARIANT", members: Wire.Member[] } // TODO: use?
-  export type FIXED = { type: "FIXED", length: number } // TODO: use?
-
   export enum Primitive {
     STRING = "STRING",
     NULL = "NULL",
@@ -40,6 +27,34 @@ export namespace Wire {
     FLOAT64 = "FLOAT64",
     BYTES = "BYTES",
   }
+
+  export enum Compound {
+    DEDUPE = "DEDUPE",
+    NULLABLE = "NULLABLE",
+    ARRAY = "ARRAY",
+    RECORD = "RECORD",
+    VARIANT = "VARIANT",
+    FIXED = "FIXED", // not exactly compound, but it's paramaterized by size
+  }
+
+  export type STRING = { type: Primitive.STRING }
+  export const STRING = { type: Primitive.STRING }
+  export type NULL = { type: Primitive.NULL }
+  export const NULL = { type: Primitive.NULL }
+  export type BOOLEAN = { type: Primitive.BOOLEAN }
+  export const BOOLEAN = { type: Primitive.BOOLEAN }
+  export type INT32 = { type: Primitive.INT32 }
+  export const INT32 = { type: Primitive.INT32 }
+  export type FLOAT64 = { type: Primitive.FLOAT64 }
+  export const FLOAT64 = { type: Primitive.FLOAT64 }
+  export type BYTES = { type: Primitive.BYTES }
+  export const BYTES = { type: Primitive.BYTES }
+  export type DEDUPE = { type: Compound.DEDUPE, key: DedupeKey, of: Wire.Type }
+  export type ARRAY = { type: Compound.ARRAY, of: Wire.Type }
+  export type NULLABLE = { type: Compound.NULLABLE, of: Wire.Type, dedupeKey?: DedupeKey } // some types are dedupable _only_ when nullable
+  export type RECORD = { type: Compound.RECORD, fields: Wire.Field[] }
+  export type VARIANT = { type: Compound.VARIANT, members: Wire.Member[] } // TODO: use?
+  export type FIXED = { type: Compound.FIXED, length: number } // TODO: use?
 
   export type Field = {
     "name": string,
@@ -52,12 +67,17 @@ export namespace Wire {
     type: Wire.Type
   }
 
-  export function isSTRING(type: Wire.Type): type is Wire.STRING { return type == Primitive.STRING }
-  export function isNULL(type: Wire.Type): type is Wire.NULL { return type == Primitive.NULL }
-  export function isBOOLEAN(type: Wire.Type): type is Wire.BOOLEAN { return type == Primitive.BOOLEAN }
-  export function isINT32(type: Wire.Type): type is Wire.INT32 { return type == Primitive.INT32 }
-  export function isFLOAT64(type: Wire.Type): type is Wire.FLOAT64 { return type == Primitive.FLOAT64 }
-  export function isBYTES(type: Wire.Type): type is Wire.BYTES { return type == Primitive.BYTES }
+  export function kind(type: Wire.Type): string {
+    if (typeof type === 'string') return type
+    else return type.type
+  }
+
+  export function isSTRING(type: Wire.Type): type is Wire.STRING { return type.type == "STRING" }
+  export function isNULL(type: Wire.Type): type is Wire.NULL { return type.type == "NULL" }
+  export function isBOOLEAN(type: Wire.Type): type is Wire.BOOLEAN { return type.type == "BOOLEAN" }
+  export function isINT32(type: Wire.Type): type is Wire.INT32 { return type.type == "INT32" }
+  export function isFLOAT64(type: Wire.Type): type is Wire.FLOAT64 { return type.type == "FLOAT64" }
+  export function isBYTES(type: Wire.Type): type is Wire.BYTES { return type.type == "BYTES" }
   export function isDEDUPE(type: Wire.Type): type is Wire.DEDUPE { return (type as Wire.DEDUPE).type == "DEDUPE" }
   export function isARRAY(type: Wire.Type): type is Wire.ARRAY { return (type as Wire.ARRAY).type == "ARRAY" }
   export function isNULLABLE(type: Wire.Type): type is Wire.NULLABLE { return (type as Wire.NULLABLE).type == "NULLABLE" }
@@ -74,10 +94,10 @@ export namespace Wire {
     return isRECORD(wt) || (isDEDUPE(wt) && isNullMasked(wt.of))
   }
   export function nullable(wt: Wire.Type, dedupeKey?: Wire.DedupeKey): Wire.NULLABLE {
-    return { type: "NULLABLE", of: wt, dedupeKey }
+    return { type: Compound.NULLABLE, of: wt, dedupeKey }
   }
   export function deduped(wt: Wire.Type, key: DedupeKey): Wire.DEDUPE {
-    return { type: "DEDUPE", of: wt, key }
+    return { type: Compound.DEDUPE, of: wt, key }
   }
   export function print(wt: Wire.Type, indent: number = 0): string {
     const idnt = (plus: number = 0) => " ".repeat(indent + plus)
@@ -87,7 +107,7 @@ export namespace Wire {
       else if (Wire.isNULL(wt)) return "NULL"
       else if (Wire.isINT32(wt)) return "INT32"
       else if (Wire.isBOOLEAN(wt)) return "BOOLEAN"
-      else if (Wire.isNULLABLE(wt)) return recurse(wt.of) + "?"
+      else if (Wire.isNULLABLE(wt)) return recurse(wt.of) + "?" + (wt.dedupeKey ? "{" + wt.dedupeKey + "}" : "")
       else if (Wire.isDEDUPE(wt)) return recurse(wt.of) + "{" + wt.key + "}"
       else if (Wire.isARRAY(wt)) return recurse(wt.of) + "[]"
       else if (Wire.isRECORD(wt)) {
@@ -140,7 +160,7 @@ export class Typer {
   rootWireType(): Wire.Type {
     const getField = this.makeGetField(this.rootType)
     const data = this.collectFieldWireTypes(this.rootType, this.operation.selectionSet, getField)
-    return { type: "RECORD", fields: [{ name: "data", type: Wire.nullable(data), omittable: false }] }
+    return { type: Wire.Compound.RECORD, fields: [{ name: "data", type: Wire.nullable(data), omittable: false }] }
   }
 
   // this follows the spec's CollectFields, but is modified to require no runtime information
@@ -281,7 +301,7 @@ export class Typer {
         }
       }
     }
-    const record: Wire.Type = { type: "RECORD", fields: recordFields }
+    const record: Wire.Type = { type: Wire.Compound.RECORD, fields: recordFields }
     return record
   }
 
@@ -299,46 +319,49 @@ export class Typer {
   typeToWireType = (t: GraphQLType): Wire.Type => {
     if (graphql.isScalarType(t)) {
       let wtype: Wire.Type
-      let nullableDedupeKey: string | undefined = undefined // only used for deduping nullable types
+      let nullableDedupeKey: string | undefined
       switch (t) {
         case graphql.GraphQLString:
-          wtype = Wire.deduped(Wire.Primitive.STRING, graphql.GraphQLString.name)
-          break
         case graphql.GraphQLID:
-          wtype = Wire.deduped(Wire.Primitive.STRING, graphql.GraphQLID.name)
+          wtype = Wire.deduped(Wire.STRING, t.name)
           break
         case graphql.GraphQLInt:
-          wtype = Wire.Primitive.INT32;
-          nullableDedupeKey = graphql.GraphQLInt.name
+          wtype = Wire.INT32
+          nullableDedupeKey = t.name
           break
-        case graphql.GraphQLBoolean: wtype = Wire.Primitive.BOOLEAN; break
-        case graphql.GraphQLFloat: wtype = Wire.Primitive.FLOAT64; break
+        case graphql.GraphQLFloat:
+          wtype = Wire.FLOAT64
+          nullableDedupeKey = t.name
+          break
+        case graphql.GraphQLBoolean:
+          wtype = Wire.BOOLEAN
+          break
         default:
           // TODO: don't assume all custom scalars are encoded as strings, respect CedarEncoding directive instead
           // throw 'custom scalars not yet supported; ' + t.toString() // TODO: support
           // console.log('custom scalars not yet supported ', t.toString()) // TODO: support
           // t.astNode?.directives?.find(d => d.name.value == "CedarEncoding")?.arguments
-          wtype = { type: "DEDUPE", key: t.toString(), of: Wire.Primitive.STRING }
+          wtype = Wire.deduped(Wire.STRING, t.name)
           break
       }
-      return Wire.nullable(wtype, nullableDedupeKey)
+      return Wire.nullable(wtype, nullableDedupeKey ? nullableDedupeKey + 'WRAPPED' : undefined)
     } else if (graphql.isListType(t)) {
-      return Wire.nullable({ type: "ARRAY", of: this.typeToWireType(t.ofType) })
+      return Wire.nullable({ type: Wire.Compound.ARRAY, of: this.typeToWireType(t.ofType) })
       // return Wire.nullable(this.typeToWireType(t.ofType))
     } else if (graphql.isObjectType(t) || graphql.isInterfaceType(t)) {
       // const fields: Wire.Field[] = Object.values(t.getFields())
       //   .map(f => { return { name: f.name, type: this.typeToWire.Type(f.type) } })
-      return Wire.nullable({ type: "RECORD", fields: [] })
+      return Wire.nullable({ type: Wire.Compound.RECORD, fields: [] })
     } else if (graphql.isUnionType(t)) {
-      return Wire.nullable({ type: "RECORD", fields: [] })
+      return Wire.nullable({ type: Wire.Compound.RECORD, fields: [] })
     } else if (graphql.isNonNullType(t)) {
       const nullable = this.typeToWireType(t.ofType)
-      return (nullable as { type: "NULLABLE", of: Wire.Type }).of
+      return (nullable as { type: Wire.Compound.NULLABLE, of: Wire.Type }).of
     } else if (graphql.isEnumType(t)) {
       // const members: Wire.Member[] = t.getValues()
       //   .map(ev => { return { name: ev.name, type: Wire.Primitive.NULL } })
       // return Wire.nullable({ type: "VARIANT", members })
-      return Wire.nullable({ type: "DEDUPE", key: "Enum", of: Wire.Primitive.STRING })
+      return Wire.nullable(Wire.deduped(Wire.STRING, t.name))
 
       // } else if (graphql.isInterfaceType(t)) {
       //   const members: WireMember[] = this.schema.getImplementations(t).objects
@@ -375,10 +398,10 @@ export class Typer {
       return { record, wrap: (r: Wire.Type) => Wire.nullable(wrap(r)) }
     } else if (Wire.isDEDUPE(wt)) {
       const { record, wrap } = this.unwrapForSelectionSet(wt.of)
-      return { record, wrap: (r: Wire.Type) => { return { type: "DEDUPE", key: wt.key, of: wrap(r) } } }
+      return { record, wrap: (r: Wire.Type) => { return { type: Wire.Compound.DEDUPE, key: wt.key, of: wrap(r) } } }
     } else if (Wire.isARRAY(wt)) {
       const { record, wrap } = this.unwrapForSelectionSet(wt.of)
-      return { record, wrap: (r: Wire.Type) => { return { type: "ARRAY", of: wrap(r) } } }
+      return { record, wrap: (r: Wire.Type) => { return { type: Wire.Compound.ARRAY, of: wrap(r) } } }
     } else {
       throw 'tried to unwrap type which does not have selection set: ' + wt.toString()
     }
