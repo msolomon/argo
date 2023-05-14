@@ -337,6 +337,30 @@ export class CedarDecoder {
       case 'RECORD':
         this.track(path, 'record', buf, {})
         const obj: { [key: string]: any } = {}
+
+        let anyOmittable = false
+        let anyNullMarkable = false
+        for (const { name, type, omittable } of wt.fields) {
+          if (omittable) { anyOmittable = true }
+          if (Wire.isNULLABLE(type) && !Wire.isLabeled(type.of)) { anyNullMarkable = true }
+        }
+
+        let omitMask = { length: 0, bitset: 0n }
+        let nullMask = { length: 0, bitset: 0n }
+        if (anyNullMarkable) {
+          nullMask = BitSet.readVarBitSet(buf.uint8array, buf.position)
+          this.track(path, 'read null mask', buf, nullMask)
+          buf.incrementPosition(nullMask.length)
+        }
+        if (anyOmittable) {
+          omitMask = BitSet.readVarBitSet(buf.uint8array, buf.position)
+          this.track(path, 'read omit mask', buf, omitMask)
+          buf.incrementPosition(omitMask.length)
+        }
+
+        let omitI = -1
+        let nullI = -1
+
         for (const { name, type, omittable } of wt.fields) {
           if (Wire.isLabeled(type)) {
             this.count('field: labeled')
@@ -347,30 +371,29 @@ export class CedarDecoder {
           }
 
           if (omittable) {
-            const labelPeek = buf.get()
-            // const label = Label.read(buf)
-            if (labelPeek == Label.Error[0]) { throw 'TODO: handle error' }
-            if (!Wire.isLabeled(type) && labelPeek == Label.NonNull[0]) {
-              this.track(path, 'non-null', this.buf, name)
-              this.count('non-null field')
-              this.count('bytes: non-null')
-              buf.incrementPosition(1)
-            }
-            if (labelPeek == Label.Absent[0]) {
-              // obj[name] = Wire.isLabeled(type) ? null : undefined
-              obj[name] = undefined
+            omitI++
+            if (BitSet.getBit(omitMask.bitset, omitI)) {
+              // field is absent
               this.track(path, 'absent', this.buf, name)
               this.count('absent field')
               this.count('bytes: absent')
-
-              buf.incrementPosition(1)
-              // if (!Wire.isLabeled(type)) { bump(length) }
+              continue
+            }
+          }
+          if (Wire.isNULLABLE(type) && !Wire.isLabeled(type.of)) {
+            nullI++
+            if (BitSet.getBit(nullMask.bitset, nullI)) {
+              // field is null
+              this.track(path, 'null', buf, name)
+              this.count('null field')
+              this.count('bytes: null')
+              obj[name] = null
               continue
             }
           }
 
           this.track(path, 'record field', buf, name)
-          obj[name] = this.readCedar(buf, [...path, name], type)
+          obj[name] = this.readCedar(buf, [...path, name], Wire.isNULLABLE(type) && !Wire.isLabeled(type.of) ? type.of : type)
         }
         return obj
 
