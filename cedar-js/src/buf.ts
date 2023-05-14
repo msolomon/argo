@@ -114,7 +114,7 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
    * @param bytes The Buf to write to the buffer
    */
   public writeBuf = (buf: Buf): void => {
-    this.write(buf.uint8array.slice(0, buf.length))
+    this.write(buf.uint8array.subarray(0, buf.length))
   }
 
   /**
@@ -135,7 +135,7 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
    * @returns A Uint8Array containing the bytes read from the buffer
    */
   public read = (numBytes: number): Uint8Array => {
-    const data = this._bytes.slice(this.position, this.position + numBytes)
+    const data = this._bytes.subarray(this.position, this.position + numBytes)
     this.position += data.byteLength // may be shorter than numBytes
     return data
   }
@@ -153,14 +153,13 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
   }
 
   /**
-   * Reads a single byte from the buffer at the given position.
+   * Reads a single byte from the buffer at the given position without adjusting the position.
    * 
    * @param position The offset to read the byte from
    * @returns The byte at the given position
    */
   public get = (position: number = this.position): number | undefined => {
     const data = this._bytes[position]
-    this.position++
     return data
   }
 
@@ -182,7 +181,7 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
     if (newSize === this._buffer.byteLength) return
     const newBuffer = new ArrayBuffer(newSize)
     const newBytes = new Uint8Array(newBuffer)
-    newBytes.set(this._bytes.slice(0, newSize))
+    newBytes.set(this._bytes.subarray(0, newSize))
     this._buffer = newBuffer
     this._bytes = newBytes
   }
@@ -197,14 +196,13 @@ export class ReadonlyBuf extends BufBase implements BufPosition, BufRead {
   constructor(private readonly _bytes: Uint8Array) { super() }
 
   public read = (numBytes: number): Uint8Array => {
-    const data = this._bytes.slice(this.position, this.position + numBytes)
+    const data = this._bytes.subarray(this.position, this.position + numBytes)
     this.position += data.byteLength // may be shorter than numBytes
     return data
   }
 
   public get = (position: number = this.position): number | undefined => {
     const data = this._bytes[position]
-    this.position++
     return data
   }
 

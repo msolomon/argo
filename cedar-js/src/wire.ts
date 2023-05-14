@@ -51,7 +51,7 @@ export namespace Wire {
   export const BYTES = { type: Primitive.BYTES }
   export type DEDUPE = { type: Compound.DEDUPE, key: DedupeKey, of: Wire.Type }
   export type ARRAY = { type: Compound.ARRAY, of: Wire.Type }
-  export type NULLABLE = { type: Compound.NULLABLE, of: Wire.Type, dedupeKey?: DedupeKey } // some types are dedupable _only_ when nullable
+  export type NULLABLE = { type: Compound.NULLABLE, of: Wire.Type }
   export type RECORD = { type: Compound.RECORD, fields: Wire.Field[] }
   export type VARIANT = { type: Compound.VARIANT, members: Wire.Member[] } // TODO: use?
   export type FIXED = { type: Compound.FIXED, length: number } // TODO: use?
@@ -93,8 +93,8 @@ export namespace Wire {
   export function isNullMasked(wt: Wire.Type): Boolean { // do values start with a Label or null mask?
     return isRECORD(wt) || (isDEDUPE(wt) && isNullMasked(wt.of))
   }
-  export function nullable(wt: Wire.Type, dedupeKey?: Wire.DedupeKey): Wire.NULLABLE {
-    return { type: Compound.NULLABLE, of: wt, dedupeKey }
+  export function nullable(wt: Wire.Type): Wire.NULLABLE {
+    return { type: Compound.NULLABLE, of: wt }
   }
   export function deduped(wt: Wire.Type, key: DedupeKey): Wire.DEDUPE {
     return { type: Compound.DEDUPE, of: wt, key }
@@ -107,7 +107,7 @@ export namespace Wire {
       else if (Wire.isNULL(wt)) return "NULL"
       else if (Wire.isINT32(wt)) return "INT32"
       else if (Wire.isBOOLEAN(wt)) return "BOOLEAN"
-      else if (Wire.isNULLABLE(wt)) return recurse(wt.of) + "?" + (wt.dedupeKey ? "{" + wt.dedupeKey + "}" : "")
+      else if (Wire.isNULLABLE(wt)) return recurse(wt.of) + "?"
       else if (Wire.isDEDUPE(wt)) return recurse(wt.of) + "{" + wt.key + "}"
       else if (Wire.isARRAY(wt)) return recurse(wt.of) + "[]"
       else if (Wire.isRECORD(wt)) {
@@ -319,19 +319,16 @@ export class Typer {
   typeToWireType = (t: GraphQLType): Wire.Type => {
     if (graphql.isScalarType(t)) {
       let wtype: Wire.Type
-      // let nullableDedupeKey: string | undefined
       switch (t) {
         case graphql.GraphQLString:
         case graphql.GraphQLID:
           wtype = Wire.deduped(Wire.STRING, t.name)
           break
         case graphql.GraphQLInt:
-          wtype = Wire.INT32
-          // nullableDedupeKey = t.name
+          wtype = Wire.deduped(Wire.INT32, t.name)
           break
         case graphql.GraphQLFloat:
           wtype = Wire.FLOAT64
-          // nullableDedupeKey = t.name
           break
         case graphql.GraphQLBoolean:
           wtype = Wire.BOOLEAN

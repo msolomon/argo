@@ -4,7 +4,7 @@ import { Label, LabelKind } from './label'
 import { Wire } from './wire'
 import { BitSet } from './bitset'
 import { writeFileSync } from 'fs'
-import { Buf } from './buf'
+import { Buf, BufWrite } from './buf'
 
 const DEBUG = true
 
@@ -18,8 +18,8 @@ export class CedarEncoder {
 
   constructor(readonly buf: Buf = new Buf()) { }
 
-  track = (kind: string, value: any, length: number) => {
-    if (DEBUG) this.tracked.push({ pos: this.buf.position, kind, value, bytes: this.buf.uint8array })
+  track = (path: (string | number)[], msg: string, buf: BufWrite, value: any) => {
+    if (DEBUG) this.tracked.push({ path: path.join('.'), msg, pos: buf.position, value, })
   }
 
   log = (msg: string | object) => {
@@ -55,7 +55,6 @@ export class CedarEncoder {
 
     // write scalar blocks
     for (const [dedupeKey, deduper] of this.writers.entries()) {
-      console.log('writing block for', dedupeKey, 'with', deduper.valuesAsBytes.length, 'values', deduperLengthHeaders.get(deduper))
       buf.write(deduperLengthHeaders.get(deduper)) // write length of block
       for (const value of deduper.valuesAsBytes) {
         buf.write(value) // write each value in the block
@@ -100,32 +99,33 @@ export class CedarEncoder {
     */
   }
 
-  maybeRewindToOverwriteNonNull = () => {
-    // collapse labels over non-null markers, else we waste ~ 1byte/object
-    if (this.buf.position > 0 && this.nonNullPos == this.buf.position - 1) { // non-null label is 1 byte long, since it is 0
-      // console.log('overwriting non-null marker', this.nonNullPos)
-      this.buf.incrementPosition(-1)
-      this.nonNullPos = -1
-    }
-  }
+  // maybeRewindToOverwriteNonNull = () => {
+  //   // collapse labels over non-null markers, else we waste ~ 1byte/object
+  //   if (this.buf.position > 0 && this.nonNullPos == this.buf.position - 1) { // non-null label is 1 byte long, since it is 0
+  //     // console.log('overwriting non-null marker', this.nonNullPos)
+  //     this.buf.incrementPosition(-1)
+  //     this.nonNullPos = -1
+  //   }
+  // }
 
   buildHeader(): Uint8Array {
     // TODO: support non-default flags
     const flags = new Uint8Array(1)
-    this.track('flags', flags.toString(), flags.length)
+    this.track(['<flags header>'], 'flags', this.buf, flags)
     return flags
   }
 
   writeBytesRaw = (bytes: ArrayLike<number>): void => {
+    // console.log('writing bytes at position', this.buf.position, bytes)
     this.buf.write(bytes)
     // console.log(this.pos, bytes)
-    if (DEBUG) this.track('bytes', bytes, bytes.length)
+    // if (DEBUG) this.track('bytes', bytes, bytes.length)
   }
 
   writeVarInt = (n: Label | number): void => {
-    this.maybeRewindToOverwriteNonNull()
+    // this.maybeRewindToOverwriteNonNull()
     // console.log('writing', n, 'at', this.pos, VarInt.ZigZag.encode(n))
-    if (DEBUG) this.track('varint', n, VarInt.ZigZag.encode(n).length)
+    // if (DEBUG) this.track('varint', n, VarInt.ZigZag.encode(n).length)
     this.buf.write(VarInt.ZigZag.encode(n))
   }
 
@@ -141,17 +141,18 @@ export class CedarEncoder {
     const bytes = CedarEncoder.utf8.encode(str)
     this.writeVarInt(bytes.length)
     this.buf.write(bytes)
-    if (DEBUG) this.track('string', str, bytes.length)
+    // if (DEBUG) this.track('string', str, bytes.length)
     // return bytes
   }
 
   writeStringLength = (string: string, bytes: Uint8Array): void => {
     this.writeVarInt(bytes.length)
-    if (DEBUG) this.track('string length', string, bytes.length)
+    // if (DEBUG) this.track('string length', string, bytes.length)
   }
 
   writeLabel = (bytes: ArrayLike<number>): void => {
     // this.maybeRewindToOverwriteNonNull()
+    // this.track('label', bytes, bytes.length)
     this.writeBytesRaw(bytes)
   }
 
@@ -163,12 +164,6 @@ export class CedarEncoder {
         return DeduplicatingWriter.lengthOfBytes(bytes => bytes)
       case "INT32":
         return BytesWriter.noLabel(VarInt.ZigZag.encode)
-
-      case "ARRAY":
-        return new DeduplicatingWriter<Array<any>>(
-          (v: Array<any>, out: Uint8Array) => BigInt(v.length),
-          (v: Array<any>) => { return null }
-        )
       default:
         throw 'Unsupported dedupe type ' + t
     }
@@ -212,6 +207,7 @@ export class CedarEncoder {
 
   write<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type, v: T): Label | null {
     const writer = this.getWriter<T>(dedupeKey, t)
+    const pos = this.buf.position
     const label = writer.write(v)
     if (label != null) { this.writeLabel(Label.encode(label)) }
     return label
@@ -246,7 +242,7 @@ export class CedarEncoder {
       , 2)
 
 
-    const result = this.writeCedar(js, wt, encoder)
+    const result = this.writeCedar([], js, wt, encoder)
     writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
     // console.log('Read log', this.tracked)
     return result
@@ -265,25 +261,23 @@ export class CedarEncoder {
   [int32!]: write array length to msg, then zigzag for each entry to value block
   */
 
-  private writeCedar = (js: any, wt: Wire.Type, encoder: CedarEncoder, dedupeKey?: Wire.DedupeKey): void => {
-    const log = (msg: string | object) => {
-      encoder.log({ msg, wt, dedupeKey, js })
-    }
+  private writeCedar = (path: (string | number)[], js: any, wt: Wire.Type, encoder: CedarEncoder, dedupeKey?: Wire.DedupeKey): void => {
     switch (wt.type) {
       case 'NULLABLE':
         if (js == null) {
-          log('Writing null marker')
-          encoder.writeLabel(Label.Null)
+          this.track(path, 'null', this.buf, Label.Null)
+          return encoder.writeLabel(Label.Null)
         }
 
         if (!Wire.isLabeled(wt.of)) {
-          log('Writing non-null marker')
+          this.track(path, 'non-null', this.buf, Label.NonNull)
           encoder.writeLabel(Label.NonNull)
         }
-        return this.writeCedar(js, wt.of, encoder, wt.dedupeKey)
+        return this.writeCedar(path, js, wt.of, encoder)
       case 'DEDUPE':
         if (dedupeKey != null) { throw `Was already deduping '${dedupeKey}', unexpected to switch to '${wt.key}'. ${Wire.print(wt)}.` }
-        return this.writeCedar(js, wt.of, encoder, wt.key)
+        this.track(path, 'dedupe with key', this.buf, wt.key)
+        return this.writeCedar(path, js, wt.of, encoder, wt.key)
       case 'RECORD': {
 
         /*
@@ -310,31 +304,41 @@ export class CedarEncoder {
         // }
         */
 
+        this.track(path, 'record with num fields', this.buf, wt.fields.length)
         for (const { name, type, omittable } of wt.fields) {
           // if (omittable) console.log('@ FOUND OMITTABLE', name, 'in', Wire.print(wt))
           if (js && name in js && js[name] != null) { // field actually present
             if (omittable && !Wire.isLabeled(type)) {
-              this.track('writing omittable: present', name, 0)
+              // this.track('writing omittable: present', name, 0)
+              this.track(path, 'record field is present but omittable, writing non-null', this.buf, name)
               encoder.writeLabel(Label.NonNull)
             }
-            log({ msg: 'Writing field', field: name, value: js[name] })
-            this.writeCedar(js[name], type, encoder)
+            this.writeCedar([...path, name], js[name], type, encoder)
           } else if (omittable && js && (!(name in js) || js[name] === undefined)) { // field not present, but omittable
-            this.track('writing omittable: absent', name, 0)
+            // this.track('writing omittable: absent', name, 0)
+            this.track(path, 'record field is absent but omittable, writing Absent', this.buf, name)
             encoder.writeLabel(Label.Absent)
+            // encoder.writeLabel(Label.Null)
           } else if (Wire.isNULLABLE(type)) {
-            // this.track('writting null for field', name, 0)
+            // console.log('found nullable field', name, 'with type', type, 'js value', js, Wire.print(wt))
+            // this.track('writing null for field', name, 0)
             // encoder.log({ msg: 'Field was missing from object, writing NULL', field: name })
-            // encoder.writeLabelNull()
-            this.writeCedar(js[name], type, encoder)
+            // encoder.writeLabel(Label.Null)
+            this.track(path, 'record field is absent but nullable', this.buf, name)
+            this.writeCedar([...path, name], js[name], type, encoder)
           } else {
+            this.track(path, 'record field is absent and not-nullable, error', this.buf, name)
+
+            // console.log('Trynig to write field', name, 'from js object', js)
             // if (omittable) {
             //   this.track('writing omittable: absent', name, 0)
-            //   encoder.writeLabelAbsent()
+            //   encoder.writeLabel(Label.Absent)
+            //   return
             // }
-            this.track('skipping absent field', name, 0)
+            // this.track('skipping absent field', name, 0)
+            // encoder.writeLabel(Label.Absent)
+            // return
             throw 'programmer error'
-            // encoder.writeLabelAbsent()
             // TODO: fragments which don't match a given union can return empty here even though it is non-nullable
             // this could be fixed up to detect this case, if we distinguished unions from other records
             // console.log(js, wt); console.log(encoder.tracked[encoder.tracked.length - 1]); throw `Could not extract field ${name}\n\t${wt}`
@@ -345,22 +349,26 @@ export class CedarEncoder {
       case 'STRING':
       case 'BYTES':
       case 'INT32':
-        log(`writing ${wt.type}}`)
-        encoder.write(dedupeKey, wt, js)
+        this.track(path, wt.type, this.buf, js)
+        this.track(path, 'using dedupe key', this.buf, dedupeKey)
+        const label = encoder.write(dedupeKey, wt, js)
+        this.track(path, 'label', this.buf, label)
         return
       // return encoder.dedup(dedupeKey, wt, js)
-      case 'NULL': return // write nothing
+      case 'NULL':
+        this.track(path, 'null, writing nothing', this.buf, null)
+        return // write nothing
       case 'BOOLEAN':
-        encoder.log({ msg: 'Writing boolean', value: js })
+        this.track(path, 'boolean', this.buf, js)
         return encoder.writeLabel(js ? Label.True : Label.False)
       case 'FLOAT64':
-        encoder.log({ msg: 'Writing float64', value: js })
+        this.track(path, 'float64', this.buf, js)
         throw 'TODO not yet implemented'
       case 'FIXED':
-        encoder.log({ msg: 'Writing fixed', length: wt.length, value: js })
+        this.track(path, 'fixed', this.buf, js)
         return encoder.writeBytesRaw(js) // TODO: check the fixed length
       case 'ARRAY': {
-        encoder.log({ msg: 'Writing array', value: js })
+        this.track(path, 'array', this.buf, js.length)
         if (!Array.isArray(js)) {
           console.log(js, '\n\t', JSON.stringify(js), '\n\t', JSON.stringify(wt), '\n', Wire.print(wt))
           console.log(encoder.tracked)
@@ -371,11 +379,11 @@ export class CedarEncoder {
         // const label = writer.write(js) // write length or backref
         // if (label && Label.isBackref(label)) { return } // don't write the array if we've seen it before
         encoder.writeVarInt(js.length)
-        const t = wt.of
-        return js.forEach(v => this.writeCedar(v, t, encoder))
+        // this.buf.write(VarInt.ZigZag.encode(js.length))
+        return js.forEach((v, i) => this.writeCedar([...path, i], v, wt.of, encoder))
       }
       case 'VARIANT':
-        encoder.log({ msg: 'Writing variant', value: js })
+        this.track(path, 'variant', this.buf, js)
         // return encoder.dedup(dedupeKey, wt, js)
         throw 'unexpected variant'
         return

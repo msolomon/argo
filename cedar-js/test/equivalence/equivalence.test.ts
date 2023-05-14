@@ -9,6 +9,7 @@ import * as graphql from 'graphql'
 import { Wire, CedarInterpreter, WithInfo, Typer } from '../../src'
 import { brotliCompressSync, gzipSync, constants, gzip } from 'zlib'
 import { StarWarsSchema } from './starwarsequivalence'
+import zstd from '@mongodb-js/zstd';
 
 jest.setTimeout(10000)
 
@@ -322,24 +323,24 @@ async function* walk(dir: string, dirsOnly: boolean = false): AsyncGenerator<str
 
 // TODO: re-enable
 
-test('Star Wars equivalence tests', async () => {
-  const starwarsDir = path.join(path.dirname(testPath), 'starwars')
-  for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
-    // if (name != 'NestedQuery') continue
-    console.log("Running test:", name)
-    runEquivalence(query, json, StarWarsSchema, expected)
-  }
-})
-
-
-// test('Queries are serialized equivalently', async () => {
-//   for await (const { name, dir, query, json, schema, expected } of loadTests()) {
-//     if (dir.includes('starwars')) continue
+// test('Star Wars equivalence tests', async () => {
+//   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
+//   for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
+//     // if (name != 'NestedQuery') continue
 //     console.log("Running test:", name)
-//     // const resolvers = valueToResolver(schema, schema.getQueryType()!, expected.data, expected, [])
-//     runEquivalence(query, json, schema, expected)
+//     runEquivalence(query, json, StarWarsSchema, expected)
 //   }
 // })
+
+
+test('Queries are serialized equivalently', async () => {
+  for await (const { name, dir, query, json, schema, expected } of loadTests()) {
+    if (dir.includes('starwars')) continue
+    console.log("Running test:", name)
+    // const resolvers = valueToResolver(schema, schema.getQueryType()!, expected.data, expected, [])
+    await runEquivalence(query, json, schema, expected)
+  }
+})
 
 // test('Typer', async () => {
 //   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
@@ -354,7 +355,7 @@ test('Star Wars equivalence tests', async () => {
 //     // console.log(typer.types)
 //   }
 // })
-const runEquivalence = (query: DocumentNode, json: string, schema: GraphQLSchema, expected: any) => {
+async function runEquivalence(query: DocumentNode, json: string, schema: GraphQLSchema, expected: any) {
   const ci = new CedarInterpreter(schema, query)
 
   const cedarBytes = ci.jsToCedar(expected)
@@ -368,23 +369,28 @@ const runEquivalence = (query: DocumentNode, json: string, schema: GraphQLSchema
   const cedarToJson = JSON.stringify(fromCedarResult, null, 2)
   expect(cedarToJson).toEqual(json)
 
-  // use quality 6 for JSON (Apache default), and 4 for brotli (rough equivalent based on https://dev.to/coolblue/improving-website-performance-with-brotli-5h70)
-  const brotliJsonSize = brotliCompressSync(compactJson, { params: { [constants.BROTLI_PARAM_QUALITY]: 4 } }).byteLength
-  const gzipJsonSize = gzipSync(compactJson, { level: 6 }).byteLength
-  const brotliCedarize = brotliCompressSync(cedarBytes.uint8array, { params: { [constants.BROTLI_PARAM_QUALITY]: 4 } }).byteLength
-  const gzipCedarSize = gzipSync(cedarBytes.uint8array, { level: 6 }).byteLength
-  const bestJson = Math.min(brotliJsonSize, gzipJsonSize, compactJsonLength)
-  const bestCedar = Math.min(brotliCedarize, gzipCedarSize, cedarBytes.length)
-  const savedWithCedar = `${bestJson - bestCedar} bytes (${100 - Math.round(bestCedar / bestJson * 100)}%)`
+  // Compression levels have to be picked somehow, so this is all (very roughly) normalized around gzip level 6 performance
+  // In my experience, brotli is good at large responses but bad at small ones, gzip is ok at everything, and zstd is good at everything
+  const GzipLevel = 6 // Apache and CLI default. NGINX uses 1
+  const BrotliQuality = 4 // rough equivalent of gzip 6 based on https://dev.to/coolblue/improving-website-performance-with-brotli-5h70
+  const ZstdLevel = 6 // very rough single-core equivalent of above based on https://community.centminmod.com/threads/round-4-compression-comparison-benchmarks-zstd-vs-brotli-vs-pigz-vs-bzip2-vs-xz-etc.18669/
 
-  console.log(`Saved ${(compactJsonLength - cedarBytes.length).toLocaleString("en-US")} bytes (saved ${100 - Math.round(cedarBytes.length / compactJsonLength * 100)}%).\n\tCompact JSON: ${compactJsonLength}\n\tCedar: ${cedarBytes.length}\nCompressed, Cedar saved ${savedWithCedar}\n`, {
-    brotliJsonSize,
-    gzipJsonSize,
-    brotliCedarize,
-    gzipCedarSize,
-    bestJson,
-    bestCedar,
-  })
+  const brotliJsonSize = brotliCompressSync(compactJson, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
+  const gzipJsonSize = gzipSync(compactJson, { level: GzipLevel }).byteLength
+  const zstdJsonSize = (await zstd.compress(Buffer.from(compactJson), ZstdLevel)).byteLength
+  const brotliCedarSize = brotliCompressSync(cedarBytes.uint8array, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
+  const gzipCedarSize = gzipSync(cedarBytes.uint8array, { level: GzipLevel }).byteLength
+  const zstdCedarSize = (await zstd.compress(Buffer.from(cedarBytes.uint8array), ZstdLevel)).byteLength
+  const savedWithCedar = (json: number, cedar: number) => `${(json - cedar).toLocaleString("en-US")} bytes (${100 - Math.round(cedar / json * 100)}%)`
+
+  console.log(
+    `Cedar saved ${savedWithCedar(gzipJsonSize, gzipCedarSize)} assuming gzip compression\n`,
+    {
+      uncompressed: { json: compactJsonLength, cedar: cedarBytes.length, saved: savedWithCedar(compactJsonLength, cedarBytes.length) },
+      gzip: { level: GzipLevel, json: gzipJsonSize, cedar: gzipCedarSize, saved: savedWithCedar(gzipJsonSize, gzipCedarSize) },
+      brotli: { level: BrotliQuality, json: brotliJsonSize, cedar: brotliCedarSize, saved: savedWithCedar(brotliJsonSize, brotliCedarSize) },
+      zstd: { level: ZstdLevel, json: zstdJsonSize, cedar: zstdCedarSize, saved: savedWithCedar(zstdJsonSize, zstdCedarSize) },
+    })
 }
 
 // test('Star Wars encoding with Typer', async () => {

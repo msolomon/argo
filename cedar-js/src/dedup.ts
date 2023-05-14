@@ -77,7 +77,7 @@ export class DeduplicatingWriter<In> extends Writer<In> {
   lastId: Label = Label.LowestResevedValue
 
   static lengthOfBytes<In>(toBytes: (v: In) => Uint8Array): DeduplicatingWriter<In> {
-    return new DeduplicatingWriter<In>((v, bytes) => BigInt(bytes.length), toBytes)
+    return new DeduplicatingWriter<In>((v, bytes) => BigInt(bytes.byteLength), toBytes)
   }
 
   private nextId() { return --this.lastId }
@@ -97,16 +97,12 @@ export class DeduplicatingWriter<In> extends Writer<In> {
 
   override write(v: In): Label | null {
     const backref = this.labelForValue(v)
-    if (backref == null) {
-      const bytes = this.valueToBytes(v)
-      if (bytes) {
-        this.valuesAsBytes.push(bytes)
-        return this.labelForNew(v, bytes)
-      }
-      return null
-    } else {
-      return backref
-    }
+    if (backref != null) return backref
+    const bytes = this.valueToBytes(v)
+    if (bytes) {
+      this.valuesAsBytes.push(bytes)
+      return this.labelForNew(v, bytes)
+    } else return null
   }
 
 }
@@ -117,7 +113,6 @@ export class DeduplicatingWriter<In> extends Writer<In> {
 export abstract class Reader<Out> {
   constructor(public buf: BufRead) { }
   abstract read(parent: BufRead): Out
-  // read(label: Label | null): Out | null {
 }
 
 export class DeduplicatingLabelReader<Out> extends Reader<Out> {
@@ -140,7 +135,8 @@ export class DeduplicatingLabelReader<Out> extends Reader<Out> {
         const value = this.fromBytes(bytes)
         this.values.push(value)
         return value
-      case LabelKind.Null: throw 'Programmer error: Reader cannot handle null labels'
+      case LabelKind.Null:
+        throw 'Programmer error: Reader cannot handle null labels'
       case LabelKind.Absent: throw 'Programmer error: Reader cannot handle absent labels'
       case LabelKind.Error: throw 'Programmer error: Reader cannot handle error labels'
     }
