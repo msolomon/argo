@@ -305,6 +305,17 @@ export class CedarEncoder {
         */
 
         this.track(path, 'record with num fields', this.buf, wt.fields.length)
+        // let anyNullMaskable = false
+        // let anyOmittable = false
+        // let omitMask = 0n
+        // let nullMask = 0n
+        // for (const { name, type, omittable } of wt.fields) {
+        //   if (omittable) anyOmittable = true
+        //   if (Wire.isNULLABLE(type) && !Wire.isLabeled(type.of)) {
+        //     anyNullMaskable = true
+        //   }
+        // }
+
         for (const { name, type, omittable } of wt.fields) {
           // if (omittable) console.log('@ FOUND OMITTABLE', name, 'in', Wire.print(wt))
           if (js && name in js && js[name] != null) { // field actually present
@@ -378,9 +389,20 @@ export class CedarEncoder {
         // const writer = encoder.getWriter(dedupeKey, wt)
         // const label = writer.write(js) // write length or backref
         // if (label && Label.isBackref(label)) { return } // don't write the array if we've seen it before
+        this.track(path, 'array length', this.buf, js.length)
         encoder.writeVarInt(js.length)
-        // this.buf.write(VarInt.ZigZag.encode(js.length))
-        return js.forEach((v, i) => this.writeCedar([...path, i], v, wt.of, encoder))
+        let t = wt.of
+        if (js.length > 0 && Wire.isNULLABLE(t) && !Wire.isLabeled(t.of)) {
+          t = t.of
+          let bs = 0n
+          js.forEach((v, i) => { if (v == null) bs = BitSet.setBit(bs, i) })
+          const bsBytes = BitSet.writeVarBitSet(bs)
+          this.track(path, 'array null mask', this.buf, bsBytes)
+          this.buf.write(bsBytes) // write the null mask
+          return js.forEach((v, i) => { if (v != null) this.writeCedar([...path, i], v, t, encoder) })
+        } else {
+          return js.forEach((v, i) => this.writeCedar([...path, i], v, t, encoder))
+        }
       }
       case 'VARIANT':
         this.track(path, 'variant', this.buf, js)

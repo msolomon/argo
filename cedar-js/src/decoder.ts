@@ -320,6 +320,8 @@ export class CedarDecoder {
             throw 'invalid non-null ' + marker + '\n' + Wire.print(wt) + '\n' + buf.position + 'at ' + path.join('.')
           } {
             this.count('non-null')
+            this.count('non-null ' + wt.of.type)
+            this.count('non-null ' + wt.of.type + ' ' + path[path.length - 1])
             this.track(path, 'non-null', buf, marker)
           }
         } else {
@@ -373,11 +375,28 @@ export class CedarDecoder {
         return obj
 
       case 'ARRAY': {
+        this.track(path, 'array', buf, undefined)
+        let t = wt.of
         const length = Number(Label.read(buf))
+        const arr = new Array(length).fill(undefined)
         this.track(path, 'array length', buf, length)
         this.count('bytes: array length', Label.encode(BigInt(length)).length)
+        if (length > 0 && Wire.isNULLABLE(t) && !Wire.isLabeled(t.of)) {
+          t = t.of // unwrap the nullable layer
+          // instead of non-null markers for each value, read a bitset to show which are null (if any)
+          const bs = BitSet.readVarBitSet(buf.uint8array, buf.position)
+          this.count('array bitmask', bs.length)
+          this.track(path, 'array null mask ', this.buf, bs)
+          buf.incrementPosition(bs.length)
+
+          return (arr.map((_, i) => {
+            if (BitSet.getBit(bs.bitset, i)) return null
+            else return this.readCedar(buf, [...path, i], t)
+          }))
+        }
+
+        return (arr.map((_, i) => this.readCedar(buf, [...path, i], t)))
         // if (length < 0) return null
-        return (new Array(length).fill(undefined).map((_, i) => this.readCedar(buf, [...path, i], wt.of)))
       }
       case 'STRING':
       case 'BYTES':
