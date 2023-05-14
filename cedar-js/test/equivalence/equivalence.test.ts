@@ -322,24 +322,24 @@ async function* walk(dir: string, dirsOnly: boolean = false): AsyncGenerator<str
 
 // TODO: re-enable
 
-// test('Star Wars equivalence tests', async () => {
-//   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
-//   for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
-//     // if (name != 'NestedQuery') continue
-//     console.log("Running test:", name)
-//     runEquivalence(query, json, StarWarsSchema, expected)
-//   }
-// })
-
-
-test('Queries are serialized equivalently', async () => {
-  for await (const { name, dir, query, json, schema, expected } of loadTests()) {
-    if (dir.includes('starwars')) continue
+test('Star Wars equivalence tests', async () => {
+  const starwarsDir = path.join(path.dirname(testPath), 'starwars')
+  for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
+    // if (name != 'NestedQuery') continue
     console.log("Running test:", name)
-    // const resolvers = valueToResolver(schema, schema.getQueryType()!, expected.data, expected, [])
-    runEquivalence(query, json, schema, expected)
+    runEquivalence(query, json, StarWarsSchema, expected)
   }
 })
+
+
+// test('Queries are serialized equivalently', async () => {
+//   for await (const { name, dir, query, json, schema, expected } of loadTests()) {
+//     if (dir.includes('starwars')) continue
+//     console.log("Running test:", name)
+//     // const resolvers = valueToResolver(schema, schema.getQueryType()!, expected.data, expected, [])
+//     runEquivalence(query, json, schema, expected)
+//   }
+// })
 
 // test('Typer', async () => {
 //   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
@@ -362,8 +362,8 @@ const runEquivalence = (query: DocumentNode, json: string, schema: GraphQLSchema
   const compactJson = JSON.stringify(expected)
   const compactJsonLength = new TextEncoder().encode(compactJson).byteLength
 
+  cedarBytes.resetPosition() // start at the beginning, not the end
   const fromCedarResult = ci.cedarToJs(cedarBytes)
-
 
   const cedarToJson = JSON.stringify(fromCedarResult, null, 2)
   expect(cedarToJson).toEqual(json)

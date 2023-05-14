@@ -1,18 +1,47 @@
 import { GraphQLCompositeType, Kind, visit, GraphQLType, FieldNode, ExecutionResult, ASTNode, OperationTypeNode, ResponsePath, GraphQLTypeResolver, GraphQLFieldResolver, GraphQLAbstractType, DocumentNode, GraphQLResolveInfo, GraphQLSchema, TypedQueryDocumentNode, } from 'graphql'
 import * as VarInt from './varint'
-import { BackreferenceReaderTracker, BackreferenceWriterTracker, ValueDeduplicator } from './dedup'
+import { BackreferenceReaderTracker, DeduplicatingLabelReader, FixedSizeReader, Reader, UnlabeledVarIntReader, } from './dedup'
 import { Typer, Wire } from './wire'
 import { Label, LabelKind } from './label'
 import { assert } from 'console'
 import { writeFileSync } from 'fs'
 import { BitSet } from './bitset'
-import { Buf } from './buf'
+import { Buf, ReadonlyBuf, BufRead } from './buf'
+import { get } from 'http'
+import { match } from 'assert'
 
 const DEBUG = true
 
+class BlockTracker {
+  private blocks: Uint8Array[] = []
+  private nextBlockIndex: number = 0
+
+  private _message: BufRead
+  get message(): BufRead { return this._message }
+  get nextBlock(): BufRead {
+    const next = this.blocks[this.nextBlockIndex++]
+    console.log('nextBlock', next, 'number ', this.nextBlockIndex - 1)
+    return new ReadonlyBuf(next)
+  }
+
+  constructor(readonly buf: Buf) {
+    do {
+      const blockLength = Number(Label.read(buf))
+      if (blockLength < 0) throw 'Could not read invalid block length: ' + blockLength
+      const block = buf.read(blockLength)
+      if (block.length != blockLength) throw 'Could not read block of length ' + blockLength + ', only got ' + block.length + ' bytes. Message is invalid for this query.'
+      this.blocks.push(block)
+    } while (buf.position < buf.length)
+
+    this._message = new ReadonlyBuf(this.blocks[this.blocks.length - 1])
+  }
+}
+
 export class CedarDecoder {
   private static utf8 = new TextDecoder()
-
+  private static utf8decode = this.utf8.decode.bind(this.utf8)
+  private readers: Map<Wire.DedupeKey, Reader<any>> = new Map()
+  private blockTracker: BlockTracker
   // bump = (numNewBytes: number): number => (
   //   this.pos += numNewBytes
   //   // assert(pos < buffer.byteLength, "Ran out of space in buffer")
@@ -31,7 +60,10 @@ export class CedarDecoder {
   //   }
   // }
 
-  constructor(readonly buf: Buf) { }
+  constructor(readonly buf: Buf) {
+    this.buf.incrementPosition(1) // TODO: skip the header block when it isn't just 0
+    this.blockTracker = new BlockTracker(this.buf)
+  }
 
   cedarToJsWithType(wt: Wire.Type): ExecutionResult {
     const cedarThis = this
@@ -129,7 +161,7 @@ export class CedarDecoder {
         } else if (!Wire.isLabeled(wt.of)) {
           count('marker: non-null')
           // count('marker: non-null ' + Wire.print(wt.of))
-          track('Non-NULL', Wire.print(wt.of) + " " + this.buf.get(), 1)
+          // track('Non-NULL', Wire.print(wt.of) + " " + this.buf.get(), 1)
           if (this.buf.get() != Label.NonNull[0]) {
             track('invalid non-null', Wire.print(wt.of) + " " + this.buf.get(), 1)
             throw 'invalid non-null ' + this.buf.get() + '\n' + Wire.print(wt)
@@ -246,10 +278,12 @@ export class CedarDecoder {
         : value // return everything else unchanged
       , 2)
 
+    console.log('starting at pos', this.buf.position)
+
     let exn: any = null
     let result: any = null
     try {
-      result = readCedar(wt)
+      result = this.readCedar(this.blockTracker.message, wt)
     } catch (e) {
       exn = e
     } finally {
@@ -260,4 +294,100 @@ export class CedarDecoder {
       return result
     }
   }
+
+  readCedar = (buf: BufRead, wt: Wire.Type, memoKey?: Wire.DedupeKey): any => {
+
+    switch (wt.type) {
+      case 'NULLABLE':
+        const marker = buf.get()
+        if (marker == Label.Null[0]) {
+          return null
+        }
+
+        if (!Wire.isLabeled(wt.of)) {
+          if (marker != Label.NonNull[0]) {
+            throw 'invalid non-null ' + marker + '\n' + Wire.print(wt)
+          }
+        } else {
+          buf.incrementPosition(-1) // no non-null marker here
+        }
+
+        return this.readCedar(buf, wt.of)
+
+      case 'DEDUPE':
+        return this.readCedar(buf, wt.of, wt.key)
+
+      case 'RECORD':
+        const obj: { [key: string]: any } = {}
+        for (const { name, type, omittable } of wt.fields) {
+          if (omittable) {
+            const label = Label.read(buf)
+            if (Label.isError(label)) { throw 'TODO: handle error' }
+            if (!Wire.isLabeled(type) && label == Label.NonNullMarker) buf.incrementPosition(length)
+            if (Label.isAbsent(label)) {
+              obj[name] = undefined
+              // if (!Wire.isLabeled(type)) { bump(length) }
+              continue
+            }
+          }
+
+          obj[name] = this.readCedar(buf, type)
+        }
+        return obj
+
+      case 'ARRAY': {
+        const length = Number(Label.read(buf))
+        return (new Array(length).fill(undefined).map(() => this.readCedar(buf, wt.of)))
+      }
+      case 'STRING':
+      case 'BYTES':
+      case 'INT32':
+        const reader = this.getReader(memoKey, wt)
+        console.log(memoKey, reader)
+        return reader.read(buf)
+      case 'BOOLEAN':
+        const label = Label.read(buf)
+        switch (label) {
+          case Label.FalseMarker: return false
+          case Label.TrueMarker: return false
+          default: throw 'invalid boolean label ' + label
+        }
+      default:
+        throw 'unsupported type ' + wt.type
+
+    }
+
+  }
+
+  read<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type, parent: BufRead): T | null {
+    return this.getReader<T>(dedupeKey, t).read(parent)
+  }
+
+  private getReader<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type): Reader<T> {
+    if (dedupeKey == null) dedupeKey = Wire.print(t) + '!'
+    let reader = this.readers.get(dedupeKey)
+    if (reader == null) {
+      console.log('creating reader for ', dedupeKey, t)
+      reader = this.makeReader(t)
+      this.readers.set(dedupeKey, reader)
+    }
+    return reader
+  }
+
+  makeReader(t: Wire.Type): Reader<any> {
+    switch (t.type) {
+      case "STRING":
+        return new DeduplicatingLabelReader<string>(this.blockTracker.nextBlock, CedarDecoder.utf8decode)
+      case "BYTES":
+        return new DeduplicatingLabelReader<Uint8Array>(this.blockTracker.nextBlock, bytes => bytes)
+      case "INT32":
+        return new UnlabeledVarIntReader(this.blockTracker.nextBlock)
+
+      // case "ARRAY":
+      //   return new DeduplicatingLabelReader<Array<any>>(this.blockTracker.nextBlock, (bytes) => [])
+      default:
+        throw 'Unsupported dedupe type ' + t
+    }
+  }
+
 }

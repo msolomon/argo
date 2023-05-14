@@ -1,5 +1,5 @@
 import * as VarInt from './varint'
-import { Buf } from './buf'
+import { BufRead } from './buf'
 
 export enum LabelKind {
   Null,
@@ -13,6 +13,8 @@ export type Label = bigint
 
 export namespace Label {
   export const typeOf = 'bigint'
+  export const TrueMarker: Label = 1n
+  export const FalseMarker: Label = 0n
   export const NonNullMarker: Label = 0n
   export const NullMarker: Label = -1n
   export const AbsentMarker: Label = -2n
@@ -76,9 +78,16 @@ export namespace Label {
     return { label: result, length }
   }
 
-  export function read(buf: Buf) {
+  export function read(buf: BufRead) {
     const { result, length } = VarInt.ZigZag.decode(buf.uint8array, buf.position)
     buf.incrementPosition(length)
     return result
+  }
+
+  const labelToOffsetFactor = Number(LowestResevedValue) - 1
+  /** Converts a Label to an offset in an array of backreferences */
+  export function labelToOffset(label: Label): number {
+    if (label >= 0) throw 'Cannot convert non-negative label to offset'
+    return -Number(label) + labelToOffsetFactor
   }
 }

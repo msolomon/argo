@@ -319,7 +319,7 @@ export class Typer {
   typeToWireType = (t: GraphQLType): Wire.Type => {
     if (graphql.isScalarType(t)) {
       let wtype: Wire.Type
-      let nullableDedupeKey: string | undefined
+      // let nullableDedupeKey: string | undefined
       switch (t) {
         case graphql.GraphQLString:
         case graphql.GraphQLID:
@@ -327,11 +327,11 @@ export class Typer {
           break
         case graphql.GraphQLInt:
           wtype = Wire.INT32
-          nullableDedupeKey = t.name
+          // nullableDedupeKey = t.name
           break
         case graphql.GraphQLFloat:
           wtype = Wire.FLOAT64
-          nullableDedupeKey = t.name
+          // nullableDedupeKey = t.name
           break
         case graphql.GraphQLBoolean:
           wtype = Wire.BOOLEAN
@@ -344,7 +344,8 @@ export class Typer {
           wtype = Wire.deduped(Wire.STRING, t.name)
           break
       }
-      return Wire.nullable(wtype, nullableDedupeKey ? nullableDedupeKey + 'WRAPPED' : undefined)
+      return Wire.nullable(wtype)
+      // return Wire.nullable(wtype, nullableDedupeKey ? nullableDedupeKey + 'WRAPPED' : undefined)
     } else if (graphql.isListType(t)) {
       return Wire.nullable({ type: Wire.Compound.ARRAY, of: this.typeToWireType(t.ofType) })
       // return Wire.nullable(this.typeToWireType(t.ofType))

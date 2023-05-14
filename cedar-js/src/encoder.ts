@@ -1,5 +1,5 @@
 import * as VarInt from './varint'
-import { BackreferenceWriterTracker, ValueDeduplicator } from './dedup'
+import { BackreferenceWriterTracker, BytesWriter, DeduplicatingWriter, Writer } from './dedup'
 import { Label, LabelKind } from './label'
 import { Wire } from './wire'
 import { BitSet } from './bitset'
@@ -10,8 +10,9 @@ const DEBUG = true
 
 export class CedarEncoder {
   private static utf8 = new TextEncoder()
+  private static utf8encode = this.utf8.encode.bind(this.utf8)
 
-  private dedupers: Map<Wire.DedupeKey, ValueDeduplicator<any>> = new Map()
+  private writers: Map<Wire.DedupeKey, Writer<any>> = new Map()
   public tracked: any[] = []
   private nonNullPos = -1
 
@@ -32,36 +33,40 @@ export class CedarEncoder {
     const header = this.buildHeader()
     let dataBytesNeeded = 0
     const deduperLengthHeaders = new Map()
+    const bufLength = Label.encode(BigInt(this.buf.length))
 
-    // calculate how much space we need for deduped values, which go in a series of blocks at the start
-    for (const deduper of this.dedupers.values()) {
+    // calculate how much space we need for block values, which go in a series of blocks at the start
+    for (const writer of this.writers.values()) {
       let deduperBytesNeeded = 0
-      for (const value of deduper.valuesAsBytes) {
+      for (const value of writer.valuesAsBytes) {
         deduperBytesNeeded += value.length
       }
       const deduperLengthHeader = Label.encode(BigInt(deduperBytesNeeded))
-      deduperLengthHeaders.set(deduper, deduperLengthHeader)
+      deduperLengthHeaders.set(writer, deduperLengthHeader)
       dataBytesNeeded += deduperBytesNeeded // reserve space for data
       dataBytesNeeded += deduperLengthHeader.length // reserve space for length header
     }
 
-    const dataLength = header.length + dataBytesNeeded + this.buf.length
+    const dataLength = header.length + dataBytesNeeded + bufLength.length + this.buf.length
     const buf = new Buf(dataLength)
 
     // write the header
     buf.write(header)
 
     // write scalar blocks
-    for (const deduper of this.dedupers.values()) {
+    for (const [dedupeKey, deduper] of this.writers.entries()) {
+      console.log('writing block for', dedupeKey, 'with', deduper.valuesAsBytes.length, 'values', deduperLengthHeaders.get(deduper))
       buf.write(deduperLengthHeaders.get(deduper)) // write length of block
       for (const value of deduper.valuesAsBytes) {
         buf.write(value) // write each value in the block
       }
     }
 
+    // write message length
+    buf.write(bufLength)
     // write message data
     buf.writeBuf(this.buf)
-    if (buf.length != buf.capacity) throw 'Programmer error: incorrect result length'
+    if (buf.length != buf.capacity) throw 'Programmer error: incorrect result length' + buf.length + ', expected' + buf.capacity
     return buf
 
 
@@ -150,42 +155,76 @@ export class CedarEncoder {
     this.writeBytesRaw(bytes)
   }
 
-  makeDeduper(t: Wire.Type): ValueDeduplicator<any> {
-    if (Wire.isSTRING(t)) {
-      return new ValueDeduplicator<string>(
-        (string: string, bytes: Uint8Array): Uint8Array => {
-          this.writeStringLength(string, bytes)
-          return bytes
-        },
-        this.writeVarInt,
-        (string: string) => CedarEncoder.utf8.encode(string)
-      )
+  makeWriter(t: Wire.Type): Writer<any> {
+    switch (t.type) {
+      case "STRING":
+        return DeduplicatingWriter.lengthOfBytes(CedarEncoder.utf8encode)
+      case "BYTES":
+        return DeduplicatingWriter.lengthOfBytes(bytes => bytes)
+      case "INT32":
+        return BytesWriter.noLabel(VarInt.ZigZag.encode)
+
+      case "ARRAY":
+        return new DeduplicatingWriter<Array<any>>(
+          (v: Array<any>, out: Uint8Array) => BigInt(v.length),
+          (v: Array<any>) => { return null }
+        )
+      default:
+        throw 'Unsupported dedupe type ' + t
     }
-    if (Wire.isBYTES(t)) {
-      return new ValueDeduplicator<Uint8Array>(
-        (bytes: Uint8Array, bytes2: Uint8Array): Uint8Array => {
-          this.writeVarInt(bytes.length)
-          return bytes
-        },
-        this.writeVarInt,
-        bytes => bytes
-      )
-    }
-    throw 'Unsupported dedupe type ' + t
+  }
+  // /**
+  //  * Builds a deduplicator for the given type.
+  //  * 
+  //  * @param t 
+  //  * @returns 
+  //  */
+  // makeDeduper(t: Wire.Type): ValueDeduplicator<any> {
+  //   switch (t.type) {
+  //     case "STRING":
+  //       return new ValueDeduplicator<string>(
+  //         (string: string, bytes: Uint8Array): Uint8Array => {
+  //           this.writeStringLength(string, bytes)
+  //           return bytes
+  //         },
+  //         this.writeVarInt,
+  //         (string: string) => CedarEncoder.utf8.encode(string)
+  //       )
+
+  //     case "BYTES":
+  //       return new ValueDeduplicator<Uint8Array>(
+  //         (bytes: Uint8Array, bytes2: Uint8Array): Uint8Array => {
+  //           this.writeVarInt(bytes.length)
+  //           return bytes
+  //         },
+  //         this.writeVarInt,
+  //         bytes => bytes
+  //       )
+
+  //     case "INT32":
+  //       return ValueRepeater.simple<number>(VarInt.ZigZag.encode)
+
+
+  //     default:
+  //       throw 'Unsupported dedupe type ' + t
+  //   }
+  // }
+
+  write<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type, v: T): Label | null {
+    const writer = this.getWriter<T>(dedupeKey, t)
+    const label = writer.write(v)
+    if (label != null) { this.writeLabel(Label.encode(label)) }
+    return label
   }
 
-  dedup<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type, v: T): void {
-    return this.getDeduper<T>(dedupeKey, this.makeDeduper.bind(this), t).dedup(v)
-  }
-
-  private getDeduper<T>(dedupeKey: Wire.DedupeKey | undefined, mkDeduper: (t: Wire.Type) => ValueDeduplicator<T>, t: Wire.Type): ValueDeduplicator<T> {
-    if (dedupeKey == null) throw 'Cannot write without a dedup key'
-    let deduper = this.dedupers.get(dedupeKey)
-    if (deduper == null) {
-      deduper = mkDeduper(t)
-      this.dedupers.set(dedupeKey, deduper)
+  private getWriter<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type): Writer<T> {
+    if (dedupeKey == null) { throw 'Programmer error: need deduplication key for ' + Wire.print(t) }
+    let writer = this.writers.get(dedupeKey)
+    if (writer == null) {
+      writer = this.makeWriter(t)
+      this.writers.set(dedupeKey, writer)
     }
-    return deduper
+    return writer
   }
 
   // stringDedup = this.newStringDeduplicator()
@@ -213,19 +252,35 @@ export class CedarEncoder {
     return result
   }
 
+  /*
+  examples:
+  string: write length to msg, then bytes to value block
+  int32: write nothing to msg, write zigzag varint to value block
+  int32?: write non-null marker to msg, then zigzag varint to value block
+  float64: write nothing to msg, then 8 bytes to value block
+  float64?: write non-null marker to msg, then 8 bytes to value block
+  [string?]: write array length to msg, then length of each entry to msg, then bytes for each entry to value block
+  [string!]: write array length to msg, then length of each entry to msg, then bytes for each entry to value block
+  [int32?]: write array length to msg, then non-null marker for each entry to msg, then zigzag for each entry to value block
+  [int32!]: write array length to msg, then zigzag for each entry to value block
+  */
+
   private writeCedar = (js: any, wt: Wire.Type, encoder: CedarEncoder, dedupeKey?: Wire.DedupeKey): void => {
+    const log = (msg: string | object) => {
+      encoder.log({ msg, wt, dedupeKey, js })
+    }
     switch (wt.type) {
       case 'NULLABLE':
         if (js == null) {
-          encoder.log('Writing null marker')
-          return encoder.writeLabel(Label.Null)
-        } else if (Wire.isLabeled(wt.of)) {
-          return this.writeCedar(js, wt.of, encoder, wt.dedupeKey)
-        } else {
-          encoder.log('Writing non-null marker')
-          encoder.writeLabel(Label.NonNull)
-          return this.writeCedar(js, wt.of, encoder)
+          log('Writing null marker')
+          encoder.writeLabel(Label.Null)
         }
+
+        if (!Wire.isLabeled(wt.of)) {
+          log('Writing non-null marker')
+          encoder.writeLabel(Label.NonNull)
+        }
+        return this.writeCedar(js, wt.of, encoder, wt.dedupeKey)
       case 'DEDUPE':
         if (dedupeKey != null) { throw `Was already deduping '${dedupeKey}', unexpected to switch to '${wt.key}'. ${Wire.print(wt)}.` }
         return this.writeCedar(js, wt.of, encoder, wt.key)
@@ -247,7 +302,7 @@ export class CedarEncoder {
         //   }
         //   i++
         // }
-        // encoder.log({ msg: 'Writing null mask', value: BitSet.writeVarBitSet(nullMask) })
+        // log({ msg: 'Writing null mask', value: BitSet.writeVarBitSet(nullMask) })
         // if (nullMask == 0n) {
         //   encoder.writeLabelZero()
         // } else {
@@ -257,14 +312,14 @@ export class CedarEncoder {
 
         for (const { name, type, omittable } of wt.fields) {
           // if (omittable) console.log('@ FOUND OMITTABLE', name, 'in', Wire.print(wt))
-          if (js && name in js && js[name] != null) {
+          if (js && name in js && js[name] != null) { // field actually present
             if (omittable && !Wire.isLabeled(type)) {
               this.track('writing omittable: present', name, 0)
               encoder.writeLabel(Label.NonNull)
             }
-            encoder.log({ msg: 'Writing field', field: name, value: js[name] })
+            log({ msg: 'Writing field', field: name, value: js[name] })
             this.writeCedar(js[name], type, encoder)
-          } else if (omittable && js && (!(name in js) || js[name] === undefined)) {
+          } else if (omittable && js && (!(name in js) || js[name] === undefined)) { // field not present, but omittable
             this.track('writing omittable: absent', name, 0)
             encoder.writeLabel(Label.Absent)
           } else if (Wire.isNULLABLE(type)) {
@@ -288,20 +343,19 @@ export class CedarEncoder {
         return
       }
       case 'STRING':
-        return encoder.dedup(dedupeKey, wt, js)
+      case 'BYTES':
+      case 'INT32':
+        log(`writing ${wt.type}}`)
+        encoder.write(dedupeKey, wt, js)
+        return
+      // return encoder.dedup(dedupeKey, wt, js)
       case 'NULL': return // write nothing
       case 'BOOLEAN':
         encoder.log({ msg: 'Writing boolean', value: js })
         return encoder.writeLabel(js ? Label.True : Label.False)
-      case 'INT32':
-        encoder.log({ msg: 'Writing int32', value: js })
-        return encoder.writeVarInt(js)
       case 'FLOAT64':
         encoder.log({ msg: 'Writing float64', value: js })
         throw 'TODO not yet implemented'
-      case 'BYTES':
-        encoder.log({ msg: 'Writing bytes', value: js })
-        return encoder.writeBytes(js)
       case 'FIXED':
         encoder.log({ msg: 'Writing fixed', length: wt.length, value: js })
         return encoder.writeBytesRaw(js) // TODO: check the fixed length
@@ -312,13 +366,19 @@ export class CedarEncoder {
           console.log(encoder.tracked)
           throw `Could not encode non - array as array: ${js} `
         }
-        const t = wt.of
+        // write<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type, v: T): Label | null {
+        // const writer = encoder.getWriter(dedupeKey, wt)
+        // const label = writer.write(js) // write length or backref
+        // if (label && Label.isBackref(label)) { return } // don't write the array if we've seen it before
         encoder.writeVarInt(js.length)
+        const t = wt.of
         return js.forEach(v => this.writeCedar(v, t, encoder))
       }
       case 'VARIANT':
         encoder.log({ msg: 'Writing variant', value: js })
-        return encoder.dedup(dedupeKey, wt, js)
+        // return encoder.dedup(dedupeKey, wt, js)
+        throw 'unexpected variant'
+        return
       default: throw `Cannot yet handle wire type ${wt}`
     }
   }
