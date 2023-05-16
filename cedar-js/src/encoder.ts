@@ -305,65 +305,43 @@ export class CedarEncoder {
         */
 
         this.track(path, 'record with num fields', this.buf, wt.fields.length)
-        let anyNullMaskable = false
-        let anyOmittable = false
-        let omitMask = 0n
-        let nullMask = 0n
-        let omitI = -1
-        let nullI = -1
         for (const { name, type, omittable } of wt.fields) {
-          if (omittable) {
-            omitI++
-            anyOmittable = true
-          }
-          if (Wire.isNULLABLE(type) && !Wire.isLabeled(type.of)) {
-            nullI++
-            anyNullMaskable = true
-          }
-
-          if (js && name in js && js[name] != null) {
-            // field actually present. set nothing.
-          } else if (omittable && js && (!(name in js) || js[name] === undefined)) {
-            // field not present, but omittable (i.e. absent)
-            omitMask = BitSet.setBit(omitMask, omitI)
-          } else if (Wire.isNULLABLE(type) && !Wire.isLabeled(type.of)) {
-            // field absent, but nullable and underlying type is unlabeled (i.e. needs a null marker)
-            nullMask = BitSet.setBit(nullMask, nullI)
-          } else if (Wire.isNULLABLE(type)) {
-            // field absent, but nullable and underlying type is labeled (i.e. does not need a null marker)
-          } else {
-            throw 'programmer error'
-            // TODO: fragments which don't match a given union can return empty here even though it is non-nullable
-            // this could be fixed up to detect this case, if we distinguished unions from other records
-            // console.log(js, wt); console.log(encoder.tracked[encoder.tracked.length - 1]); throw `Could not extract field ${name}\n\t${wt}`
-          }
-        }
-
-        if (anyNullMaskable) {
-          const nullMaskBytes = BitSet.writeVarBitSet(nullMask)
-          this.track(path, 'writing null mask', this.buf, nullMaskBytes)
-          encoder.writeBytesRaw(nullMaskBytes)
-        }
-        if (anyOmittable) {
-          const omitMaskBytes = BitSet.writeVarBitSet(omitMask)
-          this.track(path, 'writing omit mask', this.buf, omitMaskBytes)
-          encoder.writeBytesRaw(omitMaskBytes)
-        }
-
-        for (const { name, type, omittable } of wt.fields) {
-          const t = Wire.isNULLABLE(type) && !Wire.isLabeled(type.of) ? type.of : type
+          // if (omittable) console.log('@ FOUND OMITTABLE', name, 'in', Wire.print(wt))
           if (js && name in js && js[name] != null) { // field actually present
-            this.writeCedar([...path, name], js[name], t, encoder)
+            if (omittable && !Wire.isLabeled(type)) {
+              // this.track('writing omittable: present', name, 0)
+              this.track(path, 'record field is present but omittable, writing non-null', this.buf, name)
+              encoder.writeLabel(Label.NonNull)
+            }
+            this.writeCedar([...path, name], js[name], type, encoder)
           } else if (omittable && js && (!(name in js) || js[name] === undefined)) { // field not present, but omittable
-            // accounted for in omitMask
-          } else if (Wire.isNULLABLE(type) && !Wire.isLabeled(type.of)) {
-            // accounted for in nullMask
+            // this.track('writing omittable: absent', name, 0)
+            this.track(path, 'record field is absent but omittable, writing Absent', this.buf, name)
+            encoder.writeLabel(Label.Absent)
+            // encoder.writeLabel(Label.Null)
           } else if (Wire.isNULLABLE(type)) {
+            // console.log('found nullable field', name, 'with type', type, 'js value', js, Wire.print(wt))
+            // this.track('writing null for field', name, 0)
+            // encoder.log({ msg: 'Field was missing from object, writing NULL', field: name })
+            // encoder.writeLabel(Label.Null)
             this.track(path, 'record field is absent but nullable', this.buf, name)
             this.writeCedar([...path, name], js[name], type, encoder)
           } else {
             this.track(path, 'record field is absent and not-nullable, error', this.buf, name)
-            throw 'Programmer error: could not write record field'
+
+            // console.log('Trynig to write field', name, 'from js object', js)
+            // if (omittable) {
+            //   this.track('writing omittable: absent', name, 0)
+            //   encoder.writeLabel(Label.Absent)
+            //   return
+            // }
+            // this.track('skipping absent field', name, 0)
+            // encoder.writeLabel(Label.Absent)
+            // return
+            throw 'programmer error'
+            // TODO: fragments which don't match a given union can return empty here even though it is non-nullable
+            // this could be fixed up to detect this case, if we distinguished unions from other records
+            // console.log(js, wt); console.log(encoder.tracked[encoder.tracked.length - 1]); throw `Could not extract field ${name}\n\t${wt}`
           }
         }
         return
@@ -400,20 +378,9 @@ export class CedarEncoder {
         // const writer = encoder.getWriter(dedupeKey, wt)
         // const label = writer.write(js) // write length or backref
         // if (label && Label.isBackref(label)) { return } // don't write the array if we've seen it before
-        this.track(path, 'array length', this.buf, js.length)
         encoder.writeVarInt(js.length)
-        let t = wt.of
-        if (js.length > 0 && Wire.isNULLABLE(t) && !Wire.isLabeled(t.of)) {
-          t = t.of
-          let bs = 0n
-          js.forEach((v, i) => { if (v == null) bs = BitSet.setBit(bs, i) })
-          const bsBytes = BitSet.writeVarBitSet(bs)
-          this.track(path, 'array null mask', this.buf, bsBytes)
-          this.buf.write(bsBytes) // write the null mask
-          return js.forEach((v, i) => { if (v != null) this.writeCedar([...path, i], v, t, encoder) })
-        } else {
-          return js.forEach((v, i) => this.writeCedar([...path, i], v, t, encoder))
-        }
+        // this.buf.write(VarInt.ZigZag.encode(js.length))
+        return js.forEach((v, i) => this.writeCedar([...path, i], v, wt.of, encoder))
       }
       case 'VARIANT':
         this.track(path, 'variant', this.buf, js)
