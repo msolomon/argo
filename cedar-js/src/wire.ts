@@ -1,26 +1,25 @@
 
 import { GraphQLError, Kind, SelectionNode, GraphQLType, FieldNode, DocumentNode, GraphQLSchema } from 'graphql'
 import * as graphql from 'graphql'
+import { groupBy } from './util'
 
 export namespace Wire {
   export type Type =
     | Wire.STRING
-    | Wire.NULL
     | Wire.BOOLEAN
     | Wire.INT32
     | Wire.FLOAT64
     | Wire.BYTES
-    | Wire.DEDUPE
+    | Wire.BLOCK
     | Wire.ARRAY
     | Wire.NULLABLE
     | Wire.RECORD
     | Wire.FIXED
 
-  export type DedupeKey = string
+  export type BlockKey = string
 
   export enum Primitive {
     STRING = "STRING",
-    NULL = "NULL",
     BOOLEAN = "BOOLEAN",
     INT32 = "INT32",
     FLOAT64 = "FLOAT64",
@@ -28,7 +27,7 @@ export namespace Wire {
   }
 
   export enum Compound {
-    DEDUPE = "DEDUPE",
+    BLOCK = "BLOCK",
     NULLABLE = "NULLABLE",
     ARRAY = "ARRAY",
     RECORD = "RECORD",
@@ -37,8 +36,6 @@ export namespace Wire {
 
   export type STRING = { type: Primitive.STRING }
   export const STRING = { type: Primitive.STRING }
-  export type NULL = { type: Primitive.NULL }
-  export const NULL = { type: Primitive.NULL }
   export type BOOLEAN = { type: Primitive.BOOLEAN }
   export const BOOLEAN = { type: Primitive.BOOLEAN }
   export type INT32 = { type: Primitive.INT32 }
@@ -47,11 +44,11 @@ export namespace Wire {
   export const FLOAT64 = { type: Primitive.FLOAT64 }
   export type BYTES = { type: Primitive.BYTES }
   export const BYTES = { type: Primitive.BYTES }
-  export type DEDUPE = { type: Compound.DEDUPE, key: DedupeKey, of: Wire.Type }
+  export type BLOCK = { type: Compound.BLOCK, of: Wire.Type, key: BlockKey, dedupe: boolean }
   export type ARRAY = { type: Compound.ARRAY, of: Wire.Type }
   export type NULLABLE = { type: Compound.NULLABLE, of: Wire.Type }
   export type RECORD = { type: Compound.RECORD, fields: Wire.Field[] }
-  export type FIXED = { type: Compound.FIXED, length: number } // TODO: use?
+  export type FIXED = { type: Compound.FIXED, length: number }
 
   export type Field = {
     "name": string,
@@ -60,45 +57,45 @@ export namespace Wire {
   }
 
   export function isSTRING(type: Wire.Type): type is Wire.STRING { return type.type == "STRING" }
-  export function isNULL(type: Wire.Type): type is Wire.NULL { return type.type == "NULL" }
   export function isBOOLEAN(type: Wire.Type): type is Wire.BOOLEAN { return type.type == "BOOLEAN" }
   export function isINT32(type: Wire.Type): type is Wire.INT32 { return type.type == "INT32" }
   export function isFLOAT64(type: Wire.Type): type is Wire.FLOAT64 { return type.type == "FLOAT64" }
   export function isBYTES(type: Wire.Type): type is Wire.BYTES { return type.type == "BYTES" }
-  export function isDEDUPE(type: Wire.Type): type is Wire.DEDUPE { return (type as Wire.DEDUPE).type == "DEDUPE" }
+  export function isBLOCK(type: Wire.Type): type is Wire.BLOCK { return (type as Wire.BLOCK).type == "BLOCK" }
   export function isARRAY(type: Wire.Type): type is Wire.ARRAY { return (type as Wire.ARRAY).type == "ARRAY" }
   export function isNULLABLE(type: Wire.Type): type is Wire.NULLABLE { return (type as Wire.NULLABLE).type == "NULLABLE" }
   export function isRECORD(type: Wire.Type): type is Wire.RECORD { return (type as Wire.RECORD).type == "RECORD" }
   export function isFIXED(type: Wire.Type): type is Wire.FIXED { return (type as Wire.FIXED).type == "FIXED" }
 
   export function isLabeled(wt: Wire.Type): Boolean { // do values start with a Label
-    return isNULLABLE(wt) || isSTRING(wt) || isBOOLEAN(wt) || isBYTES(wt) || isARRAY(wt) || (isDEDUPE(wt) && isLabeled(wt.of))
+    return isNULLABLE(wt) || isSTRING(wt) || isBOOLEAN(wt) || isBYTES(wt) || isARRAY(wt) || (isBLOCK(wt) && isLabeled(wt.of))
   }
 
   export function nullable(wt: Wire.Type): Wire.NULLABLE {
     return { type: Compound.NULLABLE, of: wt }
   }
 
-  export function deduped(wt: Wire.Type, key: DedupeKey): Wire.DEDUPE {
-    return { type: Compound.DEDUPE, of: wt, key }
+  export function block(of: Wire.Type, key: BlockKey, dedupe: boolean): Wire.BLOCK {
+    return { type: Compound.BLOCK, of, key, dedupe }
   }
 
   export function print(wt: Wire.Type, indent: number = 0): string {
     const idnt = (plus: number = 0) => " ".repeat(indent + plus)
     const recurse = (wt: Wire.Type): string => print(wt, indent + 1)
     const inner = () => {
-      if (Wire.isSTRING(wt)) return "STRING"
-      else if (Wire.isNULL(wt)) return "NULL"
-      else if (Wire.isINT32(wt)) return "INT32"
-      else if (Wire.isBOOLEAN(wt)) return "BOOLEAN"
+      if (Wire.isSTRING(wt)) return wt.type
+      else if (Wire.isINT32(wt)) return wt.type
+      else if (Wire.isBOOLEAN(wt)) return wt.type
+      else if (Wire.isFLOAT64(wt)) return wt.type
+      else if (Wire.isBYTES(wt)) return wt.type
       else if (Wire.isNULLABLE(wt)) return recurse(wt.of) + "?"
-      else if (Wire.isDEDUPE(wt)) return recurse(wt.of) + "{" + wt.key + "}"
+      else if (Wire.isBLOCK(wt)) return recurse(wt.of) + wt.dedupe ? "<" : "{" + wt.key + wt.dedupe ? ">" : "}"
       else if (Wire.isARRAY(wt)) return recurse(wt.of) + "[]"
       else if (Wire.isRECORD(wt)) {
         const fs = wt.fields.map(({ name, type, omittable }) => idnt(1) + `${name}${omittable ? "?" : ""}: ${recurse(type).trimStart()}`)
         return "{\n" + fs.join("\n") + "\n" + idnt() + "}"
       }
-      else throw wt
+      else throw "Programmer error: print can't handle " + JSON.stringify(wt)
     }
     return idnt() + inner()
   }
@@ -109,6 +106,9 @@ type SelectedFieldNode = {
   field: FieldNode,
 }
 
+/**
+ * Typer converts types from GraphQL schemas and documents (queries) to Cedar Wire types.
+ */
 export class Typer {
   private fragments: Map<string, graphql.FragmentDefinitionNode> = new Map()
   readonly types: Map<FieldNode, Wire.Type> = new Map()
@@ -249,7 +249,7 @@ export class Typer {
   // if we have overlapping selections, merge them into a canonical order
   groupOverlapping(fields: Wire.Field[]): Wire.RECORD {
     let recordFields = fields
-    const grouped = this.groupBy(recordFields, f => f.name)
+    const grouped = groupBy(recordFields, f => f.name)
     if (Array.from(grouped.values()).some(g => g.length > 1)) { // need to merge overlapping fields
       recordFields = []
       for (const [name, fields] of grouped) {
@@ -281,16 +281,6 @@ export class Typer {
     return record
   }
 
-  private groupBy<T, K>(array: T[], extract: (t: T) => K): Map<K, T[]> {
-    const grouped = new Map<K, T[]>()
-    for (const element of array) {
-      const key = extract(element)
-      const group = grouped.get(key)
-      if (group == undefined) grouped.set(key, [element])
-      else group.push(element)
-    }
-    return grouped
-  }
 
   /**
    * Converts a GraphQL type to a wire type, provided it is _not_ a record, union, or interface.
@@ -303,24 +293,16 @@ export class Typer {
       let wtype: Wire.Type
       switch (t) {
         case graphql.GraphQLString:
-        case graphql.GraphQLID:
-          wtype = Wire.deduped(Wire.STRING, t.name)
-          break
-        case graphql.GraphQLInt:
-          wtype = Wire.deduped(Wire.INT32, t.name)
-          break
-        case graphql.GraphQLFloat:
-          wtype = Wire.FLOAT64
-          break
-        case graphql.GraphQLBoolean:
-          wtype = Wire.BOOLEAN
-          break
+        case graphql.GraphQLID: wtype = Wire.block(Wire.STRING, t.name, true); break
+        case graphql.GraphQLInt: wtype = Wire.block(Wire.INT32, t.name, false); break
+        case graphql.GraphQLFloat: wtype = Wire.block(Wire.FLOAT64, t.name, false); break
+        case graphql.GraphQLBoolean: wtype = Wire.BOOLEAN; break
         default:
           // TODO: don't assume all custom scalars are encoded as strings, respect CedarEncoding directive instead
           // throw 'custom scalars not yet supported; ' + t.toString() // TODO: support
           // console.log('custom scalars not yet supported ', t.toString()) // TODO: support
           // t.astNode?.directives?.find(d => d.name.value == "CedarEncoding")?.arguments
-          wtype = Wire.deduped(Wire.STRING, t.name)
+          wtype = Wire.block(Wire.STRING, t.name, true)
           break
       }
       return Wire.nullable(wtype)
@@ -332,7 +314,7 @@ export class Typer {
       const nullable = this.typeToWireType(t.ofType)
       return (nullable as { type: Wire.Compound.NULLABLE, of: Wire.Type }).of
     } else if (graphql.isEnumType(t)) {
-      return Wire.nullable(Wire.deduped(Wire.STRING, t.name))
+      return Wire.nullable(Wire.block(Wire.STRING, t.name, true))
     } else {
       throw 'unsupported type ' + t
     }
@@ -356,9 +338,13 @@ export class Typer {
     } else if (Wire.isNULLABLE(wt)) {
       const { record, wrap } = this.unwrapForSelectionSet(wt.of)
       return { record, wrap: (r: Wire.Type) => Wire.nullable(wrap(r)) }
-    } else if (Wire.isDEDUPE(wt)) {
+    } else if (Wire.isBLOCK(wt)) {
       const { record, wrap } = this.unwrapForSelectionSet(wt.of)
-      return { record, wrap: (r: Wire.Type) => { return { type: Wire.Compound.DEDUPE, key: wt.key, of: wrap(r) } } }
+      return {
+        record, wrap: (r: Wire.Type) => {
+          return { type: Wire.Compound.BLOCK, of: wrap(r), key: wt.key, dedupe: wt.dedupe }
+        }
+      }
     } else if (Wire.isARRAY(wt)) {
       const { record, wrap } = this.unwrapForSelectionSet(wt.of)
       return { record, wrap: (r: Wire.Type) => { return { type: Wire.Compound.ARRAY, of: wrap(r) } } }

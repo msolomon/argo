@@ -160,7 +160,8 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
    * @param position The offset to read the byte from
    * @returns The byte at the given position
    */
-  public get = (position: number = this.position): number | undefined => {
+  public get = (position?: number): number | undefined => {
+    position = position ?? this.position
     const data = this._bytes[position]
     return data
   }
