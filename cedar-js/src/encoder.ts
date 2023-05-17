@@ -65,7 +65,7 @@ export class CedarEncoder {
     buf.write(bufLength)
     // write message data
     buf.writeBuf(this.buf)
-    if (buf.length != buf.capacity) throw 'Programmer error: incorrect result length' + buf.length + ', expected' + buf.capacity
+    if (buf.length != buf.capacity) throw 'Programmer error: incorrect result length ' + buf.length + ', expected ' + buf.capacity
     return buf
 
 
@@ -116,9 +116,8 @@ export class CedarEncoder {
 
   write<T>(dedupeKey: Wire.DedupeKey | undefined, t: Wire.Type, v: T): Label | null {
     const writer = this.getWriter<T>(dedupeKey, t)
-    const pos = this.buf.position
     const label = writer.write(v)
-    if (label != null) { Label.encodeInto(label, this.buf) }
+    if (label != null) { this.buf.write(Label.encode(label)) }
     return label
   }
 
@@ -223,12 +222,10 @@ export class CedarEncoder {
           console.log(this.tracked)
           throw `Could not encode non - array as array: ${js} `
         }
-        Label.encodeInto(BigInt(js.length), this.buf)
+        // Label.encodeInto(BigInt(js.length), this.buf)
+        this.buf.write(Label.encode(BigInt(js.length)))
         return js.forEach((v, i) => this.writeCedar([...path, i], v, wt.of))
       }
-      case 'VARIANT':
-        this.track(path, 'variant', this.buf, js)
-        throw 'unexpected variant'
       default: throw `Cannot yet handle wire type ${wt}`
     }
   }

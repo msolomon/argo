@@ -1,4 +1,4 @@
-import { BufRead, ReadonlyBuf } from './buf'
+import { BufRead, BufReadonly } from './buf'
 import { Label, LabelKind } from './label'
 
 export class BackreferenceWriterTracker<In> {
@@ -121,6 +121,7 @@ export class DeduplicatingLabelReader<Out> extends Reader<Out> {
 
   read(parent: BufRead): Out {
     const label = Label.read(parent)
+    console.log('read value label', label, Label.kind(label))
 
     switch (Label.kind(label)) {
       case LabelKind.Backreference: {

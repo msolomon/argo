@@ -6,6 +6,9 @@ import { Typer } from './wire'
 import { Buf } from './buf'
 
 
+/**
+ * CedarInterpreter 
+ */
 export class CedarInterpreter {
   readonly typer: Typer
 
@@ -25,6 +28,7 @@ export class CedarInterpreter {
 
   cedarToJs(bytes: Buf): ExecutionResult {
     const decoder = new CedarDecoder(bytes)
+    decoder.DEBUG = true
     return decoder.cedarToJsWithType(this.typer.rootWireType())
   }
 }

@@ -3,7 +3,7 @@ import { DeduplicatingLabelReader, Reader, UnlabeledVarIntReader, } from './dedu
 import { Wire } from './wire'
 import { Label } from './label'
 import { writeFileSync } from 'fs'
-import { Buf, ReadonlyBuf, BufRead } from './buf'
+import { Buf, BufReadonly, BufRead } from './buf'
 import { Path, addPath, pathToArray } from 'graphql/jsutils/Path'
 import { jsonify } from './util'
 
@@ -23,7 +23,7 @@ class BlockTracker {
   get message(): BufRead { return this._message }
   get nextBlock(): BufRead {
     const next = this.blocks[this.nextBlockIndex++]
-    return new ReadonlyBuf(next)
+    return new BufReadonly(next)
   }
 
   constructor(readonly buf: Buf) {
@@ -33,9 +33,9 @@ class BlockTracker {
       const block = buf.read(blockLength)
       if (block.length != blockLength) throw 'Could not read block of length ' + blockLength + ', only got ' + block.length + ' bytes. Message is invalid for this query.'
       this.blocks.push(block)
-    } while (buf.position < buf.length)
+    } while (buf.position <= buf.length)
 
-    this._message = new ReadonlyBuf(this.blocks[this.blocks.length - 1])
+    this._message = new BufReadonly(this.blocks[this.blocks.length - 1])
   }
 }
 

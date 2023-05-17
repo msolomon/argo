@@ -1,5 +1,5 @@
 
-import { GraphQLCompositeType, GraphQLError, Kind, visit, SelectionNode, GraphQLType, FieldNode, ExecutionResult, ASTNode, OperationTypeNode, ResponsePath, GraphQLTypeResolver, GraphQLFieldResolver, GraphQLAbstractType, DocumentNode, GraphQLResolveInfo, GraphQLSchema, TypedQueryDocumentNode, } from 'graphql'
+import { GraphQLError, Kind, SelectionNode, GraphQLType, FieldNode, DocumentNode, GraphQLSchema } from 'graphql'
 import * as graphql from 'graphql'
 
 export namespace Wire {
@@ -14,7 +14,6 @@ export namespace Wire {
     | Wire.ARRAY
     | Wire.NULLABLE
     | Wire.RECORD
-    | Wire.VARIANT
     | Wire.FIXED
 
   export type DedupeKey = string
@@ -33,7 +32,6 @@ export namespace Wire {
     NULLABLE = "NULLABLE",
     ARRAY = "ARRAY",
     RECORD = "RECORD",
-    VARIANT = "VARIANT",
     FIXED = "FIXED", // not exactly compound, but it's paramaterized by size
   }
 
@@ -53,23 +51,12 @@ export namespace Wire {
   export type ARRAY = { type: Compound.ARRAY, of: Wire.Type }
   export type NULLABLE = { type: Compound.NULLABLE, of: Wire.Type }
   export type RECORD = { type: Compound.RECORD, fields: Wire.Field[] }
-  export type VARIANT = { type: Compound.VARIANT, members: Wire.Member[] } // TODO: use?
   export type FIXED = { type: Compound.FIXED, length: number } // TODO: use?
 
   export type Field = {
     "name": string,
     type: Wire.Type,
     omittable: boolean
-  }
-
-  export type Member = {
-    "name": string,
-    type: Wire.Type
-  }
-
-  export function kind(type: Wire.Type): string {
-    if (typeof type === 'string') return type
-    else return type.type
   }
 
   export function isSTRING(type: Wire.Type): type is Wire.STRING { return type.type == "STRING" }
@@ -82,23 +69,20 @@ export namespace Wire {
   export function isARRAY(type: Wire.Type): type is Wire.ARRAY { return (type as Wire.ARRAY).type == "ARRAY" }
   export function isNULLABLE(type: Wire.Type): type is Wire.NULLABLE { return (type as Wire.NULLABLE).type == "NULLABLE" }
   export function isRECORD(type: Wire.Type): type is Wire.RECORD { return (type as Wire.RECORD).type == "RECORD" }
-  export function isVARIANT(type: Wire.Type): type is Wire.VARIANT { return (type as Wire.VARIANT).type == "VARIANT" }
   export function isFIXED(type: Wire.Type): type is Wire.FIXED { return (type as Wire.FIXED).type == "FIXED" }
+
   export function isLabeled(wt: Wire.Type): Boolean { // do values start with a Label
-    return isNULLABLE(wt) || isSTRING(wt) || isBOOLEAN(wt) || isBYTES(wt) || isARRAY(wt) || isVARIANT(wt) || (isDEDUPE(wt) && isLabeled(wt.of))
+    return isNULLABLE(wt) || isSTRING(wt) || isBOOLEAN(wt) || isBYTES(wt) || isARRAY(wt) || (isDEDUPE(wt) && isLabeled(wt.of))
   }
-  export function isPrefixed(wt: Wire.Type): Boolean { // do values start with a Label or null mask?
-    return isSTRING(wt) || isBOOLEAN(wt) || isBYTES(wt) || isARRAY(wt) || isVARIANT(wt) || isRECORD(wt) || (isDEDUPE(wt) && isPrefixed(wt.of))
-  }
-  export function isNullMasked(wt: Wire.Type): Boolean { // do values start with a Label or null mask?
-    return isRECORD(wt) || (isDEDUPE(wt) && isNullMasked(wt.of))
-  }
+
   export function nullable(wt: Wire.Type): Wire.NULLABLE {
     return { type: Compound.NULLABLE, of: wt }
   }
+
   export function deduped(wt: Wire.Type, key: DedupeKey): Wire.DEDUPE {
     return { type: Compound.DEDUPE, of: wt, key }
   }
+
   export function print(wt: Wire.Type, indent: number = 0): string {
     const idnt = (plus: number = 0) => " ".repeat(indent + plus)
     const recurse = (wt: Wire.Type): string => print(wt, indent + 1)
@@ -114,9 +98,7 @@ export namespace Wire {
         const fs = wt.fields.map(({ name, type, omittable }) => idnt(1) + `${name}${omittable ? "?" : ""}: ${recurse(type).trimStart()}`)
         return "{\n" + fs.join("\n") + "\n" + idnt() + "}"
       }
-      else if (Wire.isVARIANT(wt)) {
-        return wt.members.map(wt => wt.name + "<" + print(wt.type) + ">").join(" | ").replaceAll("<NULL>", "")
-      } else throw wt
+      else throw wt
     }
     return idnt() + inner()
   }
@@ -197,7 +179,6 @@ export class Typer {
         const fragmentGroupedFieldSet = this.collectFieldsStatic(fragmentSelectionSet, new Set(visitedFragments))
         for (const [responseKey, fragmentGroup] of fragmentGroupedFieldSet.entries()) {
           const groupForResponseKey = getGroupedField(responseKey)
-          // console.log('selected by name', selection.name.value, fragmentGroup.map(sfn => { return sfn.field.alias ?? sfn.field.name.value }))
           groupForResponseKey.push(...fragmentGroup.map(sfn => { return { selectedBy: selection, field: sfn.field } }))
         }
       } else if (selection.kind == Kind.INLINE_FRAGMENT) {
@@ -206,7 +187,6 @@ export class Typer {
         const fragmentGroupedFieldSet = this.collectFieldsStatic(fragmentSelectionSet, new Set(visitedFragments))
         for (const [responseKey, fragmentGroup] of fragmentGroupedFieldSet.entries()) {
           const groupForResponseKey = getGroupedField(responseKey)
-          // console.log('selected inline', selection.typeCondition?.name.value, fragmentGroup.map(sfn => { return sfn.field.alias ?? sfn.field.name.value }))
           groupForResponseKey.push(...fragmentGroup.map(sfn => { return { selectedBy: selection, field: sfn.field } }))
         }
       } else { throw "Programmer error" }
@@ -261,8 +241,6 @@ export class Typer {
       }
     }
 
-    // console.log('@@ wrapping', this.groupOverlapping(recordFields), '\nafter:', wrapRecord(this.groupOverlapping(recordFields)))
-    // const result = wrapRecord(this.groupOverlapping(recordFields))
     const record = this.groupOverlapping(recordFields)
     for (const field of recordNodes) { this.types.set(field, record) }
     return record
@@ -271,7 +249,6 @@ export class Typer {
   // if we have overlapping selections, merge them into a canonical order
   groupOverlapping(fields: Wire.Field[]): Wire.RECORD {
     let recordFields = fields
-    // let isList = false
     const grouped = this.groupBy(recordFields, f => f.name)
     if (Array.from(grouped.values()).some(g => g.length > 1)) { // need to merge overlapping fields
       recordFields = []
@@ -279,7 +256,6 @@ export class Typer {
         let wrapRecord = (n: Wire.Type) => n
         if (fields.length == 1) recordFields.push(...fields)
         else {
-          // console.warn('@@ grouping', name)
           const combinedFields: Wire.Field[] = []
           const nodesToUpdate: FieldNode[] = []
           for (const { type } of fields) {
@@ -316,6 +292,12 @@ export class Typer {
     return grouped
   }
 
+  /**
+   * Converts a GraphQL type to a wire type, provided it is _not_ a record, union, or interface.
+   * 
+   * @param t 
+   * @returns 
+   */
   typeToWireType = (t: GraphQLType): Wire.Type => {
     if (graphql.isScalarType(t)) {
       let wtype: Wire.Type
@@ -342,35 +324,15 @@ export class Typer {
           break
       }
       return Wire.nullable(wtype)
-      // return Wire.nullable(wtype, nullableDedupeKey ? nullableDedupeKey + 'WRAPPED' : undefined)
     } else if (graphql.isListType(t)) {
       return Wire.nullable({ type: Wire.Compound.ARRAY, of: this.typeToWireType(t.ofType) })
-      // return Wire.nullable(this.typeToWireType(t.ofType))
-    } else if (graphql.isObjectType(t) || graphql.isInterfaceType(t)) {
-      // const fields: Wire.Field[] = Object.values(t.getFields())
-      //   .map(f => { return { name: f.name, type: this.typeToWire.Type(f.type) } })
-      return Wire.nullable({ type: Wire.Compound.RECORD, fields: [] })
-    } else if (graphql.isUnionType(t)) {
+    } else if (graphql.isObjectType(t) || graphql.isInterfaceType(t) || graphql.isUnionType(t)) {
       return Wire.nullable({ type: Wire.Compound.RECORD, fields: [] })
     } else if (graphql.isNonNullType(t)) {
       const nullable = this.typeToWireType(t.ofType)
       return (nullable as { type: Wire.Compound.NULLABLE, of: Wire.Type }).of
     } else if (graphql.isEnumType(t)) {
-      // const members: Wire.Member[] = t.getValues()
-      //   .map(ev => { return { name: ev.name, type: Wire.Primitive.NULL } })
-      // return Wire.nullable({ type: "VARIANT", members })
       return Wire.nullable(Wire.deduped(Wire.STRING, t.name))
-
-      // } else if (graphql.isInterfaceType(t)) {
-      //   const members: WireMember[] = this.schema.getImplementations(t).objects
-      //     .map(ot => { return { name: ot.name, type: this.typeToWire.Type(ot) } })
-      //   return { type: "VARIANT", members }
-      // } else if (graphql.isUnionType(t)) {
-      //   const members: Wire.Member[] = t.getTypes()
-      //     .map(ot => { return { name: ot.name, type: this.typeToWireType(ot) } })
-      //   return Wire.nullable({ type: "VARIANT", members })
-    } else if (graphql.isObjectType(t) || graphql.isInterfaceType(t) || graphql.isUnionType(t)) {
-      throw "This method should not be used for compound types " + t.toString()
     } else {
       throw 'unsupported type ' + t
     }

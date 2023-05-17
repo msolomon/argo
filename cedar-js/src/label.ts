@@ -1,5 +1,5 @@
 import * as VarInt from './varint'
-import { BufRead, BufWrite } from './buf'
+import { BufRead } from './buf'
 
 export enum LabelKind {
   Null,
@@ -21,7 +21,6 @@ export namespace Label {
   export const ErrorMarker: Label = -3n
   export const LowestResevedValue: Label = ErrorMarker
 
-  // export const Null = new Uint8Array(varint.encode(zzenc(NullMarker)))
   export const Null = VarInt.ZigZag.encode(NullMarker)
   export const Absent = VarInt.ZigZag.encode(AbsentMarker)
   export const Error = VarInt.ZigZag.encode(ErrorMarker)
@@ -56,19 +55,10 @@ export namespace Label {
     }
   }
 
-  export function encodeInto(label: Label, buf: BufWrite): void {
-    switch (kind(label)) {
-      case LabelKind.Length:
-      case LabelKind.Backreference:
-        return VarInt.ZigZag.encodeIntoBuf(label, buf)
-      case LabelKind.Null: return buf.write(Null)
-      case LabelKind.Absent: return buf.write(Absent)
-      case LabelKind.Error: return buf.write(Error)
-    }
-  }
-
   export function read(buf: BufRead) {
-    return VarInt.ZigZag.decodeBuf(buf)
+    const label = VarInt.ZigZag.decode(buf.uint8array, buf.position)
+    buf.position += label.length
+    return label.result
   }
 
   const labelToOffsetFactor = Number(LowestResevedValue) - 1

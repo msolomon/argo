@@ -86,7 +86,7 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
     return this._bytes
   }
 
-  /** The amount of the buffer that has been written to in bytes*/
+  /** The amount of the buffer that has been written to in bytes */
   public get length() {
     return this._end
   }
@@ -102,6 +102,7 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
    * @param bytes The bytes to write to the buffer
    */
   public write = (bytes: ArrayLike<number>): void => {
+    if (bytes.length === 0) return
     const newPosition = this.position + bytes.length
     this.resizeIfNecessary(newPosition)
     this._bytes.set(bytes, this.position)
@@ -150,7 +151,7 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
   public set = (position: number, byte: number): void => {
     this.resizeIfNecessary(position + 1)
     this._bytes[position] = byte
-    this.updateEndIfNecessary(position)
+    this.updateEndIfNecessary(position + 1)
   }
 
   /**
@@ -193,7 +194,7 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
   }
 }
 
-export class ReadonlyBuf extends BufBase implements BufPosition, BufRead {
+export class BufReadonly extends BufBase implements BufPosition, BufRead {
   constructor(private readonly _bytes: Uint8Array) { super() }
 
   public read = (numBytes: number): Uint8Array => {

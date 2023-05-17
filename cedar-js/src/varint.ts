@@ -1,7 +1,5 @@
 /* Variable-length integer encodings */
 
-import { BufRead, BufWrite } from "./buf"
-
 /**
  * Variable-length integer encoding for unsigned integers
  */
@@ -39,15 +37,6 @@ export namespace Unsigned {
     return pos - offset
   }
 
-  export function encodeIntoBuf(n: bigint, buf: BufWrite): void {
-    if (!(n < 2 ** 63 - 1 && n > -(2 ** 63))) throw "bigint is out of signed 64-bit integer range"
-    do {
-      let octet = n & 0x7fn
-      n = n >> 7n
-      buf.writeByte(Number(octet | (n ? 0x80n : 0x0n)))
-    } while (n)
-  }
-
   export function decode(buf: Uint8Array, offset: number = 0): { result: bigint, length: number } {
     let result = 0n
     let shift = 0
@@ -57,20 +46,6 @@ export namespace Unsigned {
       result |= BigInt((octet & 0x7f) << shift)
       ++pos
       if (!(octet & 0x80)) return { result, length: pos - offset }
-      shift += 7
-      if (shift >= 64) throw "tried to decode out of 64-bit integer range"
-    }
-  }
-
-  export function decodeBuf(buf: BufRead): bigint {
-    let result = 0n
-    let shift = 0
-    while (true) {
-      let octet = buf.get()
-      if (octet == undefined) throw 'unexpected end of buffer'
-      result |= BigInt((octet & 0x7f) << shift)
-      buf.incrementPosition()
-      if (!(octet & 0x80)) return result
       shift += 7
       if (shift >= 64) throw "tried to decode out of 64-bit integer range"
     }
@@ -91,19 +66,10 @@ export namespace ZigZag {
     return Unsigned.encodeInto(bigintEncode(BigInt(n)), buf, offset)
   }
 
-  export function encodeIntoBuf(n: bigint | number, buf: BufWrite): void {
-    Unsigned.encodeIntoBuf(bigintEncode(BigInt(n)), buf)
-  }
-
   export function decode(buf: Uint8Array, offset: number = 0): { result: bigint, length: number } {
     const { result, length } = Unsigned.decode(buf, offset)
     return { result: bigintDecode(result), length }
   }
-  export function decodeBuf(buf: BufRead): bigint {
-    const result = Unsigned.decodeBuf(buf)
-    return bigintDecode(result)
-  }
-
 
   export function bigintEncode(n: bigint): bigint {
     return n >= 0 ? n << 1n : (n << 1n) ^ (~0n)
