@@ -2,7 +2,7 @@
 export interface BufPosition {
   position: number
   resetPosition(position: number): void
-  incrementPosition(numBytes: number): void
+  incrementPosition(numBytes?: number): void
 }
 
 export interface BufRead extends BufPosition {
@@ -15,6 +15,7 @@ export interface BufRead extends BufPosition {
 export interface BufWrite extends BufPosition {
   write(bytes: ArrayLike<number>): void
   writeBuf(buf: Buf): void
+  writeByte(byte: number): void
   get capacity(): number
 }
 

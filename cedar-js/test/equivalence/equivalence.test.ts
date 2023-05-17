@@ -4,12 +4,10 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import { buildSchema, parse, Kind, FieldNode, DocumentNode, GraphQLSchema, GraphQLType } from 'graphql'
-import * as graphql from 'graphql'
-import { Wire, CedarInterpreter, WithInfo, Typer } from '../../src'
-import { brotliCompressSync, gzipSync, constants, gzip } from 'zlib'
-import { StarWarsSchema } from './starwarsequivalence'
-import zstd from '@mongodb-js/zstd';
+import { buildSchema, parse, DocumentNode, GraphQLSchema } from 'graphql'
+import { CedarInterpreter } from '../../src'
+import { brotliCompressSync, gzipSync, constants } from 'zlib'
+import zstd from '@mongodb-js/zstd'
 
 jest.setTimeout(10000)
 
