@@ -8,6 +8,7 @@ import { buildSchema, parse, DocumentNode, GraphQLSchema } from 'graphql'
 import { CedarInterpreter } from '../../src'
 import { brotliCompressSync, gzipSync, constants } from 'zlib'
 import zstd from '@mongodb-js/zstd'
+import { StarWarsSchema } from './starwarsequivalence'
 
 jest.setTimeout(10000)
 
@@ -321,14 +322,14 @@ async function* walk(dir: string, dirsOnly: boolean = false): AsyncGenerator<str
 
 // TODO: re-enable
 
-// test('Star Wars equivalence tests', async () => {
-//   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
-//   for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
-//     // if (name != 'NestedQuery') continue
-//     console.log("Running test:", name)
-//     runEquivalence(query, json, StarWarsSchema, expected)
-//   }
-// })
+test('Star Wars equivalence tests', async () => {
+  const starwarsDir = path.join(path.dirname(testPath), 'starwars')
+  for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
+    // if (name != 'NestedQuery') continue
+    console.log("Running test:", name)
+    runEquivalence(query, json, StarWarsSchema, expected)
+  }
+})
 
 
 test('Queries are serialized equivalently', async () => {

@@ -25,6 +25,7 @@ export namespace Wire {
     INT32 = "INT32",
     FLOAT64 = "FLOAT64",
     BYTES = "BYTES",
+    DESC = "DESC", // a self-describing value
   }
 
   export enum Compound {
@@ -110,7 +111,7 @@ export function deduplicateByDefault(t: Wire.Type): boolean {
     case 'FLOAT64': return false
     case 'BYTES': return true
     case 'FIXED': return false
-    default: throw 'Programmer error: deduplicateByDefault does not make senes for ' + JSON.stringify(t)
+    default: throw 'Programmer error: deduplicateByDefault does not make sense for ' + JSON.stringify(t)
   }
 }
 

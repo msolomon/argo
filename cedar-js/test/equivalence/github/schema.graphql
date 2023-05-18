@@ -1694,7 +1694,7 @@ type AutomaticBaseChangeSucceededEvent implements Node {
 """
 A (potentially binary) string encoded using base64.
 """
-scalar Base64String @CedarCodec(codec: "String")
+scalar Base64String @CedarCodec(codec: String)
 
 """
 Represents a 'base_ref_changed' event on a given issue or pull request.
@@ -54662,7 +54662,7 @@ enum WorkflowRunOrderField {
 """
 A valid x509 certificate string
 """
-scalar X509Certificate @CedarCodec(codec: "String")
+scalar X509Certificate @CedarCodec(codec: String)
 
 #########################################################
 # Cedar directives
