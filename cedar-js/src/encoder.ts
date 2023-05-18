@@ -11,7 +11,7 @@ export class CedarEncoder {
   private static utf8 = new TextEncoder()
   private static utf8encode = this.utf8.encode.bind(this.utf8)
 
-  private writers: Map<Wire.BlockKey, Writer<any>> = new Map()
+  private writers: Map<Wire.BlockKey, BlockWriter<any>> = new Map()
   public tracked: any[] = []
 
   constructor(readonly buf: Buf = new Buf()) { }
@@ -65,27 +65,6 @@ export class CedarEncoder {
     buf.writeBuf(this.buf)
     if (buf.length != buf.capacity) throw 'Programmer error: incorrect result length ' + buf.length + ', expected ' + buf.capacity
     return buf
-
-
-    /*
-    ideas for scalar block layout
-
-    * in main message, Labeled values always correspond to an in-block entry. if length given,
-    read next value from corresponding block. if backref, use backref from that block. if null, null.
-    * that applies to string, id, bytes, enum, int32 (due to varint encoding EDIT: nope, since they can be negative of course), and array.
-    null, bool are always inlined.
-    object is always inlined, simply because it avoids so much re-writing at the end and keeps things simple.
-    nullable values are ALSO written into blocks--this means null/non-null markers are inlined, but the value is not,DDF
-    and this separation makes both halves more compressible.o
-    this really just leaves non-null floats (and any future FIXED). these are always inlined.
-    custom scalars get their own dedupers, and therefore their own blocks.
-    we must create the block when we come across the first non-null value in the message,
-    and we don't even know it is present until we arrive at it.
-    i.e. all blocks are written in the order they are first encountered in the message and therefore necessary.
-    so if we come across a string first, the entire first block will be strings.
-    if we then encounter a nullable float, we will create a new block for floats.
-    if we then encounter a custom scalar called Foo, we will create a new block for Foo (based on its type)
-    */
   }
 
   buildHeader(): Uint8Array {
@@ -95,35 +74,40 @@ export class CedarEncoder {
     return flags
   }
 
-  makeWriter(t: Wire.Type): Writer<any> {
+  makeBlockWriter(t: Wire.Type, dedupe: boolean): BlockWriter<any> {
     switch (t.type) {
       case "STRING":
-        return DeduplicatingWriter.lengthOfBytes(CedarEncoder.utf8encode)
+        if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(CedarEncoder.utf8encode)
+        else return BlockWriter.lengthOfBytes(CedarEncoder.utf8encode)
       case "BYTES":
-        return DeduplicatingWriter.lengthOfBytes(bytes => bytes)
+        if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(bytes => bytes)
+        else return BlockWriter.lengthOfBytes(bytes => bytes)
       case "INT32":
-        return Writer.noLabel(Label.encode)
+        if (dedupe) throw 'Unimplemented: deduping  ' + t.type
+        return BlockWriter.noLabel(Label.encode)
       case 'FLOAT64':
-        return Writer.noLabel(v => new Uint8Array(new Float64Array([v])))
+        if (dedupe) throw 'Unimplemented: deduping ' + t.type
+        return BlockWriter.noLabel(v => new Uint8Array(new Float64Array([v])))
       case "FIXED":
-        return Writer.noLabel(bytes => bytes)
+        if (dedupe) throw 'Unimplemented: deduping ' + t.type
+        return BlockWriter.noLabel(bytes => bytes)
       default:
         throw 'Unsupported dedupe type ' + t
     }
   }
 
-  write<T>(key: Wire.BlockKey, t: Wire.Type, v: T): Label | null {
-    const writer = this.getWriter<T>(key, t)
+  write<T>(block: Wire.BLOCK, t: Wire.Type, v: T): Label | null {
+    const writer = this.getWriter<T>(block, t)
     const label = writer.write(v)
     if (label != null) { this.buf.write(Label.encode(label)) }
     return label
   }
 
-  private getWriter<T>(key: Wire.BlockKey, t: Wire.Type): Writer<T> {
-    let writer = this.writers.get(key)
+  private getWriter<T>(block: Wire.BLOCK, t: Wire.Type): BlockWriter<T> {
+    let writer = this.writers.get(block.key)
     if (writer == null) {
-      writer = this.makeWriter(t)
-      this.writers.set(key, writer)
+      writer = this.makeBlockWriter(t, block.dedupe)
+      this.writers.set(block.key, writer)
     }
     return writer
   }
@@ -133,19 +117,6 @@ export class CedarEncoder {
     if (DEBUG) writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
     return result
   }
-
-  /*
-  examples:
-  string: write length to msg, then bytes to value block
-  int32: write nothing to msg, write zigzag varint to value block
-  int32?: write non-null marker to msg, then zigzag varint to value block
-  float64: write nothing to msg, then 8 bytes to value block
-  float64?: write non-null marker to msg, then 8 bytes to value block
-  [string?]: write array length to msg, then length of each entry to msg, then bytes for each entry to value block
-  [string!]: write array length to msg, then length of each entry to msg, then bytes for each entry to value block
-  [int32?]: write array length to msg, then non-null marker for each entry to msg, then zigzag for each entry to value block
-  [int32!]: write array length to msg, then zigzag for each entry to value block
-  */
 
   private writeCedar = (path: Path | undefined, js: any, wt: Wire.Type, block?: Wire.BLOCK): void => {
     switch (wt.type) {
@@ -209,8 +180,8 @@ export class CedarEncoder {
       case 'FLOAT64':
       case 'FIXED':
         this.track(path, 'writing with block key', this.buf, block)
-        if (block?.key == null) { throw 'Programmer error: need block key for ' + Wire.print(wt) }
-        const label = this.write(block.key, wt, js)
+        if (block == null) { throw 'Programmer error: need block for ' + Wire.print(wt) }
+        const label = this.write(block, wt, js)
         this.track(path, wt.type, this.buf, js)
         this.track(path, 'label', this.buf, label)
         return
@@ -221,22 +192,22 @@ export class CedarEncoder {
 }
 
 /**
- * Writer writes a value (in bytes) to a value block, and returns a label which should be written to the data stream.
+ * BlockWriter writes a value (in bytes) to a value block, and returns a label which should be written to the data stream.
  * It does _not_ write the label to the data stream.
  */
-class Writer<In> {
+class BlockWriter<In> {
   valuesAsBytes: Uint8Array[] = []
   constructor(
     readonly makeLabel: (v: In, out: Uint8Array) => Label | null,
     readonly valueToBytes: (v: In) => Uint8Array,
   ) { }
 
-  static lengthOfBytes<In>(toBytes: (v: In) => Uint8Array): Writer<In> {
-    return new Writer<In>((v, bytes) => BigInt(bytes.byteLength), toBytes)
+  static lengthOfBytes<In>(toBytes: (v: In) => Uint8Array): BlockWriter<In> {
+    return new BlockWriter<In>((v, bytes) => BigInt(bytes.byteLength), toBytes)
   }
 
-  static noLabel<In>(toBytes: (v: In) => Uint8Array): Writer<In> {
-    return new Writer<In>((v, bytes) => null, toBytes)
+  static noLabel<In>(toBytes: (v: In) => Uint8Array): BlockWriter<In> {
+    return new BlockWriter<In>((v, bytes) => null, toBytes)
   }
 
   write(v: In): Label | null {
@@ -245,20 +216,20 @@ class Writer<In> {
     return this.makeLabel(v, bytes)
   }
 
-  toDeduplicating(): DeduplicatingWriter<In> {
-    return new DeduplicatingWriter<In>(this.makeLabel, this.valueToBytes)
+  toDeduplicating(): DeduplicatingBlockWriter<In> {
+    return new DeduplicatingBlockWriter<In>(this.makeLabel, this.valueToBytes)
   }
 }
 
 /**
- * A Writer which deduplicates values, returning backreferences for duplicated values.
+ * A BlockWriter which deduplicates values, returning backreferences for duplicated values.
  */
-class DeduplicatingWriter<In> extends Writer<In> {
+class DeduplicatingBlockWriter<In> extends BlockWriter<In> {
   seen: Map<In, Label> = new Map()
   lastId: Label = Label.LowestResevedValue
 
-  static lengthOfBytes<In>(toBytes: (v: In) => Uint8Array): DeduplicatingWriter<In> {
-    return new DeduplicatingWriter<In>((v, bytes) => BigInt(bytes.byteLength), toBytes)
+  static lengthOfBytes<In>(toBytes: (v: In) => Uint8Array): DeduplicatingBlockWriter<In> {
+    return new DeduplicatingBlockWriter<In>((v, bytes) => BigInt(bytes.byteLength), toBytes)
   }
 
   private nextId() { return --this.lastId }
@@ -286,7 +257,7 @@ class DeduplicatingWriter<In> extends Writer<In> {
     } else return null
   }
 
-  override toDeduplicating(): DeduplicatingWriter<In> {
+  override toDeduplicating(): DeduplicatingBlockWriter<In> {
     return this
   }
 }

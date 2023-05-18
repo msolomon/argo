@@ -1,3 +1,3 @@
 export * from './cedar'
-export * from './varint'
+export * from './varInt'
 export * from './wire'

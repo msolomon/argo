@@ -1,4 +1,4 @@
-import * as VarInt from './varint'
+import * as VarInt from './varInt'
 import { BufRead } from './buf'
 
 export enum LabelKind {

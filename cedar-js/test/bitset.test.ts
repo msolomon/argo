@@ -1,7 +1,7 @@
 import { BitSet } from "../src/bitset"
 
 test('round trip through bytes', () => {
-  const writeRead = (n: bigint) => BitSet.readVarBitSet(BitSet.writeVarBitSet(n)).bitset
+  const writeRead = (n: bigint) => BitSet.Var.read(BitSet.Var.write(n)).bitset
   expect(writeRead(0n)).toEqual(0n)
   expect(writeRead(1n)).toEqual(1n)
   expect(writeRead(127n)).toEqual(127n)
@@ -31,8 +31,8 @@ test('round trip through bit setting', () => {
 
 test('round trip through bytes (fixed bitset)', () => {
   const writeRead = (n: bigint) => {
-    const bs = BitSet.writeBitSet(n)
-    return BitSet.readBitSet(bs, 0, bs.length)
+    const bs = BitSet.Fixed.write(n)
+    return BitSet.Fixed.read(bs, 0, bs.length)
   }
   expect(writeRead(0n)).toEqual(0n)
   expect(writeRead(1n)).toEqual(1n)

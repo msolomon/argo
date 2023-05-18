@@ -2,6 +2,7 @@
 import { GraphQLError, Kind, SelectionNode, GraphQLType, FieldNode, DocumentNode, GraphQLSchema } from 'graphql'
 import * as graphql from 'graphql'
 import { groupBy } from './util'
+import { CedarCodecDirective, CedarDeduplicateDirective, getCedarCodecDirectiveValue, getCedarDeduplicateDirectiveValue } from './directives'
 
 export namespace Wire {
   export type Type =
@@ -101,6 +102,18 @@ export namespace Wire {
   }
 }
 
+export function deduplicateByDefault(t: Wire.Type): boolean {
+  switch (t.type) {
+    case 'STRING': return true
+    case 'BOOLEAN': return false
+    case 'INT32': return false
+    case 'FLOAT64': return false
+    case 'BYTES': return true
+    case 'FIXED': return false
+    default: throw 'Programmer error: deduplicateByDefault does not make senes for ' + JSON.stringify(t)
+  }
+}
+
 type SelectedFieldNode = {
   selectedBy: SelectionNode,
   field: FieldNode,
@@ -115,6 +128,11 @@ export class Typer {
 
   private _operation: graphql.OperationDefinitionNode | undefined;
   public get operation(): graphql.OperationDefinitionNode { return this._operation! }
+
+  // private _directives: graphql.DirectiveDefinitionNode | undefined;
+  public get directives(): graphql.GraphQLDirective[] {
+    return [CedarCodecDirective, CedarDeduplicateDirective]
+  }
 
   constructor(readonly schema: GraphQLSchema, readonly query: DocumentNode, operationName?: string) {
     for (const definition of query.definitions) {
@@ -291,19 +309,26 @@ export class Typer {
   typeToWireType = (t: GraphQLType): Wire.Type => {
     if (graphql.isScalarType(t)) {
       let wtype: Wire.Type
+      const codec = getCedarCodecDirectiveValue(t)
+      const deduplicate = getCedarDeduplicateDirectiveValue(t)
+
       switch (t) {
         case graphql.GraphQLString:
-        case graphql.GraphQLID: wtype = Wire.block(Wire.STRING, t.name, true); break
-        case graphql.GraphQLInt: wtype = Wire.block(Wire.INT32, t.name, false); break
-        case graphql.GraphQLFloat: wtype = Wire.block(Wire.FLOAT64, t.name, false); break
-        case graphql.GraphQLBoolean: wtype = Wire.BOOLEAN; break
-        default:
-          // TODO: don't assume all custom scalars are encoded as strings, respect CedarEncoding directive instead
-          // throw 'custom scalars not yet supported; ' + t.toString() // TODO: support
-          // console.log('custom scalars not yet supported ', t.toString()) // TODO: support
-          // t.astNode?.directives?.find(d => d.name.value == "CedarEncoding")?.arguments
-          wtype = Wire.block(Wire.STRING, t.name, true)
+        case graphql.GraphQLID:
+          wtype = Wire.block(codec ?? Wire.STRING, t.name, deduplicate ?? deduplicateByDefault(Wire.STRING))
           break
+        case graphql.GraphQLInt:
+          wtype = Wire.block(codec ?? Wire.INT32, t.name, deduplicate ?? deduplicateByDefault(Wire.INT32))
+          break
+        case graphql.GraphQLFloat:
+          wtype = Wire.block(codec ?? Wire.FLOAT64, t.name, deduplicate ?? deduplicateByDefault(Wire.FLOAT64))
+          break
+        case graphql.GraphQLBoolean:
+          if (deduplicate) throw 'Boolean fields cannot be deduplicated'
+          wtype = Wire.BOOLEAN; break
+        default:
+          if (codec == null) throw 'Custom scalars must have a CedarCodec directive. Missing on ' + t.name
+          wtype = Wire.block(codec, t.name, deduplicate ?? deduplicateByDefault(codec))
       }
       return Wire.nullable(wtype)
     } else if (graphql.isListType(t)) {
@@ -319,18 +344,6 @@ export class Typer {
       throw 'unsupported type ' + t
     }
   }
-
-  // unwrapSelectionSet(t: GraphQLType): { record: Wire.RECORD, wrap: (r: Wire.Type) => Wire.Type } {
-  //   if (graphql.isNonNullType(t)) {
-  //     const { record, wrap } = this.unwrapSelectionSet(t.ofType)
-  //     return { record, wrap: (r: Wire.Type) => Wire.nullable(wrap(r)) }
-  //   } else if (graphql.isListType(t)) {
-  //     const { record, wrap } = this.unwrapSelectionSet(t.ofType)
-  //     return { record, wrap: (r: Wire.Type) => { return { type: "ARRAY", of: wrap(r) } } }
-  //   } else {
-  //     throw 'tried to unwrap type which does not have selection set: ' + t.toString()
-  //   }
-  // }
 
   unwrapForSelectionSet(wt: Wire.Type): { record: Wire.RECORD, wrap: (r: Wire.Type) => Wire.Type } {
     if (Wire.isRECORD(wt)) {

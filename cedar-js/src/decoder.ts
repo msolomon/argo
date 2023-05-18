@@ -1,49 +1,21 @@
 import { ExecutionResult } from 'graphql'
 import { Wire } from './wire'
-import { Label, LabelKind } from './label'
+import { Label } from './label'
 import { writeFileSync } from 'fs'
 import { Buf, BufReadonly, BufRead } from './buf'
 import { Path, addPath, pathToArray } from 'graphql/jsutils/Path'
 import { jsonify } from './util'
+import { BlockReader, DeduplicatingLabelBlockReader, FixedSizeBlockReader, LabelBlockReader, UnlabeledVarIntBlockReader } from './blockReader'
+import { BitSet } from './bitset'
 
-class HeaderReader {
-  constructor(readonly buf: BufRead) { }
-  read(): void {
-    const header = this.buf.read(1) // TODO: support reading actual headers
-    if (header[0] != 0) throw 'Expected header byte to be 0, but got ' + header[0]
-  }
-}
-
-class BlockTracker {
-  private blocks: Uint8Array[] = []
-  private nextBlockIndex: number = 0
-
-  private _message: BufRead
-  get message(): BufRead { return this._message }
-  get nextBlock(): BufRead {
-    const next = this.blocks[this.nextBlockIndex++]
-    return new BufReadonly(next)
-  }
-
-  constructor(readonly buf: Buf) {
-    do {
-      const blockLength = Number(Label.read(buf))
-      if (blockLength < 0) throw 'Could not read invalid block length: ' + blockLength
-      const block = buf.read(blockLength)
-      if (block.length != blockLength) throw 'Could not read block of length ' + blockLength + ', only got ' + block.length + ' bytes. Message is invalid for this query.'
-      this.blocks.push(block)
-    } while (buf.position < buf.length)
-
-    this._message = new BufReadonly(this.blocks[this.blocks.length - 1])
-  }
-}
-
+/**
+ * Decodes a Cedar message into a JavaScript object (ExecutionResult).
+ */
 export class CedarDecoder {
   private static utf8 = new TextDecoder()
   private static utf8decode = this.utf8.decode.bind(this.utf8)
-  private readers: Map<Wire.BlockKey, Reader<any>> = new Map()
-  private headerReader: HeaderReader
-  private blockTracker: BlockTracker
+  private readers: Map<Wire.BlockKey, BlockReader<any>> = new Map()
+  private slicer: MessageSlicer
 
   DEBUG = false // set to true to enable tracking of extra information
   tracked: any[] = [] // a detailed log of decoding actions, to assist understanding and debugging
@@ -59,9 +31,7 @@ export class CedarDecoder {
   }
 
   constructor(readonly messageBuf: Buf) {
-    this.headerReader = new HeaderReader(this.messageBuf)
-    this.headerReader.read()
-    this.blockTracker = new BlockTracker(this.messageBuf)
+    this.slicer = new MessageSlicer(this.messageBuf)
   }
 
   /**
@@ -75,7 +45,7 @@ export class CedarDecoder {
     let exn: any = null
     let result: any = null
     try {
-      result = this.readCedar(this.blockTracker.message, undefined, wt)
+      result = this.readCedar(this.slicer.core, undefined, wt)
     } catch (e) {
       exn = e
     } finally {
@@ -92,7 +62,7 @@ export class CedarDecoder {
     this.count(wt.type)
     switch (wt.type) {
       case 'BLOCK':
-        this.track(path, 'block', buf, wt.key)
+        this.track(path, 'block', buf, { key: wt.key, dedupe: wt.dedupe })
         return this.readCedar(buf, path, wt.of, wt)
 
       case 'NULLABLE':
@@ -147,14 +117,12 @@ export class CedarDecoder {
               buf.incrementPosition()
             }
             if (labelPeek == Label.Absent[0]) {
-              // obj[name] = Wire.isLabeled(type) ? null : undefined
               obj[name] = undefined
               this.track(path, 'absent', buf, name)
               this.count('absent field')
               this.count('bytes: absent')
 
               buf.incrementPosition()
-              // if (!Wire.isLabeled(type)) { bump(length) }
               continue
             }
           }
@@ -168,7 +136,6 @@ export class CedarDecoder {
         const length = Number(Label.read(buf))
         this.track(path, 'array length', buf, length)
         this.count('bytes: array length', Label.encode(BigInt(length)).length)
-        // if (length < 0) return null
         return (new Array(length).fill(undefined).map((_, i) => this.readCedar(buf, addPath(path, i, block?.key), wt.of)))
       }
 
@@ -188,7 +155,7 @@ export class CedarDecoder {
       case 'FLOAT64':
       case 'FIXED':
         if (block?.key == null) { throw 'Programmer error: need block key for ' + Wire.print(wt) }
-        const reader = this.getReader(block.key, wt)
+        const reader = this.getBlockReader(block, wt)
         this.track(path, 'reader read by block', buf, block)
         const value = reader.read(buf)
         if (this.DEBUG) {
@@ -213,87 +180,82 @@ export class CedarDecoder {
     }
   }
 
-  read<T>(key: Wire.BlockKey, t: Wire.Type, parent: BufRead): T | null {
-    return this.getReader<T>(key, t).read(parent)
+  readFromBlock<T>(block: Wire.BLOCK, t: Wire.Type, parent: BufRead): T | undefined | null {
+    return this.getBlockReader<T>(block, t).read(parent)
   }
 
-  private getReader<T>(key: Wire.BlockKey, t: Wire.Type): Reader<T> {
-    let reader = this.readers.get(key)
+  private getBlockReader<T>(block: Wire.BLOCK, t: Wire.Type): BlockReader<T> {
+    let reader = this.readers.get(block.key)
     if (reader == null) {
-      reader = this.makeReader(t)
-      this.readers.set(key, reader)
+      reader = this.makeBlockReader(t, block.dedupe)
+      this.readers.set(block.key, reader)
     }
     return reader
   }
 
-  makeReader(t: Wire.Type): Reader<any> {
+  makeBlockReader(t: Wire.Type, dedupe: boolean): BlockReader<any> {
     switch (t.type) {
       case "STRING":
-        return new DeduplicatingLabelReader<string>(this.blockTracker.nextBlock, CedarDecoder.utf8decode)
+        if (dedupe) return new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, CedarDecoder.utf8decode)
+        else return new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, CedarDecoder.utf8decode)
       case "BYTES":
-        return new DeduplicatingLabelReader<Uint8Array>(this.blockTracker.nextBlock, bytes => bytes)
+        if (dedupe) return new DeduplicatingLabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
+        else return new LabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
       case "INT32":
-        return new UnlabeledVarIntReader(this.blockTracker.nextBlock)
+        if (dedupe) throw 'Unimplemented: deduping ' + t.type
+        return new UnlabeledVarIntBlockReader(this.slicer.nextBlock)
       case "FLOAT64":
-        return new FixedSizeReader<number>(
-          this.blockTracker.nextBlock,
+        if (dedupe) throw 'Unimplemented: deduping ' + t.type
+        return new FixedSizeBlockReader<number>(
+          this.slicer.nextBlock,
           bytes => new Float64Array(bytes)[0],
           Float64Array.BYTES_PER_ELEMENT)
-      case "FIXED": // TODO: support optional deduping?
-        return new FixedSizeReader(this.blockTracker.nextBlock, bytes => bytes, t.length)
+      case "FIXED":
+        if (dedupe) throw 'Unimplemented: deduping ' + t.type
+        return new FixedSizeBlockReader(this.slicer.nextBlock, bytes => bytes, t.length)
       default:
-        throw 'Unsupported dedupe type ' + t
+        throw 'Unsupported block type ' + t
     }
   }
 
 }
 
-abstract class Reader<Out> {
-  constructor(public buf: BufRead) { }
-  abstract read(parent: BufRead): Out
-}
-
-class DeduplicatingLabelReader<Out> extends Reader<Out> {
-  values: Out[] = []
-  constructor(public buf: BufRead, protected fromBytes: (bytes: Uint8Array) => Out) { super(buf) }
-
-  read(parent: BufRead): Out {
-    const before = parent.position
-    const label = Label.read(parent)
-
-    switch (Label.kind(label)) {
-      case LabelKind.Backreference: {
-        const value = this.values[Label.labelToOffset(label)]
-        if (value == undefined) {
-          throw 'Got invalid backreference'
-        }
-        return value
-      }
-      case LabelKind.Length:
-        const bytes = this.buf.read(Number(label))
-        const value = this.fromBytes(bytes)
-        this.values.push(value)
-        return value
-      case LabelKind.Null:
-        throw 'Programmer error: Reader cannot handle null labels'
-      case LabelKind.Absent: throw 'Programmer error: Reader cannot handle absent labels'
-      case LabelKind.Error: throw 'Programmer error: Reader cannot handle error labels'
-    }
+/**
+ * Reads the flags/header from a Cedar message and provides access to values.
+ */
+class Header {
+  readonly flags: BitSet
+  constructor(readonly buf: BufRead) {
+    const bs = BitSet.Var.read(this.buf.uint8array)
+    this.buf.incrementPosition(bs.length)
+    this.flags = bs.bitset
+    if (this.flags != 0n) throw 'Expected header to be all zeros, but it was not: ' + this.flags
   }
 }
 
-class FixedSizeReader<Out> extends Reader<Out> {
-  constructor(public buf: BufRead, protected fromBytes: (bytes: Uint8Array) => Out, readonly byteLength: number) {
-    super(buf)
+/** Given an entire Cedar message, splits apart header, blocks, and core. Makes no copies. */
+class MessageSlicer {
+  readonly blocks: Uint8Array[] = []
+  private nextBlockIndex: number = 0
+
+  readonly header: Header
+  readonly core: BufRead
+
+  get nextBlock(): BufRead {
+    const next = this.blocks[this.nextBlockIndex++]
+    return new BufReadonly(next)
   }
 
-  read(parent: BufRead): Out {
-    return this.fromBytes(this.buf.read(this.byteLength))
-  }
-}
+  constructor(readonly buf: Buf) {
+    this.header = new Header(buf)
+    do {
+      const blockLength = Number(Label.read(buf))
+      if (blockLength < 0) throw 'Could not read invalid block length: ' + blockLength
+      const block = buf.read(blockLength)
+      if (block.length != blockLength) throw 'Could not read block of length ' + blockLength + ', only got ' + block.length + ' bytes. Message is invalid for this query.'
+      this.blocks.push(block)
+    } while (buf.position < buf.length)
 
-class UnlabeledVarIntReader extends Reader<number> {
-  read(parent: BufRead): number {
-    return Number(Label.read(this.buf))
+    this.core = new BufReadonly(this.blocks[this.blocks.length - 1])
   }
 }
