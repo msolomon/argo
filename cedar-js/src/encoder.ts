@@ -126,6 +126,13 @@ export class CedarEncoder {
           return this.buf.write(Label.Null)
         }
 
+        if (js instanceof Error) {
+          this.track(path, 'error', this.buf, js)
+          this.buf.write(Label.Error)
+          this.writeSelfDescribing(path, js)
+          return
+        }
+
         if (!Wire.isLabeled(wt.of)) {
           this.track(path, 'non-null', this.buf, Label.NonNull)
           this.buf.write(Label.NonNull)

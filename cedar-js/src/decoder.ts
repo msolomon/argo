@@ -77,6 +77,14 @@ export class CedarDecoder {
           this.count('absent')
           buf.incrementPosition()
           return undefined
+        } else if (peekLabel == Label.Error[0]) {
+          this.track(path, 'error', buf, undefined)
+          this.count('error')
+          buf.incrementPosition()
+          const error = this.readSelfDescribing(buf, path)
+          this.track(path, 'error value', buf, undefined)
+          // A different implementation might choose a different behavior, like attaching the error to the result
+          return null // simple for compatibility, but up to implementations what to do with inline errors 
         }
 
         if (!Wire.isLabeled(wt.of)) {
