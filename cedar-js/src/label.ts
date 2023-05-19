@@ -45,8 +45,8 @@ export namespace Label {
   export function isLength(label: Label): boolean { return label >= 0 }
   export function isBackref(label: Label): boolean { return label < LowestResevedValue }
 
-  export function encode(label: Label): Uint8Array {
-    switch (kind(label)) {
+  export function encode(label: Label | number): Uint8Array {
+    switch (kind(BigInt(label))) {
       case LabelKind.Length:
       case LabelKind.Backreference: return VarInt.ZigZag.encode(label)
       case LabelKind.Null: return Null

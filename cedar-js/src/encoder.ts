@@ -82,7 +82,7 @@ export class CedarEncoder {
       case "BYTES":
         if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(bytes => bytes)
         else return BlockWriter.lengthOfBytes(bytes => bytes)
-      case "INT32":
+      case "VARINT":
         if (dedupe) throw 'Unimplemented: deduping  ' + t.type
         return BlockWriter.noLabel(Label.encode)
       case 'FLOAT64':
@@ -176,7 +176,7 @@ export class CedarEncoder {
 
       case 'STRING':
       case 'BYTES':
-      case 'INT32':
+      case 'VARINT':
       case 'FLOAT64':
       case 'FIXED':
         this.track(path, 'writing with block key', this.buf, block)
@@ -186,7 +186,64 @@ export class CedarEncoder {
         this.track(path, 'label', this.buf, label)
         return
 
-      default: throw `Cannot yet handle wire type ${wt}`
+      case 'DESC':
+        this.track(path, 'self-describing', this.buf, js)
+        return this.writeSelfDescribing(path, js)
+
+      default: throw `Unsupported wire type ${wt}`
+    }
+  }
+
+  writeSelfDescribing = (path: Path | undefined, js: any): void => {
+    let type = typeof js
+    switch (type) {
+
+      case 'object':
+        if (js == null) {
+          this.buf.write(Wire.SelfDescribing.Null)
+        } else if (Array.isArray(js)) {
+          this.buf.write(Wire.SelfDescribing.List)
+          this.buf.write(Label.encode(js.length))
+          js.forEach((v, i) => this.writeSelfDescribing(addPath(path, i, undefined), v))
+        } else { // encode as if it's a regular javascript object
+          this.buf.write(Wire.SelfDescribing.Object)
+          this.buf.write(Label.encode(Object.keys(js).length))
+          Object.entries(js).forEach(([field, v]) => {
+            this.write(Wire.SelfDescribing.Blocks.STRING, Wire.STRING, field) // undelimited field name
+            this.writeSelfDescribing(addPath(path, field, undefined), v) // field value
+          })
+        }
+        return
+
+      case 'string':
+        this.buf.write(Wire.SelfDescribing.String)
+        this.write(Wire.SelfDescribing.Blocks.STRING, Wire.STRING, js)
+        return
+
+      case 'number':
+      case 'bigint':
+        if (type == 'bigint' || Number.isInteger(js)) {
+          this.buf.write(Wire.SelfDescribing.Int)
+          this.write(Wire.SelfDescribing.Blocks.VARINT, Wire.VARINT, js)
+        } else {
+          this.buf.write(Wire.SelfDescribing.Float)
+          this.write(Wire.SelfDescribing.Blocks.FLOAT64, Wire.FLOAT64, js)
+        }
+        return
+
+      case 'boolean':
+        this.buf.write(Wire.SelfDescribing.Boolean)
+        this.buf.write(js ? Label.True : Label.False)
+        return
+
+      case 'undefined':
+        this.buf.write(Wire.SelfDescribing.Absent)
+        return
+
+      case 'symbol':
+      case 'function':
+      default:
+        throw `Cannot encode unsupported type ${type} at ${path}`
     }
   }
 }

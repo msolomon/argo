@@ -151,7 +151,7 @@ export class CedarDecoder {
 
       case 'STRING':
       case 'BYTES':
-      case 'INT32':
+      case 'VARINT':
       case 'FLOAT64':
       case 'FIXED':
         if (block?.key == null) { throw 'Programmer error: need block key for ' + Wire.print(wt) }
@@ -166,17 +166,61 @@ export class CedarDecoder {
               this.count('bytes: string length ', Label.encode(BigInt(encoded.length)).length)
               this.count('bytes: string ', encoded.length)
               break
-            case 'INT32':
-              this.count('bytes: int32', Label.encode(BigInt(value as number)).length)
+            case 'VARINT':
+              this.count('bytes: VARINT', Label.encode(BigInt(value as number)).length)
               break
           }
           this.track(path, 'reader read', buf, value)
         }
         return value
 
-      default:
-        throw 'unsupported type ' + wt.type
+      case 'DESC':
+        this.track(path, 'self-describing', buf, {})
+        return this.readSelfDescribing(buf, path)
 
+      default: throw `Unsupported wire type ${wt}`
+    }
+  }
+
+  readSelfDescribing = (buf: BufRead, path: Path | undefined): any => {
+
+    switch (Label.read(buf)) {
+      case Wire.SelfDescribing.NullMarker: return null
+      case Wire.SelfDescribing.AbsentMarker: return undefined
+
+      case Wire.SelfDescribing.ObjectMarker: {
+        const obj: { [key: string]: any } = {}
+        const length = Number(Label.read(buf))
+        for (let i = 0; i < length; i++) {
+          const fieldPath = addPath(path, i, Wire.TypeKey.STRING)
+          const fieldName = this.readCedar(buf, fieldPath, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
+          const value = this.readSelfDescribing(buf, addPath(path, i, undefined))
+          obj[fieldName] = value
+        }
+        return obj
+      }
+
+      case Wire.SelfDescribing.StringMarker:
+        return this.readCedar(buf, path, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
+
+      case Wire.SelfDescribing.BooleanMarker:
+        const label = Label.read(buf)
+        switch (label) {
+          case Label.TrueMarker: return true
+          case Label.FalseMarker: return false
+          default: throw `Invalid boolean label ${label} at ${path}`
+        }
+
+      case Wire.SelfDescribing.IntMarker:
+        return this.readCedar(buf, path, Wire.VARINT, Wire.SelfDescribing.Blocks.VARINT)
+
+      case Wire.SelfDescribing.FloatMarker:
+        return this.readCedar(buf, path, Wire.FLOAT64, Wire.SelfDescribing.Blocks.FLOAT64)
+
+      case Wire.SelfDescribing.ListMarker:
+        const length = Number(Label.read(buf))
+        return new Array(length).fill(undefined)
+          .map((_, i) => this.readSelfDescribing(buf, addPath(path, i, undefined)))
     }
   }
 
@@ -201,7 +245,7 @@ export class CedarDecoder {
       case "BYTES":
         if (dedupe) return new DeduplicatingLabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
         else return new LabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
-      case "INT32":
+      case "VARINT":
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
         return new UnlabeledVarIntBlockReader(this.slicer.nextBlock)
       case "FLOAT64":

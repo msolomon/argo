@@ -9,7 +9,7 @@ import { Buf } from './buf'
 /**
  * CedarInterpreter 
  */
-export class CedarInterpreter {
+export class Interpreter {
   readonly typer: Typer
 
   constructor(

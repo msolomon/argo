@@ -98,13 +98,13 @@ export function getCedarCodecDirectiveValue(scalar: GraphQLScalarType): Wire.Typ
   let wire: Wire.Type
   switch (codec as CedarCodec) {
     case CedarCodec.String: wire = Wire.STRING; break
-    case CedarCodec.Int: wire = Wire.INT32; break
+    case CedarCodec.Int: wire = Wire.VARINT; break
     case CedarCodec.Float: wire = Wire.FLOAT64; break
     case CedarCodec.Boolean: wire = Wire.BOOLEAN; break
     case CedarCodec.BYTES: wire = Wire.BYTES; break
     case CedarCodec.FIXED:
       if (length == null) throw 'fixedLength argument is required on CedarCodecDirective for FIXED codec'
-      wire = { type: Wire.Compound.FIXED, length }
+      wire = { type: Wire.TypeKey.FIXED, length }
       break
     default: throw 'Invalid codec value on CedarCodecDirective'
   }

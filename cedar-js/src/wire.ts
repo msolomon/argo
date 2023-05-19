@@ -3,54 +3,60 @@ import { GraphQLError, Kind, SelectionNode, GraphQLType, FieldNode, DocumentNode
 import * as graphql from 'graphql'
 import { groupBy } from './util'
 import { CedarCodecDirective, CedarDeduplicateDirective, getCedarCodecDirectiveValue, getCedarDeduplicateDirectiveValue } from './directives'
+import { Label } from './label'
 
 export namespace Wire {
   export type Type =
     | Wire.STRING
     | Wire.BOOLEAN
-    | Wire.INT32
+    | Wire.VARINT
     | Wire.FLOAT64
     | Wire.BYTES
+    | Wire.FIXED
     | Wire.BLOCK
     | Wire.ARRAY
     | Wire.NULLABLE
     | Wire.RECORD
-    | Wire.FIXED
+    | Wire.DESC
 
   export type BlockKey = string
 
-  export enum Primitive {
+  export enum TypeKey {
+    // Primitive types
     STRING = "STRING",
     BOOLEAN = "BOOLEAN",
-    INT32 = "INT32",
+    VARINT = "VARINT",
     FLOAT64 = "FLOAT64",
     BYTES = "BYTES",
-    DESC = "DESC", // a self-describing value
-  }
 
-  export enum Compound {
+    // Compound types
+    FIXED = "FIXED",
     BLOCK = "BLOCK",
     NULLABLE = "NULLABLE",
     ARRAY = "ARRAY",
     RECORD = "RECORD",
-    FIXED = "FIXED", // not exactly compound, but it's paramaterized by size
+    DESC = "DESC", // a self-describing value
   }
 
-  export type STRING = { type: Primitive.STRING }
-  export const STRING = { type: Primitive.STRING }
-  export type BOOLEAN = { type: Primitive.BOOLEAN }
-  export const BOOLEAN = { type: Primitive.BOOLEAN }
-  export type INT32 = { type: Primitive.INT32 }
-  export const INT32 = { type: Primitive.INT32 }
-  export type FLOAT64 = { type: Primitive.FLOAT64 }
-  export const FLOAT64 = { type: Primitive.FLOAT64 }
-  export type BYTES = { type: Primitive.BYTES }
-  export const BYTES = { type: Primitive.BYTES }
-  export type BLOCK = { type: Compound.BLOCK, of: Wire.Type, key: BlockKey, dedupe: boolean }
-  export type ARRAY = { type: Compound.ARRAY, of: Wire.Type }
-  export type NULLABLE = { type: Compound.NULLABLE, of: Wire.Type }
-  export type RECORD = { type: Compound.RECORD, fields: Wire.Field[] }
-  export type FIXED = { type: Compound.FIXED, length: number }
+  export type STRING = { type: TypeKey.STRING }
+  export type BOOLEAN = { type: TypeKey.BOOLEAN }
+  export type VARINT = { type: TypeKey.VARINT }
+  export type FLOAT64 = { type: TypeKey.FLOAT64 }
+  export type BYTES = { type: TypeKey.BYTES }
+  export const STRING: Wire.STRING = { type: TypeKey.STRING }
+  export const BOOLEAN: BOOLEAN = { type: TypeKey.BOOLEAN }
+  export const VARINT: VARINT = { type: TypeKey.VARINT }
+  export const FLOAT64: FLOAT64 = { type: TypeKey.FLOAT64 }
+  export const BYTES: BYTES = { type: TypeKey.BYTES }
+
+  export type FIXED = { type: TypeKey.FIXED, length: number }
+  export type BLOCK = { type: TypeKey.BLOCK, of: Wire.Type, key: BlockKey, dedupe: boolean }
+  export type ARRAY = { type: TypeKey.ARRAY, of: Wire.Type }
+  export type NULLABLE = { type: TypeKey.NULLABLE, of: Wire.Type }
+  export type RECORD = { type: TypeKey.RECORD, fields: Wire.Field[] }
+
+  export type DESC = { type: TypeKey.DESC }
+  export const DESC: DESC = { type: TypeKey.DESC }
 
   export type Field = {
     "name": string,
@@ -58,27 +64,27 @@ export namespace Wire {
     omittable: boolean
   }
 
-  export function isSTRING(type: Wire.Type): type is Wire.STRING { return type.type == "STRING" }
-  export function isBOOLEAN(type: Wire.Type): type is Wire.BOOLEAN { return type.type == "BOOLEAN" }
-  export function isINT32(type: Wire.Type): type is Wire.INT32 { return type.type == "INT32" }
-  export function isFLOAT64(type: Wire.Type): type is Wire.FLOAT64 { return type.type == "FLOAT64" }
-  export function isBYTES(type: Wire.Type): type is Wire.BYTES { return type.type == "BYTES" }
-  export function isBLOCK(type: Wire.Type): type is Wire.BLOCK { return (type as Wire.BLOCK).type == "BLOCK" }
-  export function isARRAY(type: Wire.Type): type is Wire.ARRAY { return (type as Wire.ARRAY).type == "ARRAY" }
-  export function isNULLABLE(type: Wire.Type): type is Wire.NULLABLE { return (type as Wire.NULLABLE).type == "NULLABLE" }
-  export function isRECORD(type: Wire.Type): type is Wire.RECORD { return (type as Wire.RECORD).type == "RECORD" }
-  export function isFIXED(type: Wire.Type): type is Wire.FIXED { return (type as Wire.FIXED).type == "FIXED" }
+  export function isSTRING(type: Wire.Type): type is Wire.STRING { return type.type == TypeKey.STRING }
+  export function isBOOLEAN(type: Wire.Type): type is Wire.BOOLEAN { return type.type == TypeKey.BOOLEAN }
+  export function isVARINT(type: Wire.Type): type is Wire.VARINT { return type.type == TypeKey.VARINT }
+  export function isFLOAT64(type: Wire.Type): type is Wire.FLOAT64 { return type.type == TypeKey.FLOAT64 }
+  export function isBYTES(type: Wire.Type): type is Wire.BYTES { return type.type == TypeKey.BYTES }
+  export function isFIXED(type: Wire.Type): type is Wire.FIXED { return type.type == TypeKey.FIXED }
+  export function isBLOCK(type: Wire.Type): type is Wire.BLOCK { return type.type == TypeKey.BLOCK }
+  export function isARRAY(type: Wire.Type): type is Wire.ARRAY { return type.type == TypeKey.ARRAY }
+  export function isNULLABLE(type: Wire.Type): type is Wire.NULLABLE { return type.type == TypeKey.NULLABLE }
+  export function isRECORD(type: Wire.Type): type is Wire.RECORD { return type.type == TypeKey.RECORD }
 
   export function isLabeled(wt: Wire.Type): Boolean { // do values start with a Label
     return isNULLABLE(wt) || isSTRING(wt) || isBOOLEAN(wt) || isBYTES(wt) || isARRAY(wt) || (isBLOCK(wt) && isLabeled(wt.of))
   }
 
   export function nullable(wt: Wire.Type): Wire.NULLABLE {
-    return { type: Compound.NULLABLE, of: wt }
+    return { type: TypeKey.NULLABLE, of: wt }
   }
 
   export function block(of: Wire.Type, key: BlockKey, dedupe: boolean): Wire.BLOCK {
-    return { type: Compound.BLOCK, of, key, dedupe }
+    return { type: TypeKey.BLOCK, of, key, dedupe }
   }
 
   export function print(wt: Wire.Type, indent: number = 0): string {
@@ -86,7 +92,7 @@ export namespace Wire {
     const recurse = (wt: Wire.Type): string => print(wt, indent + 1)
     const inner = () => {
       if (Wire.isSTRING(wt)) return wt.type
-      else if (Wire.isINT32(wt)) return wt.type
+      else if (Wire.isVARINT(wt)) return wt.type
       else if (Wire.isBOOLEAN(wt)) return wt.type
       else if (Wire.isFLOAT64(wt)) return wt.type
       else if (Wire.isBYTES(wt)) return wt.type
@@ -101,17 +107,43 @@ export namespace Wire {
     }
     return idnt() + inner()
   }
-}
 
-export function deduplicateByDefault(t: Wire.Type): boolean {
-  switch (t.type) {
-    case 'STRING': return true
-    case 'BOOLEAN': return false
-    case 'INT32': return false
-    case 'FLOAT64': return false
-    case 'BYTES': return true
-    case 'FIXED': return false
-    default: throw 'Programmer error: deduplicateByDefault does not make sense for ' + JSON.stringify(t)
+  export function deduplicateByDefault(t: Wire.Type): boolean {
+    switch (t.type) {
+      case 'STRING': return true
+      case 'BOOLEAN': return false
+      case 'VARINT': return false
+      case 'FLOAT64': return false
+      case 'BYTES': return true
+      case 'FIXED': return false
+      default: throw 'Programmer error: deduplicateByDefault does not make sense for ' + JSON.stringify(t)
+    }
+  }
+
+  export namespace SelfDescribing {
+    // Each of these marks a self-describing value, which follows
+    export const AbsentMarker = Label.AbsentMarker // -2n
+    export const Absent = Label.Absent
+    export const NullMarker = Label.NullMarker // -1n
+    export const Null = Label.Null
+    export const ObjectMarker = 0n
+    export const Object = Label.encode(ObjectMarker)
+    export const StringMarker = 1n
+    export const String = Label.encode(StringMarker)
+    export const BooleanMarker = 2n
+    export const Boolean = Label.encode(BooleanMarker)
+    export const IntMarker = 3n
+    export const Int = Label.encode(IntMarker)
+    export const FloatMarker = 4n
+    export const Float = Label.encode(FloatMarker)
+    export const ListMarker = 5n
+    export const List = Label.encode(ListMarker)
+
+    export namespace Blocks {
+      export const STRING = Wire.block(Wire.STRING, 'String', deduplicateByDefault(Wire.STRING))
+      export const VARINT = Wire.block(Wire.VARINT, 'Int', deduplicateByDefault(Wire.VARINT))
+      export const FLOAT64 = Wire.block(Wire.FLOAT64, 'Float', deduplicateByDefault(Wire.FLOAT64))
+    }
   }
 }
 
@@ -161,7 +193,11 @@ export class Typer {
   rootWireType(): Wire.Type {
     const getField = this.makeGetField(this.rootType)
     const data = this.collectFieldWireTypes(this.rootType, this.operation.selectionSet, getField)
-    return { type: Wire.Compound.RECORD, fields: [{ name: "data", type: Wire.nullable(data), omittable: false }] }
+    const fields = [
+      { name: "data", type: Wire.nullable(data), omittable: false },
+      { name: "errors", type: Wire.nullable({ type: Wire.TypeKey.ARRAY, of: Wire.DESC }), omittable: true },
+    ]
+    return { type: Wire.TypeKey.RECORD, fields }
   }
 
   // this follows the spec's CollectFields, but is modified to require no runtime information
@@ -296,7 +332,7 @@ export class Typer {
         }
       }
     }
-    const record: Wire.Type = { type: Wire.Compound.RECORD, fields: recordFields }
+    const record: Wire.Type = { type: Wire.TypeKey.RECORD, fields: recordFields }
     return record
   }
 
@@ -316,29 +352,30 @@ export class Typer {
       switch (t) {
         case graphql.GraphQLString:
         case graphql.GraphQLID:
-          wtype = Wire.block(codec ?? Wire.STRING, t.name, deduplicate ?? deduplicateByDefault(Wire.STRING))
+          wtype = Wire.block(Wire.STRING, t.name, deduplicate ?? Wire.deduplicateByDefault(Wire.STRING))
           break
         case graphql.GraphQLInt:
-          wtype = Wire.block(codec ?? Wire.INT32, t.name, deduplicate ?? deduplicateByDefault(Wire.INT32))
+          wtype = Wire.block(codec ?? Wire.VARINT, t.name, deduplicate ?? Wire.deduplicateByDefault(Wire.VARINT))
           break
         case graphql.GraphQLFloat:
-          wtype = Wire.block(codec ?? Wire.FLOAT64, t.name, deduplicate ?? deduplicateByDefault(Wire.FLOAT64))
+          wtype = Wire.block(codec ?? Wire.FLOAT64, t.name, deduplicate ?? Wire.deduplicateByDefault(Wire.FLOAT64))
           break
         case graphql.GraphQLBoolean:
           if (deduplicate) throw 'Boolean fields cannot be deduplicated'
-          wtype = Wire.BOOLEAN; break
+          wtype = Wire.BOOLEAN
+          break
         default:
           if (codec == null) throw 'Custom scalars must have a CedarCodec directive. Missing on ' + t.name
-          wtype = Wire.block(codec, t.name, deduplicate ?? deduplicateByDefault(codec))
+          wtype = Wire.block(codec, t.name, deduplicate ?? Wire.deduplicateByDefault(codec))
       }
       return Wire.nullable(wtype)
     } else if (graphql.isListType(t)) {
-      return Wire.nullable({ type: Wire.Compound.ARRAY, of: this.typeToWireType(t.ofType) })
+      return Wire.nullable({ type: Wire.TypeKey.ARRAY, of: this.typeToWireType(t.ofType) })
     } else if (graphql.isObjectType(t) || graphql.isInterfaceType(t) || graphql.isUnionType(t)) {
-      return Wire.nullable({ type: Wire.Compound.RECORD, fields: [] })
+      return Wire.nullable({ type: Wire.TypeKey.RECORD, fields: [] })
     } else if (graphql.isNonNullType(t)) {
       const nullable = this.typeToWireType(t.ofType)
-      return (nullable as { type: Wire.Compound.NULLABLE, of: Wire.Type }).of
+      return (nullable as { type: Wire.TypeKey.NULLABLE, of: Wire.Type }).of
     } else if (graphql.isEnumType(t)) {
       return Wire.nullable(Wire.block(Wire.STRING, t.name, true))
     } else {
@@ -356,12 +393,12 @@ export class Typer {
       const { record, wrap } = this.unwrapForSelectionSet(wt.of)
       return {
         record, wrap: (r: Wire.Type) => {
-          return { type: Wire.Compound.BLOCK, of: wrap(r), key: wt.key, dedupe: wt.dedupe }
+          return { type: Wire.TypeKey.BLOCK, of: wrap(r), key: wt.key, dedupe: wt.dedupe }
         }
       }
     } else if (Wire.isARRAY(wt)) {
       const { record, wrap } = this.unwrapForSelectionSet(wt.of)
-      return { record, wrap: (r: Wire.Type) => { return { type: Wire.Compound.ARRAY, of: wrap(r) } } }
+      return { record, wrap: (r: Wire.Type) => { return { type: Wire.TypeKey.ARRAY, of: wrap(r) } } }
     } else {
       throw 'tried to unwrap type which does not have selection set: ' + wt.toString()
     }
