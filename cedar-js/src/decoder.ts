@@ -51,7 +51,7 @@ export class CedarDecoder {
     } finally {
       if (this.DEBUG) {
         writeFileSync('/tmp/readlog.json', jsonify(this.tracked))
-        console.log('Counts', this.counts)
+        console.table(this.counts)
       }
       if (exn) throw exn
       return result

@@ -83,41 +83,39 @@ async function* walk(dir: string, dirsOnly: boolean = false): AsyncGenerator<str
 test('Star Wars equivalence tests', async () => {
   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
   for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
-    console.log("Running test:", name)
-    await runEquivalence(query, json, StarWarsSchema, expected)
+    console.log("============================================================\nRunning test:", name)
+    await runEquivalence(name, query, json, StarWarsSchema, expected)
   }
 })
 
 test('Queries are serialized equivalently', async () => {
   for await (const { name, dir, query, json, schema, expected } of loadTests()) {
     if (dir.includes('starwars')) continue
-    console.log("Running test:", name)
-    await runEquivalence(query, json, schema, expected)
+    console.log("============================================================\nRunning test:", name)
+    await runEquivalence(name, query, json, schema, expected)
   }
 })
 
 test('Typer', async () => {
   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
   for await (const { name, query, json, expected } of loadTests(starwarsDir)) {
-    if (name != 'Overlap') continue
     const schema = StarWarsSchema
-    console.log("Running typer test:", name)
     const typer = new Typer(schema, query)
 
     const rootWireType = typer.rootWireType() // should not throw
   }
 })
 
-async function runEquivalence(query: DocumentNode, json: string, schema: GraphQLSchema, expected: any) {
+async function runEquivalence(name: string, query: DocumentNode, json: string, schema: GraphQLSchema, expected: any) {
   const ci = new Interpreter(schema, query)
 
   const cedarBytes = ci.jsToCedar(expected)
   cedarBytes.compact() // make sure we don't have usused space, since later we access the underlying array
+  cedarBytes.resetPosition() // start at the beginning, not the end
 
   const compactJson = JSON.stringify(expected)
   const compactJsonLength = new TextEncoder().encode(compactJson).byteLength
 
-  cedarBytes.resetPosition() // start at the beginning, not the end
   const fromCedarResult = ci.cedarToJs(cedarBytes)
 
   const cedarToJson = JSON.stringify(fromCedarResult, null, 2)
@@ -137,8 +135,8 @@ async function runEquivalence(query: DocumentNode, json: string, schema: GraphQL
   const zstdCedarSize = (await zstd.compress(Buffer.from(cedarBytes.uint8array), ZstdLevel)).byteLength
   const savedWithCedar = (json: number, cedar: number) => `${(json - cedar).toLocaleString("en-US")} bytes (${100 - Math.round(cedar / json * 100)}%)`
 
-  const sizes = {
-    uncompressed: { json: compactJsonLength, cedar: cedarBytes.length, saved: savedWithCedar(compactJsonLength, cedarBytes.length) },
+  const sizes: { [index: string]: any } = {
+    uncompressed: { level: 0, json: compactJsonLength, cedar: cedarBytes.length, saved: savedWithCedar(compactJsonLength, cedarBytes.length) },
     gzip: { level: GzipLevel, json: gzipJsonSize, cedar: gzipCedarSize, saved: savedWithCedar(gzipJsonSize, gzipCedarSize) },
     brotli: { level: BrotliQuality, json: brotliJsonSize, cedar: brotliCedarSize, saved: savedWithCedar(brotliJsonSize, brotliCedarSize) },
     zstd: { level: ZstdLevel, json: zstdJsonSize, cedar: zstdCedarSize, saved: savedWithCedar(zstdJsonSize, zstdCedarSize) },
@@ -148,9 +146,8 @@ async function runEquivalence(query: DocumentNode, json: string, schema: GraphQL
     if (Math.min(last.json, last.cedar) <= Math.min(next.json, next.cedar)) return [lastName, last]
     else return [nextName, next]
   })
+  sizes[''] = {} // blank line in table
+  sizes[`best (${smallest[0]})`] = smallest[1] // always show best at bottom of table
 
-  console.log(
-    `Cedar saved ${smallest[1].saved} using ${smallest[0]}\n`,
-    sizes
-  )
+  console.table(sizes)
 }

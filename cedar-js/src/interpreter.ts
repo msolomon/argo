@@ -28,7 +28,6 @@ export class Interpreter {
 
   cedarToJs(bytes: Buf): ExecutionResult {
     const decoder = new CedarDecoder(bytes)
-    decoder.DEBUG = true
     return decoder.cedarToJsWithType(this.typer.rootWireType())
   }
 }
