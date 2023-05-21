@@ -1,22 +1,25 @@
-## Cedar
+# Argo
 
-_Version 0.1 DRAFT_.
+_Version May 2023 DRAFT_.
 _Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
 
-Cedar is a compact, streamable, binary serialization format for [GraphQL](https://graphql.org). It aims to:
+Argo is a compact, streamable, binary serialization format for [GraphQL](https://graphql.org).
+
+Argo aims to:
 
 - **Minimize end-to-end latency** of GraphQL responses
   - Including serialization, transport, and deserialization
-- **Minimize bytes on the wire**, even before compression
-- **Support _streaming_**: reading (or writing) data before reaching the end of a response
-- Be easy to implement
+- **Minimize bytes on the wire**, with and without external compression
+- Be **easy to implement**
 
-Cedar\:
+Argo\:
 
-- Takes the place of JSON in GraphQL
-- Usually meets the needs of mobile clients better than web clients
+- Takes the place of JSON in GraphQL responses
+- Usually meets the needs of mobile clients (and server clients) better than web clients
+- Works best with code generation, but also works well with interpretation
+- Does not currently support GraphQL Input types
 
-# Notes (TODO: remove)
+** Notes (TODO: remove) **
 
 hmm... i added in null bitmasks for objects, and it made things a tad worse. trying coalescing null markers and bit masks... still have a problem with error vs. absent vs. null.
 
@@ -40,7 +43,7 @@ hmm... i added in null bitmasks for objects, and it made things a tad worse. try
 - Todo: interfaces?
 - problem: write label even for nonnullable objects? or write presence label?
 
-# Problems (TODO: remove)
+** Problems (TODO: remove) **
 
 - Adding an enum: can't produce a reliable tag based on ordering, if the server adds a new enum value before the end, or removes one entirely
 - TODO: make sure the bounds of using 64bit varint can encode all the enums etc. that we need
@@ -50,35 +53,151 @@ hmm... i added in null bitmasks for objects, and it made things a tad worse. try
 - de-dup all objects as soon as one object type is marked? on the reader, i think you have to, on the writer, seems crazy? i don't see any way around it though, without a verbose communcation of which types opted in... maybe we could do query-only, and ignore schema annotations? kinda anoying too
 - TODO: where to interfaces fit in? kinda just tagged selection sets
 
-# Introduction
+** Introduction **
 
-This document defines Cedar. It is intended to be the authoritative specification. Implementations of Cedar must adhere to this document.
+This document defines Argo.
+It is intended to be the authoritative specification.
+Implementations of Argo must adhere to this document.
 
-# Background
+Design notes and motivations are included, but do not specify necessary technical details.
 
-TODO
+# Motivation
 
-Cedar typically works like this
+GraphQL typically serialzes data into JSON, but GraphQL is designed to support other serializations as well.
+Argo is purpose-made to improve on serialization for GraphQL.
+
+## JSON
+
+JSON is the standard serialization for GraphQL data.
+It has many strengths as well as a few weaknesses.
+
+**Strengths of JSON:**
+
+- Ubiquitous
+  - Many stable, high-performance implementations
+  - High quality tools for working with JSON
+- Self-describing (simple and usable even without tools)
+  - Independent of GraphQL schemas, documents, queries, and types
+- Human-readable and machine-readable
+
+**Weaknesses of JSON:**
+
+- Large data representation (relative to binary formats)
+  - Repetitive data format (e.g. field names) leads to large uncompressed sizes
+  - Self-delimited self-describing data uses additional space
+- Limited data type availability
+  - Byte string data must be "stuffed" into Unicode strings
+  - 64-bit integers don't work reliabily across all platforms
+  - "Stuffing" other types into e.g. String can introduce inefficiencies
+
+## Tradeoffs
+
+**In most cases JSON is a great choice for GraphQL.**
+However, it can be difficult to address the weaknesses.
+Primarily, these are related to performance: reducing the size of payloads, and reading and writing them quickly.
+
+The value of reading and writing data quickly is self-evident.
+The benefits of reduced payload sizes can be somewhat more subtle:
+
+- Decreased latency across the stack
+  - Most importantly, over the network
+    - [TCP Slow Start](https://developer.mozilla.org/en-US/docs/Glossary/TCP_slow_start), [QUIC Slow Start](https://www.rfc-editor.org/rfc/rfc9002.html#name-slow-start), and other congestion control mechanisms mean larger first response payloads can significantly increase user-observed latency (especially on app open)
+    - Dropped and retried packets are more likely with larger responses, especially over unreliable mobile connections
+    - Smaller payloads transfer more quickly
+  - Time spent serializing, deserializing, and copying around data
+  - Time spent cleaning up data, such as garbage collection
+- Increased I/O throughput across the stack
+
+## Argo
+
+To address the aforementioned weaknesses, Argo makes a different set of tradeoffs than JSON.
+
+**Strengths of Argo:**
+
+- Compact binary format
+  - Not self-describing: relies on GraphQL types instead
+- Unusually compressible
+  - Stores data of the same type in blocks to assist compression algorithms, e.g. all Strings are stored together
+- Maximizes re-use
+  - Deduplicates repeated values, so deserializing and converting to required types happens once
+- Flexible type availability
+  - GraphQL scalars specify their encoding/decoding with a directive
+  - Supports all GraphQL types
+  - Also natively supports:
+    - Variable-length byte strings
+    - Fixed-length byte strings
+    - Variable-length integers
+- Simple to implement relative to other binary formats (e.g. protobuf, Thrift, Avro)
+
+**Weaknesses of Argo:**
+
+- As of toady, reference implementation only
+  - No stable, high-performance implementations
+- Almost no tools for debugging or analysis
+- Binary format which is not self-describing
+  - Relatively difficult to debug or analyze without tools
+  - Requires GraphQL schema and query be known
+- Input types not supported
+  - Simpler implementation, but JSON still needed
+
+## Recommendation
+
+Overall, **JSON is the best choice for most GraphQL deployments.**
+However, Argo is a good choice for systems where performance is paramount.
+Please consider the tradeoffs above.
+
+# Overview
+
+Argo is designed to work with GraphQL queries and schemas which are known in advance,
+but executed many times.
+It separates its work into two phases: _Registration Time_ and _Execution Time._
+
+:: _Registration Time_ happens once, before a payload is serialized with Argo.
+On a mobile client, Registration Time is typically compile time.
+On a server, Registration Time is typically when a query is registered by a client application (perhaps at its compile time).
+
+:: _Execution Time_ happens many times, whenever a payload is \[de]serialized with Argo.
+This relies on information generated during Registration Time.
+
+Note: Nothing prevents running Registration Time and Execution Time steps at Execution Time.
+However, this is a low-performance pattern, and is most likely only useful during development.
+
+## Argo actions at Registration Time
+
+Argo is designed to work with GraphQL queries and schemas which are known in advance.
+It generates a description of the types which may be returned by a query (one time),
+and uses this to serialize or deserialize (many times).
+This description is called a _wire schema_.
+
+A wire schema is generated by the following high-level algorithm.
+
+### Registration time algorithm
 
 Given a GraphQL `schema`, and a GraphQL `query` on it:
 
-CedarAlgorithm(schema, query) :
+ArgoAlgorithm(schema, query) :
 
 1. Walk over the `schema` to get each type. At each `type`:
 
-   - Produce a corresponding [wire type](#sec-Wire-types), accounting for any `@encoding` directives
+   - Produce a corresponding [wire type](#sec-Wire-types), accounting for any `@ArgoCodec` or `@ArgoDeduplicate` directives
 
 2. Store the resulting _wire schema_
 3. Walk over the `query` to get the type of everything selected. At each selection, look up the corresponding wire type in the wire schema produced above:
 
-   - For each selection set, produce a new wire type which is a subset of the object `type`
+   - For each selection set, produce a new wire type which is a subset of the selected object `type`s
    - For leaf selections, copy the corresponding wire type
-   - Account for any `@encoding` directives
+
+4. Return the `wire schema`
+
+## Argo actions at Execution Time
+
+TODO
 
 # Types
 
 GraphQL uses two type systems: _GraphQL types_, which may appear in any given GraphQL Schema, and _response types_, which are used when serializing responses.
-Cedar introduces a third, called _wire types_, used when [de]serializing to or from byte streams.
+Argo introduces a third, called _wire types_, used when \[de]serializing to or from byte streams.
+Internally, Argo uses a fourth, called _self-describing types_, primarily used when \[de]serializing errors.
 
 ## GraphQL types
 
@@ -87,41 +206,56 @@ Cedar introduces a third, called _wire types_, used when [de]serializing to or f
 - `Scalar`, `Enum`, `Object`, `Input Object`, `Interface`, `Union`, `List`
 - Scalar includes, at minimum: `Int`, `Float`, `String`, `Boolean`, `ID`
 
-GraphQL also allows for [custom scalars](https://spec.graphql.org/October2021/#sec-Scalars.Custom-Scalars). Cedar supports this, though an `@encoding` directive is required to tell Cedar how to represent it on the wire.
+GraphQL also allows for [custom scalars](https://spec.graphql.org/October2021/#sec-Scalars.Custom-Scalars).
+Argo supports this, though a `@ArgoCodec` directive is required to tell Argo how to represent it on the wire.
 
 ## Response types
 
-:: _Response types_ refers to the [serialization types sketched in the GraphQL spec](https://spec.graphql.org/October2021/#sec-Serialization-Format). These do not have rigorous definitions in the GraphQL spec. These include (but are not limited to):
+:: _Response types_ refers to the [serialization types sketched in the GraphQL spec](https://spec.graphql.org/October2021/#sec-Serialization-Format).
+These do not have rigorous definitions in the GraphQL spec. These include (but are not limited to):
 
 - `Map`, `List`, `String`, `Null`
+- Optionally, `Boolean`, `Int`, `Float`, and `Enum Value`
 
 ## Wire types
 
-TODO: make this section more useful
+:: _Wire types_ are used by Argo to encode GraphQL values as bytes.
 
-:: _Wire types_ are used by Cedar to encode GraphQL values as bytes.
+- `STRING`: a UTF-8 string
+- `BOOLEAN`: true or false
+- `VARINT`: a variable-length integer
+- `FLOAT64`: an IEEE 754 double-precision binary floating-point (binary64)
+- `BYTES`: a variable-length byte string
+- `FIXED`: a fixed-length byte string
+- `RECORD`: an object, made up of potentially-omittable named fields and their values
+- `ARRAY`: a variable-length list of a single type
+- `BLOCK`: describes how to store the underlying type in a block of value data
+- `NULLABLE`: may be null or have a value
+- `DESC`: a self-describing type
 
-The set of primitive type wire type names is:
+### Self-describing types
 
-- `NULL`: represents no value
-- `VARINT`: boolean, int, enum, lenref
-- `LABEL`: string, arrays, objects
-- `BLOCK`
-- `FIXED64`: floats
-- `TAG`: for self-describing data
+:: _Self-describing types_ are used by Argo to encode values with types which are not known in advance (e.g. at Registration Time).
+Primarily, this is required to comply with the [GraphQL specification on Errors](https://spec.graphql.org/October2021/#sec-Errors).
 
-Cedar supports six kinds of complex types:
-
-- `RECORD` # object
-- `ARRAY` # list
-- `TABLE` # map
-- `VARIANT` # union
+- `Absent`: marks that a value is not present (like `undefined` in JSON)
+- `Null`: marks that a value is not present (like `null` in JSON)
+- `Object`: an object, made up of named fields and their values
+- `String`: a UTF-8 string
+- `Boolean`: true or false
+- `Int`: a variable-length integer
+- `Float`: an IEEE 754 double-precision binary floating-point (binary64)
+- `List`: a variable-length list of (potentially) mixed types
 
 # Wire schema
 
-:: GraphQL uses a Schema to capture the names and types of data. GraphQL queries select a portion of data from that Schema. Given a Schema and a query on it, Cedar produces a _wire schema_ with all the information needed to [de]serialize data powering that query against a compatible GraphQL Schema.
+:: GraphQL uses a Schema to capture the names and types of data.
+GraphQL queries select a portion of data from that Schema.
+Given a Schema and a query on it, Argo produces a _wire schema_ with all the information needed to [de]serialize data powering that query against a compatible GraphQL Schema.
 
-Note: In a client-server architecture, GraphQL schemas frequently change on the server according to certain compatibility rules. Therefore, while Cedar _cannot_ assume the Schema used for serializing data is the Schema used for deserializing, it _does_ assume they are compatible with each other (i.e. no [breaking changes](https://spec.graphql.org/October2021/#sel-EALJDCAgICCAogH) have been made).
+Note: In a client-server architecture, GraphQL schemas frequently change on the server according to certain compatibility rules.
+Therefore, while Argo _cannot_ assume the Schema used for serializing data is the Schema used for deserializing,
+it _does_ assume they are compatible with each other (i.e. no [breaking changes](https://spec.graphql.org/October2021/#sel-EALJDCAgICCAogH) have been made).
 
 The wire schema
 
@@ -148,13 +282,15 @@ The set of primitive type names is taken from the GraphQL spec.
 
 # Binary encoding
 
-Cedar's binary encoding does not include field names, self-contained information about the types of individual bytes, nor field or record separators. Therefore readers are wholly reliant on the wire schema used when the data was encoded (or any compatible wire schema), along with any information about custom scalar encodings.
+Argo's binary encoding does not include field names, self-contained information about the types of individual bytes, nor field or record separators. Therefore readers are wholly reliant on the wire schema used when the data was encoded (or any compatible wire schema), along with any information about custom scalar encodings.
 
 ## Message
 
 TODO: flags, then values etc,
 
 ### Flags
+
+noBlocks
 
 Every response starts with a flags byte. From most to least significant bits:
 0: 1 if big-endian, 0 if little-endian
@@ -178,7 +314,7 @@ Primitive types are encoded in binary as follows:
 
 ## LABELs
 
-Cedar uses a multipurpose binary marker called a `LABEL` which combines several use cases into one representation.
+Argo uses a multipurpose binary marker called a `LABEL` which combines several use cases into one representation.
 A `LABEL` is written using variable-length zig-zag coding.
 A `LABEL` is essentially a number which should be interpreted differently according to its value.
 
@@ -188,7 +324,7 @@ For variable-length data, such as a string or list, it represents the length of 
 
 Non-negative numbers are also used to mark which member of a union selection is to follow. These are numbered starting at 0 and counting up.
 
-Cedar reserves a few special negative values for certain purposes:
+Argo reserves a few special negative values for certain purposes:
 
 1. -1 represents a `null` value, particularly for fields
 2. -2 represents an error
@@ -204,9 +340,9 @@ TODO: spell out bootstrap values for strings
 
 ## Backreferences
 
-Cedar reduces data size on the wire by avoiding repeated values. Whenever a potentially-large value is read or written for the first time, it is stored in an array and given the next available backreference ID number (which is always negative). When it is next used, it can be identified by the backreference ID, eliminating the need to send the entire value again.
+Argo reduces data size on the wire by avoiding repeated values. Whenever a potentially-large value is read or written for the first time, it is stored in an array and given the next available backreference ID number (which is always negative). When it is next used, it can be identified by the backreference ID, eliminating the need to send the entire value again.
 
-Note: This is similar to how lossless compression algorithms use a [Huffman coding](https://en.wikipedia.org/wiki/Huffman_coding), but simpler and less effective. The upshot is that Cedar representations can remain small even after decompression, in contrast to JSON.
+Note: This is similar to how lossless compression algorithms use a [Huffman coding](https://en.wikipedia.org/wiki/Huffman_coding), but simpler and less effective. The upshot is that Argo representations can remain small even after decompression, in contrast to JSON.
 
 ### Write-side
 
@@ -360,14 +496,13 @@ where [key] is a string as serialized everywhere, [value type] is a lenref union
 
 # Design notes
 
-- Cedar is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as `JSON.parse`. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Cedar. A codec in WASM might meet performance needs. A Cedar interpreter (instead of a code-generated codec) might reduce the download size.
+- Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as `JSON.parse`. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. A Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.
 - Byte alignment (instead of bit or word alignment) was chosen primarily for ease of implementation (e.g. no need to pack together consecutive booleans) balanced against the resulting size. Most GraphQL responses are unlikely to majorly benefit from bit packing anyway, and the use cases which would are probably better off using a custom scalar binary representation.
-- Null vs. present fields are marked with `LABEL` per-field instead of using a bitmask for an entire object. This is a tad easier to implement on both sides, and also eases streaming writers because the the end may not yet be known.
-- Errors are represented inline for a few reasons:
-  - It is easier to implement for a streaming writer
-  - In a streaming reader, after reading a field you are guaranteed to know whether there was an error or just a null
-  - We know most of the `path` in the current response from our location, and do not need to write it explicitly, saving space
-- Perhaps surprisingly, `Enum`s can't be safely represented as small numbers, since schema evolution rules allow for changes which would alter the number one side but not the other.
+- Null vs. present fields are marked with `LABEL` per-field instead of using a bitmask for an entire object. This is a tad easier to implement on both sides. Bitmasks for null and non-null values made payloads larger during development, and were backed out.
+- Field Errors can be represented inline for a few reasons:
+  - In a reader, after reading a field you are guaranteed to know whether there was an error or just a null [TODO: require inline error?]
+  - We know most of the `path` in the current response from our location, and do not need to write most of it explicitly, saving space [TODO: do this?]
+- Perhaps surprisingly, `Enum`s can't be safely represented as small numbers, since schema evolution rules allow for changes (e.g. reordering) which would alter the number on one side but not the other.
 
 # Legal
 
@@ -385,17 +520,17 @@ This specification is licensed under [OWFa 1.0](https://www.openwebfoundation.or
 
 ## Conformance
 
-A conforming implementation of Cedar must fulfill all normative requirements. Conformance requirements are described in this document via both descriptive assertions and key words with clearly defined meanings.
+A conforming implementation of Argo must fulfill all normative requirements. Conformance requirements are described in this document via both descriptive assertions and key words with clearly defined meanings.
 
 The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL” in the normative portions of this document are to be interpreted as described in [IETF RFC 2119](https://www.rfc-editor.org/rfc/rfc2119). These key words may appear in lowercase and still retain their meaning unless explicitly declared as non-normative.
 
-A conforming implementation of Cedar may provide additional functionality, but must not where explicitly disallowed or would otherwise result in non-conformance.
+A conforming implementation of Argo may provide additional functionality, but must not where explicitly disallowed or would otherwise result in non-conformance.
 
 ## Versioning
 
-Cedar is versioned using [SemVer 2.0.0](https://semver.org/spec/v2.0.0.html).
-Each version of Cedar explicitly targets one version of the GraphQL spec, which is usually the latest at time of writing.
+Argo is versioned using [SemVer 2.0.0](https://semver.org/spec/v2.0.0.html).
+Each version of Argo explicitly targets one version of the GraphQL spec, which is usually the latest at time of writing.
 
 # Authors and contributors
 
-Cedar is authored by Michael Solomon.
+Argo is authored by [Michael Solomon](https://msol.io).

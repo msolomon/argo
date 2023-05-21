@@ -2,7 +2,7 @@ import { BitSet } from "./bitset"
 import { Buf } from "./buf"
 
 /**
- * Reads/writes the flags/header for a Cedar message and provides access to its values.
+ * Reads/writes the flags/header for a Argo message and provides access to its values.
  */
 export class Header {
   flags: BitSet = 0n

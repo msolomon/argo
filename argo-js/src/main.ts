@@ -1,6 +1,6 @@
 import { ExecutionResult, DocumentNode, GraphQLSchema } from 'graphql'
-import { CedarEncoder } from './encoder'
-import { CedarDecoder } from './decoder'
+import { ArgoEncoder } from './encoder'
+import { ArgoDecoder } from './decoder'
 import { Typer, Wire } from './wire'
 import { Buf } from './buf'
 
@@ -22,20 +22,20 @@ export class ExecutionResultCodec {
     this.typer = new Typer(schema, query, operationName)
   }
 
-  jsToCedar(js: object): Buf {
-    const encoder = new CedarEncoder()
+  jsToArgo(js: object): Buf {
+    const encoder = new ArgoEncoder()
     encoder.header.outOfBandFieldErrors = true // this reference implementation doesn't implement in-band field errors
     // uncomment the following to try out noBlocks and selfDescribing modes
     // encoder.header.noBlocks = true
     // encoder.header.selfDescribing = true
     const type = encoder.header.selfDescribing ? Wire.DESC : this.typer.rootWireType()
-    encoder.jsToCedarWithType(js, type)
+    encoder.jsToArgoWithType(js, type)
     return encoder.getResult()
   }
 
-  cedarToJs(bytes: Buf): ExecutionResult {
-    const decoder = new CedarDecoder(bytes)
-    return decoder.cedarToJsWithType(this.typer.rootWireType())
+  argoToJs(bytes: Buf): ExecutionResult {
+    const decoder = new ArgoDecoder(bytes)
+    return decoder.argoToJsWithType(this.typer.rootWireType())
   }
 }
 

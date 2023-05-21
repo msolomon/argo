@@ -2,8 +2,8 @@ import { DirectiveLocation, DirectiveNode, GraphQLBoolean, GraphQLDirective, Gra
 import { Wire } from "./wire";
 
 /** Marks a type for de-duplication. Works best with large values which re-appear often. */
-export const CedarDeduplicateDirective = new GraphQLDirective({
-  name: 'CedarDeduplicate',
+export const ArgoDeduplicateDirective = new GraphQLDirective({
+  name: 'ArgoDeduplicate',
   description: 'Deduplicate values of this type. Adding or removing this directive is typically a breaking change.',
   locations: [
     DirectiveLocation.SCALAR,
@@ -20,7 +20,7 @@ export const CedarDeduplicateDirective = new GraphQLDirective({
   isRepeatable: false,
 })
 
-export enum CedarCodec {
+export enum ArgoCodec {
   String = 'String',
   Int = 'Int',
   Float = 'Float',
@@ -29,42 +29,42 @@ export enum CedarCodec {
   FIXED = 'FIXED',
 }
 
-/** Describes the Cedar codecs which are available */
-export const CedarCodecType = new GraphQLEnumType({
-  name: 'CedarCodecType',
+/** Describes the Argo codecs which are available */
+export const ArgoCodecType = new GraphQLEnumType({
+  name: 'ArgoCodecType',
   description: 'Specifies how to serialize and deserialize this scalar. Adding, changing, or removing this directive is typically a breaking change.',
   values: {
     String: {
       description: 'Serialize and deserialize a scalar as a GraphQL String (UTF-8).',
-      value: CedarCodec.String,
+      value: ArgoCodec.String,
     },
     Int: {
       description: 'Serialize and deserialize a scalar as a GraphQL Int (32-bit signed integer).',
-      value: CedarCodec.Int,
+      value: ArgoCodec.Int,
     },
     Float: {
       description: 'Serialize and deserialize a scalar as a GraphQL Float (IEEE 754 double-precision floating-point).',
-      value: CedarCodec.Float,
+      value: ArgoCodec.Float,
     },
     Boolean: {
       description: 'Serialize and deserialize a scalar as a GraphQL Boolean.',
-      value: CedarCodec.Float,
+      value: ArgoCodec.Float,
     },
     BYTES: {
-      description: 'Serialize and deserialize a scalar as Cedar BYTES: a variable-length length-prefixed byte array.',
-      value: CedarCodec.BYTES,
+      description: 'Serialize and deserialize a scalar as Argo BYTES: a variable-length length-prefixed byte array.',
+      value: ArgoCodec.BYTES,
     },
     FIXED: {
-      description: 'Serialize and deserialize a scalar as Cedar FIXED: a fixed-length byte array.',
-      value: CedarCodec.FIXED,
+      description: 'Serialize and deserialize a scalar as Argo FIXED: a fixed-length byte array.',
+      value: ArgoCodec.FIXED,
     },
   }
 })
 
 /** Specifies how to encode and decode a (custom) Scalar */
-export const CedarCodecDirective = new GraphQLDirective({
-  name: 'CedarCodec',
-  description: 'Specifies how to serialize and deserialize this scalar. This is necessary for custom scalars to work with Cedar serialization. Adding, changing, or removing this directive is typically a breaking change.',
+export const ArgoCodecDirective = new GraphQLDirective({
+  name: 'ArgoCodec',
+  description: 'Specifies how to serialize and deserialize this scalar. This is necessary for custom scalars to work with Argo serialization. Adding, changing, or removing this directive is typically a breaking change.',
   locations: [
     DirectiveLocation.SCALAR,
     DirectiveLocation.ENUM,
@@ -73,7 +73,7 @@ export const CedarCodecDirective = new GraphQLDirective({
   args: {
     codec: {
       description: 'The codec to use to serialize and deserialize this scalar.',
-      type: new GraphQLNonNull(CedarCodecType),
+      type: new GraphQLNonNull(ArgoCodecType),
     },
     fixedLength: {
       type: GraphQLInt,
@@ -89,41 +89,41 @@ function getDirectiveByName(directives: readonly ConstDirectiveNode[] | undefine
 
 // TODO: make the directive reading below more robust
 
-export function getCedarCodecDirectiveValue(scalar: GraphQLScalarType): Wire.Type | undefined {
-  const directive = getDirectiveByName(scalar.astNode?.directives, CedarCodecDirective.name)
+export function getArgoCodecDirectiveValue(scalar: GraphQLScalarType): Wire.Type | undefined {
+  const directive = getDirectiveByName(scalar.astNode?.directives, ArgoCodecDirective.name)
   if (directive == undefined) return undefined
   const codec = (directive.arguments?.find(a => a.name.value === 'codec')?.value as StringValueNode)?.value
   const fixedLengthNode = directive.arguments?.find(a => a.name.value === 'fixedLength')?.value
   let length: number | undefined
   if (fixedLengthNode == undefined || fixedLengthNode?.kind == 'NullValue') { }
   else if (fixedLengthNode?.kind == 'IntValue') length = parseInt(fixedLengthNode.value)
-  else throw 'Invalid fixedLength kind on CedarCodecDirective: ' + fixedLengthNode?.kind
+  else throw 'Invalid fixedLength kind on ArgoCodecDirective: ' + fixedLengthNode?.kind
   let wire: Wire.Type
-  switch (codec as CedarCodec) {
-    case CedarCodec.String: wire = Wire.STRING; break
-    case CedarCodec.Int: wire = Wire.VARINT; break
-    case CedarCodec.Float: wire = Wire.FLOAT64; break
-    case CedarCodec.Boolean: wire = Wire.BOOLEAN; break
-    case CedarCodec.BYTES: wire = Wire.BYTES; break
-    case CedarCodec.FIXED:
-      if (length == null) throw 'fixedLength argument is required on CedarCodecDirective for FIXED codec'
+  switch (codec as ArgoCodec) {
+    case ArgoCodec.String: wire = Wire.STRING; break
+    case ArgoCodec.Int: wire = Wire.VARINT; break
+    case ArgoCodec.Float: wire = Wire.FLOAT64; break
+    case ArgoCodec.Boolean: wire = Wire.BOOLEAN; break
+    case ArgoCodec.BYTES: wire = Wire.BYTES; break
+    case ArgoCodec.FIXED:
+      if (length == null) throw 'fixedLength argument is required on ArgoCodecDirective for FIXED codec'
       wire = { type: Wire.TypeKey.FIXED, length }
       break
-    default: throw 'Invalid codec value on CedarCodecDirective'
+    default: throw 'Invalid codec value on ArgoCodecDirective'
   }
-  if (length != null && codec != CedarCodec.FIXED) {
-    throw 'fixedLength argument on CedarCodecDirective is only allowed for FIXED codec, not ' + codec
+  if (length != null && codec != ArgoCodec.FIXED) {
+    throw 'fixedLength argument on ArgoCodecDirective is only allowed for FIXED codec, not ' + codec
   }
 
   return wire
 }
 
-export function getCedarDeduplicateDirectiveValue(scalar: GraphQLScalarType): boolean | undefined {
-  const directive = getDirectiveByName(scalar.astNode?.directives, CedarDeduplicateDirective.name)
+export function getArgoDeduplicateDirectiveValue(scalar: GraphQLScalarType): boolean | undefined {
+  const directive = getDirectiveByName(scalar.astNode?.directives, ArgoDeduplicateDirective.name)
   if (directive == undefined) return undefined
   const deduplicateNode = directive.arguments?.find(a => a.name.value === 'deduplicate')?.value
   let deduplicate: boolean | undefined
-  if (deduplicateNode?.kind == 'NullValue') { deduplicate = true } // default on CedarDeduplicateDirective
+  if (deduplicateNode?.kind == 'NullValue') { deduplicate = true } // default on ArgoDeduplicateDirective
   else if (deduplicateNode?.kind == 'BooleanValue') deduplicate = deduplicateNode.value
-  else throw 'Invalid deduplicate value on CedarCodecDirective'
+  else throw 'Invalid deduplicate value on ArgoCodecDirective'
 }

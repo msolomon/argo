@@ -1,7 +1,7 @@
 import { BufRead } from './buf'
 import { Label, LabelKind } from './label'
 
-/** Reads values out of a compact block of values from a Cedar message. */
+/** Reads values out of a compact block of values from a Argo message. */
 export abstract class BlockReader<Out> {
   constructor(public buf: BufRead) { }
   abstract read(parent: BufRead): Out | undefined | null

@@ -8,9 +8,9 @@ import { Header } from './header'
 import { BlockWriter, DeduplicatingBlockWriter } from './blockWriter'
 
 /**
- * Encodes a JavaScript object (typically ExecutionResult) into a Cedar message.
+ * Encodes a JavaScript object (typically ExecutionResult) into a Argo message.
  */
-export class CedarEncoder {
+export class ArgoEncoder {
   private static utf8 = new TextEncoder()
   private static utf8encode = this.utf8.encode.bind(this.utf8)
 
@@ -92,8 +92,8 @@ export class CedarEncoder {
   makeBlockWriter(t: Wire.Type, dedupe: boolean): BlockWriter<any> {
     switch (t.type) {
       case "STRING":
-        if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(CedarEncoder.utf8encode)
-        else return BlockWriter.lengthOfBytes(CedarEncoder.utf8encode)
+        if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(ArgoEncoder.utf8encode)
+        else return BlockWriter.lengthOfBytes(ArgoEncoder.utf8encode)
       case "BYTES":
         if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(bytes => bytes)
         else return BlockWriter.lengthOfBytes(bytes => bytes)
@@ -131,13 +131,13 @@ export class CedarEncoder {
     return writer
   }
 
-  jsToCedarWithType(js: any, wt: Wire.Type): void {
-    const result = this.writeCedar(undefined, js, wt)
+  jsToArgoWithType(js: any, wt: Wire.Type): void {
+    const result = this.writeArgo(undefined, js, wt)
     if (this.DEBUG) writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
     return result
   }
 
-  private writeCedar = (path: Path | undefined, js: any, wt: Wire.Type, block?: Wire.BLOCK): void => {
+  private writeArgo = (path: Path | undefined, js: any, wt: Wire.Type, block?: Wire.BLOCK): void => {
     switch (wt.type) {
       case 'NULLABLE':
         if (js == null) {
@@ -156,11 +156,11 @@ export class CedarEncoder {
           this.track(path, 'non-null', this.buf, Label.NonNull)
           this.buf.write(Label.NonNull)
         }
-        return this.writeCedar(path, js, wt.of)
+        return this.writeArgo(path, js, wt.of)
       case 'BLOCK':
         if (block != null) { throw `Was already in block '${block}', unexpected to switch to '${wt.key}'. ${Wire.print(wt)}.` }
         this.track(path, 'block with key', this.buf, wt.key)
-        return this.writeCedar(path, js, wt.of, wt)
+        return this.writeArgo(path, js, wt.of, wt)
       case 'RECORD': {
         this.track(path, 'record with num fields', this.buf, wt.fields.length)
 
@@ -170,13 +170,13 @@ export class CedarEncoder {
               this.track(path, 'record field is present but omittable, writing non-null', this.buf, name)
               this.buf.write(Label.NonNull)
             }
-            this.writeCedar(addPath(path, name, block?.key), js[name], type)
+            this.writeArgo(addPath(path, name, block?.key), js[name], type)
           } else if (omittable && js && (!(name in js) || js[name] === undefined)) { // field not present, but omittable
             this.track(path, 'record field is absent but omittable, writing Absent', this.buf, name)
             this.buf.write(Label.Absent)
           } else if (Wire.isNULLABLE(type)) {
             this.track(path, 'record field is absent but nullable', this.buf, name)
-            this.writeCedar(addPath(path, name, block?.key), js[name], type)
+            this.writeArgo(addPath(path, name, block?.key), js[name], type)
           } else {
             this.track(path, 'record field is absent and not-nullable, error', this.buf, name)
             throw 'Error: record field is absent and not-nullable: ' + path
@@ -193,7 +193,7 @@ export class CedarEncoder {
           throw `Could not encode non - array as array: ${js} `
         }
         this.buf.write(Label.encode(BigInt(js.length)))
-        return js.forEach((v, i) => this.writeCedar(addPath(path, i, block?.key), v, wt.of))
+        return js.forEach((v, i) => this.writeArgo(addPath(path, i, block?.key), v, wt.of))
       }
 
       case 'BOOLEAN':

@@ -109,17 +109,17 @@ test('Typer', async () => {
 async function runEquivalence(name: string, query: DocumentNode, json: string, schema: GraphQLSchema, expected: any) {
   const ci = new ExecutionResultCodec(schema, query)
 
-  const cedarBytes = ci.jsToCedar(expected)
-  cedarBytes.compact() // make sure we don't have usused space, since later we access the underlying array
-  cedarBytes.resetPosition() // start at the beginning, not the end
+  const argoBytes = ci.jsToArgo(expected)
+  argoBytes.compact() // make sure we don't have usused space, since later we access the underlying array
+  argoBytes.resetPosition() // start at the beginning, not the end
 
   const compactJson = JSON.stringify(expected)
   const compactJsonLength = new TextEncoder().encode(compactJson).byteLength
 
-  const fromCedarResult = ci.cedarToJs(cedarBytes)
+  const fromArgoResult = ci.argoToJs(argoBytes)
 
-  const cedarToJson = JSON.stringify(fromCedarResult, null, 2)
-  expect(cedarToJson).toEqual(json)
+  const argoToJson = JSON.stringify(fromArgoResult, null, 2)
+  expect(argoToJson).toEqual(json)
 
   // Compression levels have to be picked somehow, so this is all (very roughly) normalized around gzip level 6 performance
   // For GraphQL responses, I would suggest using Brotli where supported (at quality level 4) and falling back to gzip (level 6) otherwise
@@ -130,20 +130,20 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
   const brotliJsonSize = brotliCompressSync(compactJson, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
   const gzipJsonSize = gzipSync(compactJson, { level: GzipLevel }).byteLength
   const zstdJsonSize = (await zstd.compress(Buffer.from(compactJson), ZstdLevel)).byteLength
-  const brotliCedarSize = brotliCompressSync(cedarBytes.uint8array, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
-  const gzipCedarSize = gzipSync(cedarBytes.uint8array, { level: GzipLevel }).byteLength
-  const zstdCedarSize = (await zstd.compress(Buffer.from(cedarBytes.uint8array), ZstdLevel)).byteLength
-  const savedWithCedar = (json: number, cedar: number) => `${(json - cedar).toLocaleString("en-US")} bytes (${100 - Math.round(cedar / json * 100)}%)`
+  const brotliArgoSize = brotliCompressSync(argoBytes.uint8array, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
+  const gzipArgoSize = gzipSync(argoBytes.uint8array, { level: GzipLevel }).byteLength
+  const zstdArgoSize = (await zstd.compress(Buffer.from(argoBytes.uint8array), ZstdLevel)).byteLength
+  const savedWithArgo = (json: number, argo: number) => `${(json - argo).toLocaleString("en-US")} bytes (${100 - Math.round(argo / json * 100)}%)`
 
   const sizes: { [index: string]: any } = {
-    uncompressed: { level: 0, json: compactJsonLength, cedar: cedarBytes.length, saved: savedWithCedar(compactJsonLength, cedarBytes.length) },
-    gzip: { level: GzipLevel, json: gzipJsonSize, cedar: gzipCedarSize, saved: savedWithCedar(gzipJsonSize, gzipCedarSize) },
-    brotli: { level: BrotliQuality, json: brotliJsonSize, cedar: brotliCedarSize, saved: savedWithCedar(brotliJsonSize, brotliCedarSize) },
-    zstd: { level: ZstdLevel, json: zstdJsonSize, cedar: zstdCedarSize, saved: savedWithCedar(zstdJsonSize, zstdCedarSize) },
+    uncompressed: { level: 0, json: compactJsonLength, argo: argoBytes.length, saved: savedWithArgo(compactJsonLength, argoBytes.length) },
+    gzip: { level: GzipLevel, json: gzipJsonSize, argo: gzipArgoSize, saved: savedWithArgo(gzipJsonSize, gzipArgoSize) },
+    brotli: { level: BrotliQuality, json: brotliJsonSize, argo: brotliArgoSize, saved: savedWithArgo(brotliJsonSize, brotliArgoSize) },
+    zstd: { level: ZstdLevel, json: zstdJsonSize, argo: zstdArgoSize, saved: savedWithArgo(zstdJsonSize, zstdArgoSize) },
   }
 
   const smallest = Object.entries(sizes).reduce(([lastName, last], [nextName, next]) => {
-    if (Math.min(last.json, last.cedar) <= Math.min(next.json, next.cedar)) return [lastName, last]
+    if (Math.min(last.json, last.argo) <= Math.min(next.json, next.argo)) return [lastName, last]
     else return [nextName, next]
   })
   sizes[''] = {} // blank line in table

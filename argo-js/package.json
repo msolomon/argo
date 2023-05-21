@@ -16,11 +16,11 @@
   "scripts": {
     "test": "jest"
   },
-  "name": "cedar",
+  "name": "argo",
   "version": "0.0.1",
-  "description": "Cedar is a compact, streamable, binary serialization format for GraphQL. This is the reference implementation.",
+  "description": "Argo is a compact, streamable, binary serialization format for GraphQL. This is the reference implementation.",
   "main": "src/index.js",
-  "repository": "https://github.com/msolomon/cedar",
+  "repository": "https://github.com/msolomon/argo",
   "author": "Mike Solomon",
   "license": "MIT"
 }

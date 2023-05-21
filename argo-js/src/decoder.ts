@@ -9,9 +9,9 @@ import { BlockReader, DeduplicatingLabelBlockReader, FixedSizeBlockReader, Label
 import { Header } from './header'
 
 /**
- * Decodes a Cedar message into a JavaScript object (ExecutionResult).
+ * Decodes a Argo message into a JavaScript object (ExecutionResult).
  */
-export class CedarDecoder {
+export class ArgoDecoder {
   private static utf8 = new TextDecoder()
   private static utf8decode = this.utf8.decode.bind(this.utf8)
   private readers: Map<Wire.BlockKey, BlockReader<any>> = new Map()
@@ -35,17 +35,17 @@ export class CedarDecoder {
   }
 
   /**
-   * Decode the Cedar message, returning the result as an ExecutionResult
+   * Decode the Argo message, returning the result as an ExecutionResult
    * 
    * @param wt The type of the message, as a Wire.Type
    * @returns The decoded message
    * @throws If the message is invalid for the given type
    */
-  cedarToJsWithType(wt: Wire.Type): ExecutionResult {
+  argoToJsWithType(wt: Wire.Type): ExecutionResult {
     let exn: any = null
     let result: any = null
     try {
-      result = this.readCedar(this.slicer.core, undefined, this.slicer.header.selfDescribing ? Wire.DESC : wt)
+      result = this.readArgo(this.slicer.core, undefined, this.slicer.header.selfDescribing ? Wire.DESC : wt)
     } catch (e) {
       exn = e
     } finally {
@@ -58,12 +58,12 @@ export class CedarDecoder {
     }
   }
 
-  readCedar = (buf: BufRead, path: Path | undefined, wt: Wire.Type, block?: Wire.BLOCK): any => {
+  readArgo = (buf: BufRead, path: Path | undefined, wt: Wire.Type, block?: Wire.BLOCK): any => {
     this.count(wt.type)
     switch (wt.type) {
       case 'BLOCK':
         this.track(path, 'block', buf, { key: wt.key, dedupe: wt.dedupe })
-        return this.readCedar(buf, path, wt.of, wt)
+        return this.readArgo(buf, path, wt.of, wt)
 
       case 'NULLABLE':
         const peekLabel = buf.get()
@@ -100,7 +100,7 @@ export class CedarDecoder {
           // buf.resetPosition(positionBefore) // no non-null marker here
         }
 
-        return this.readCedar(buf, path, wt.of)
+        return this.readArgo(buf, path, wt.of)
 
       case 'RECORD':
         this.track(path, 'record', buf, {})
@@ -136,7 +136,7 @@ export class CedarDecoder {
           }
 
           this.track(path, 'record field', buf, name)
-          obj[name] = this.readCedar(buf, addPath(path, name, block?.key), type)
+          obj[name] = this.readArgo(buf, addPath(path, name, block?.key), type)
         }
         return obj
 
@@ -144,7 +144,7 @@ export class CedarDecoder {
         const length = Number(Label.read(buf))
         this.track(path, 'array length', buf, length)
         this.count('bytes: array length', Label.encode(BigInt(length)).length)
-        return (new Array(length).fill(undefined).map((_, i) => this.readCedar(buf, addPath(path, i, block?.key), wt.of)))
+        return (new Array(length).fill(undefined).map((_, i) => this.readArgo(buf, addPath(path, i, block?.key), wt.of)))
       }
 
       case 'BOOLEAN':
@@ -200,7 +200,7 @@ export class CedarDecoder {
         const length = Number(Label.read(buf))
         for (let i = 0; i < length; i++) {
           const fieldPath = addPath(path, i, Wire.TypeKey.STRING)
-          const fieldName = this.readCedar(buf, fieldPath, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
+          const fieldName = this.readArgo(buf, fieldPath, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
           const value = this.readSelfDescribing(buf, addPath(path, i, undefined))
           obj[fieldName] = value
         }
@@ -208,7 +208,7 @@ export class CedarDecoder {
       }
 
       case Wire.SelfDescribing.StringMarker:
-        return this.readCedar(buf, path, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
+        return this.readArgo(buf, path, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
 
       case Wire.SelfDescribing.BooleanMarker:
         const label = Label.read(buf)
@@ -219,10 +219,10 @@ export class CedarDecoder {
         }
 
       case Wire.SelfDescribing.IntMarker:
-        return this.readCedar(buf, path, Wire.VARINT, Wire.SelfDescribing.Blocks.VARINT)
+        return this.readArgo(buf, path, Wire.VARINT, Wire.SelfDescribing.Blocks.VARINT)
 
       case Wire.SelfDescribing.FloatMarker:
-        return this.readCedar(buf, path, Wire.FLOAT64, Wire.SelfDescribing.Blocks.FLOAT64)
+        return this.readArgo(buf, path, Wire.FLOAT64, Wire.SelfDescribing.Blocks.FLOAT64)
 
       case Wire.SelfDescribing.ListMarker:
         const length = Number(Label.read(buf))
@@ -243,8 +243,8 @@ export class CedarDecoder {
   makeBlockReader(t: Wire.Type, dedupe: boolean): BlockReader<any> {
     switch (t.type) {
       case "STRING":
-        if (dedupe) return new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, CedarDecoder.utf8decode)
-        else return new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, CedarDecoder.utf8decode)
+        if (dedupe) return new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, ArgoDecoder.utf8decode)
+        else return new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, ArgoDecoder.utf8decode)
       case "BYTES":
         if (dedupe) return new DeduplicatingLabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
         else return new LabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
@@ -267,7 +267,7 @@ export class CedarDecoder {
 
 }
 
-/** Given an entire Cedar message, splits apart header, blocks, and core. Makes no copies. */
+/** Given an entire Argo message, splits apart header, blocks, and core. Makes no copies. */
 class MessageSlicer {
   readonly blocks: Uint8Array[] = []
   private nextBlockIndex: number = 0

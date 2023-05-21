@@ -2,10 +2,10 @@
 import { GraphQLError, Kind, SelectionNode, GraphQLType, FieldNode, DocumentNode, GraphQLSchema } from 'graphql'
 import * as graphql from 'graphql'
 import { groupBy } from './util'
-import { CedarCodecDirective, CedarDeduplicateDirective, getCedarCodecDirectiveValue, getCedarDeduplicateDirectiveValue } from './directives'
+import { ArgoCodecDirective, ArgoDeduplicateDirective, getArgoCodecDirectiveValue, getArgoDeduplicateDirectiveValue } from './directives'
 import { Label } from './label'
 
-/** Cedar Wire encoding */
+/** Argo Wire encoding */
 export namespace Wire {
 
   /** All possible types of a value */
@@ -162,7 +162,7 @@ type SelectedFieldNode = {
 }
 
 /**
- * Typer converts types from GraphQL schemas and documents (queries) to Cedar Wire types.
+ * Typer converts types from GraphQL schemas and documents (queries) to Argo Wire types.
  */
 export class Typer {
   private fragments: Map<string, graphql.FragmentDefinitionNode> = new Map()
@@ -173,7 +173,7 @@ export class Typer {
 
   // private _directives: graphql.DirectiveDefinitionNode | undefined;
   public get directives(): graphql.GraphQLDirective[] {
-    return [CedarCodecDirective, CedarDeduplicateDirective]
+    return [ArgoCodecDirective, ArgoDeduplicateDirective]
   }
 
   constructor(readonly schema: GraphQLSchema, readonly query: DocumentNode, operationName?: string) {
@@ -355,8 +355,8 @@ export class Typer {
   typeToWireType = (t: GraphQLType): Wire.Type => {
     if (graphql.isScalarType(t)) {
       let wtype: Wire.Type
-      const codec = getCedarCodecDirectiveValue(t)
-      const deduplicate = getCedarDeduplicateDirectiveValue(t)
+      const codec = getArgoCodecDirectiveValue(t)
+      const deduplicate = getArgoDeduplicateDirectiveValue(t)
 
       switch (t) {
         case graphql.GraphQLString:
@@ -374,7 +374,7 @@ export class Typer {
           wtype = Wire.BOOLEAN
           break
         default:
-          if (codec == null) throw 'Custom scalars must have a CedarCodec directive. Missing on ' + t.name
+          if (codec == null) throw 'Custom scalars must have a ArgoCodec directive. Missing on ' + t.name
           wtype = Wire.block(codec, t.name, deduplicate ?? Wire.deduplicateByDefault(codec))
       }
       return Wire.nullable(wtype)
