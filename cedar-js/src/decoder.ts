@@ -7,6 +7,7 @@ import { Path, addPath, pathToArray } from 'graphql/jsutils/Path'
 import { jsonify } from './util'
 import { BlockReader, DeduplicatingLabelBlockReader, FixedSizeBlockReader, LabelBlockReader, UnlabeledVarIntBlockReader } from './blockReader'
 import { BitSet } from './bitset'
+import { Header } from './header'
 
 /**
  * Decodes a Cedar message into a JavaScript object (ExecutionResult).
@@ -232,10 +233,6 @@ export class CedarDecoder {
     }
   }
 
-  readFromBlock<T>(block: Wire.BLOCK, t: Wire.Type, parent: BufRead): T | undefined | null {
-    return this.getBlockReader<T>(block, t).read(parent)
-  }
-
   private getBlockReader<T>(block: Wire.BLOCK, t: Wire.Type): BlockReader<T> {
     let reader = this.readers.get(block.key)
     if (reader == null) {
@@ -272,19 +269,6 @@ export class CedarDecoder {
 
 }
 
-/**
- * Reads the flags/header from a Cedar message and provides access to values.
- */
-class Header {
-  readonly flags: BitSet
-  constructor(readonly buf: BufRead) {
-    const bs = BitSet.Var.read(this.buf.uint8array)
-    this.buf.incrementPosition(bs.length)
-    this.flags = bs.bitset
-    if (this.flags != 0n) throw 'Expected header to be all zeros, but it was not: ' + this.flags
-  }
-}
-
 /** Given an entire Cedar message, splits apart header, blocks, and core. Makes no copies. */
 class MessageSlicer {
   readonly blocks: Uint8Array[] = []
@@ -294,19 +278,25 @@ class MessageSlicer {
   readonly core: BufRead
 
   get nextBlock(): BufRead {
+    if (this.header.noBlocks) return this.core
     const next = this.blocks[this.nextBlockIndex++]
     return new BufReadonly(next)
   }
 
   constructor(readonly buf: Buf) {
     this.header = new Header(buf)
-    do {
-      const blockLength = Number(Label.read(buf))
-      if (blockLength < 0) throw 'Could not read invalid block length: ' + blockLength
-      const block = buf.read(blockLength)
-      if (block.length != blockLength) throw 'Could not read block of length ' + blockLength + ', only got ' + block.length + ' bytes. Message is invalid for this query.'
-      this.blocks.push(block)
-    } while (buf.position < buf.length)
+    this.header.read()
+    if (this.header.noBlocks) {
+      this.blocks.push(buf.read(buf.length - buf.position)) // read the entire message
+    } else {
+      do {
+        const blockLength = Number(Label.read(buf))
+        if (blockLength < 0) throw 'Could not read invalid block length: ' + blockLength
+        const block = buf.read(blockLength)
+        if (block.length != blockLength) throw 'Could not read block of length ' + blockLength + ', only got ' + block.length + ' bytes. Message is invalid for this query.'
+        this.blocks.push(block)
+      } while (buf.position < buf.length)
+    }
 
     this.core = new BufReadonly(this.blocks[this.blocks.length - 1])
   }

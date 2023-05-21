@@ -1,7 +1,12 @@
-/* Variable-length integer encodings */
+/*
+ *  Variable-length integer encodings
+ * 
+ * This file is public domain, copy/paste at your leisure.
+ */
+
 
 /**
- * Variable-length integer encoding for unsigned integers
+ * Variable-length integer encoding for unsigned integers.
  */
 export namespace Unsigned {
   export function bytesNeeded(n: bigint): number {
@@ -14,19 +19,25 @@ export namespace Unsigned {
     if (n <= 0x1ffffffffffffn) return 7
     if (n <= 0xffffffffffffffn) return 8
     if (n <= 0x7fffffffffffffffn) return 9
-    if (!(n < 2 ** 63 - 1 && n > -(2 ** 63))) throw "bigint is out of signed 64-bit integer range"
-    return 10
+
+    let needed = 0
+    while (n > 0) {
+      needed++
+      n >>= 7n
+    }
+    return needed
   }
 
-  export function encode(n: bigint): Uint8Array {
+  export function encode(n: bigint | number): Uint8Array {
+    n = BigInt(n)
     const length = bytesNeeded(n)
     const buf = new Uint8Array(length)
     encodeInto(n, buf, 0)
     return buf
   }
 
-  export function encodeInto(n: bigint, buf: { [index: number]: number }, offset: number = 0): number {
-    if (!(n < 2 ** 63 - 1 && n > -(2 ** 63))) throw "bigint is out of signed 64-bit integer range"
+  export function encodeInto(n: bigint | number, buf: { [index: number]: number }, offset: number = 0): number {
+    n = BigInt(n)
     let pos = offset
     do {
       let octet = n & 0x7fn
@@ -47,37 +58,34 @@ export namespace Unsigned {
       ++pos
       if (!(octet & 0x80)) return { result, length: pos - offset }
       shift += 7
-      if (shift >= 64) throw "tried to decode out of 64-bit integer range"
     }
   }
 }
 
-
 /**
- * Variable-length integer encoding for unsigned integers using zig-zag. Good for integers near 0.
+ * Variable-length integer encoding using zig-zag. Good for integers near 0.
+ * 
  * https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding
  */
 export namespace ZigZag {
   export function encode(n: bigint | number): Uint8Array {
-    return Unsigned.encode(bigintEncode(BigInt(n)))
+    return Unsigned.encode(toZigZag(BigInt(n)))
   }
 
   export function encodeInto(n: bigint | number, buf: { [index: number]: number }, offset: number = 0): number {
-    return Unsigned.encodeInto(bigintEncode(BigInt(n)), buf, offset)
+    return Unsigned.encodeInto(toZigZag(BigInt(n)), buf, offset)
   }
 
   export function decode(buf: Uint8Array, offset: number = 0): { result: bigint, length: number } {
     const { result, length } = Unsigned.decode(buf, offset)
-    return { result: bigintDecode(result), length }
+    return { result: fromZigZag(result), length }
   }
 
-  export function bigintEncode(n: bigint): bigint {
+  export function toZigZag(n: bigint): bigint {
     return n >= 0 ? n << 1n : (n << 1n) ^ (~0n)
-    // return n + n + (n < 0 ? 1n : 0n)
   }
 
-  export function bigintDecode(n: bigint): bigint {
+  export function fromZigZag(n: bigint): bigint {
     return (n & 0x1n) ? n >> 1n ^ (~0n) : n >> 1n
-    // return (n + (n % 2n)) / 2n
   }
 }

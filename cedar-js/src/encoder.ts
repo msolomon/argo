@@ -4,8 +4,7 @@ import { writeFileSync } from 'fs'
 import { Buf, BufWrite } from './buf'
 import { jsonify } from './util'
 import { Path, addPath, pathToArray } from 'graphql/jsutils/Path'
-
-const DEBUG = true
+import { Header } from './header'
 
 export class CedarEncoder {
   private static utf8 = new TextEncoder()
@@ -14,64 +13,76 @@ export class CedarEncoder {
   private writers: Map<Wire.BlockKey, BlockWriter<any>> = new Map()
   public tracked: any[] = []
 
-  constructor(readonly buf: Buf = new Buf()) { }
+  header: Header
+
+  DEBUG = false // set to true to enable tracking of extra information
+
+  constructor(readonly buf: Buf = new Buf()) {
+    this.header = new Header(this.buf)
+  }
 
   track = (path: Path | undefined, msg: string, buf: BufWrite, value: any) => {
-    if (DEBUG) this.tracked.push({ path: pathToArray(path).join('.'), msg, pos: buf.position, value, })
+    if (this.DEBUG) this.tracked.push({ path: pathToArray(path).join('.'), msg, pos: buf.position, value, })
   }
 
   log = (msg: string | object) => {
-    if (DEBUG) {
+    if (this.DEBUG) {
       if (typeof msg === 'string') this.tracked.push({ pos: this.buf.position, msg })
       else this.tracked.push({ pos: this.buf.position, ...msg })
     }
   }
 
   getResult(): Buf {
-    const header = this.buildHeader()
+    const header = this.header.asUint8Array()
+    this.track(undefined, 'header', this.buf, header)
+
+    const shouldWriteBlocks = !this.header.noBlocks
+
     let dataBytesNeeded = 0
     const blockLengthHeaders = new Map()
     const bufLength = Label.encode(BigInt(this.buf.length))
 
-    // calculate how much space we need for block values, which go in a series of blocks at the start
-    for (const writer of this.writers.values()) {
-      let blockBytesNeeded = 0
-      for (const value of writer.valuesAsBytes) {
-        blockBytesNeeded += value.length
+    if (shouldWriteBlocks) {
+      // calculate how much space we need for block values, which go in a series of blocks at the start
+      for (const writer of this.writers.values()) {
+        let blockBytesNeeded = 0
+        for (const value of writer.valuesAsBytes) {
+          blockBytesNeeded += value.length
+        }
+        const blockLengthHeader = Label.encode(BigInt(blockBytesNeeded))
+        blockLengthHeaders.set(writer, blockLengthHeader)
+        dataBytesNeeded += blockBytesNeeded // reserve space for data
+        dataBytesNeeded += blockLengthHeader.length // reserve space for length header
       }
-      const blockLengthHeader = Label.encode(BigInt(blockBytesNeeded))
-      blockLengthHeaders.set(writer, blockLengthHeader)
-      dataBytesNeeded += blockBytesNeeded // reserve space for data
-      dataBytesNeeded += blockLengthHeader.length // reserve space for length header
     }
 
-    const dataLength = header.length + dataBytesNeeded + bufLength.length + this.buf.length
+    const dataLength =
+      header.length +
+      dataBytesNeeded +
+      (shouldWriteBlocks ? bufLength.length : 0) +
+      this.buf.length
     const buf = new Buf(dataLength)
 
     // write the header
     buf.write(header)
 
     // write scalar blocks
-    for (const [blockKey, writer] of this.writers.entries()) {
-      buf.write(blockLengthHeaders.get(writer)) // write length of block
-      for (const value of writer.valuesAsBytes) {
-        buf.write(value) // write each value in the block
+    if (shouldWriteBlocks) {
+      for (const [blockKey, writer] of this.writers.entries()) {
+        buf.write(blockLengthHeaders.get(writer)) // write length of block
+        for (const value of writer.valuesAsBytes) {
+          buf.write(value) // write each value in the block
+        }
       }
+
+      // write message length
+      buf.write(bufLength)
     }
 
-    // write message length
-    buf.write(bufLength)
     // write message data
     buf.writeBuf(this.buf)
     if (buf.length != buf.capacity) throw 'Programmer error: incorrect result length ' + buf.length + ', expected ' + buf.capacity
     return buf
-  }
-
-  buildHeader(): Uint8Array {
-    // TODO: support non-default flags
-    const flags = new Uint8Array(1)
-    this.track(undefined, 'flags', this.buf, flags)
-    return flags
   }
 
   makeBlockWriter(t: Wire.Type, dedupe: boolean): BlockWriter<any> {
@@ -98,8 +109,12 @@ export class CedarEncoder {
 
   write<T>(block: Wire.BLOCK, t: Wire.Type, v: T): Label | null {
     const writer = this.getWriter<T>(block, t)
+    const blockLengthBefore = writer.valuesAsBytes.length
     const label = writer.write(v)
     if (label != null) { this.buf.write(Label.encode(label)) }
+    if (this.header.noBlocks) { // write to buf instead of block
+      if (writer.valuesAsBytes.length == blockLengthBefore + 1) writer.writeLastToBuf(this.buf)
+    }
     return label
   }
 
@@ -114,7 +129,7 @@ export class CedarEncoder {
 
   jsToCedarWithType(js: any, wt: Wire.Type): void {
     const result = this.writeCedar(undefined, js, wt)
-    if (DEBUG) writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
+    if (this.DEBUG) writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
     return result
   }
 
@@ -260,7 +275,8 @@ export class CedarEncoder {
  * It does _not_ write the label to the data stream.
  */
 class BlockWriter<In> {
-  valuesAsBytes: Uint8Array[] = []
+  readonly valuesAsBytes: Uint8Array[] = []
+
   constructor(
     readonly makeLabel: (v: In, out: Uint8Array) => Label | null,
     readonly valueToBytes: (v: In) => Uint8Array,
@@ -282,6 +298,12 @@ class BlockWriter<In> {
 
   toDeduplicating(): DeduplicatingBlockWriter<In> {
     return new DeduplicatingBlockWriter<In>(this.makeLabel, this.valueToBytes)
+  }
+
+  writeLastToBuf(buf: BufWrite): void {
+    const lastValue = this.valuesAsBytes.pop()
+    if (lastValue == undefined) throw "writeLastToBuf called on empty BlockWriter"
+    buf.write(lastValue)
   }
 }
 

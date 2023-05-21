@@ -22,6 +22,7 @@ export class Interpreter {
 
   jsToCedar(js: object): Buf {
     const encoder = new CedarEncoder()
+    encoder.header.noBlocks = true
     encoder.jsToCedarWithType(js, this.typer.rootWireType())
     return encoder.getResult()
   }
