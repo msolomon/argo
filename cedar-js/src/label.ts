@@ -1,16 +1,26 @@
 import * as VarInt from './varInt'
 import { BufRead } from './buf'
 
+/** Describes which category of Label it is */
 export enum LabelKind {
-  Null,
-  Absent,
-  Error,
-  Backreference,
-  Length,
+  Null, // a missing value
+  Absent, // a missing value, which should be omitted entirely (e.g. the field or array entry should be dropped)
+  Error, // a field error occurred here
+  Backreference, // a reference to a previously-encountered value
+  Length, // the length of the value
 }
 
 export type Label = bigint
 
+/**
+ * A Label is a signed varible-length integer which encodes a length, a backreference, or a special value.
+ * It "labels" a value, indicating how it is encoded or some information about it.
+ * 
+ * For example, for a nullable String, the label is generally one of:
+ *   - The special value Null
+ *   - The length of the String (the value of which is encoded separately)
+ *   - A backreference ID to a previously-encountered String, of which this is a duplicate
+ */
 export namespace Label {
   export const typeOf = 'bigint'
   export const TrueMarker: Label = 1n

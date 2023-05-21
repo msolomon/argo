@@ -1,10 +1,12 @@
 
-export interface BufPosition {
+/** A dynamically-sized byte buffer which tracks the current position */
+interface BufPosition {
   position: number
   resetPosition(position: number): void
   incrementPosition(numBytes?: number): void
 }
 
+/** A dynamically-sized byte buffer which supports reading */
 export interface BufRead extends BufPosition {
   read(numBytes: number): Uint8Array
   get(position?: number): number | undefined
@@ -12,6 +14,7 @@ export interface BufRead extends BufPosition {
   get length(): number
 }
 
+/** A dynamically-sized byte buffer which supports writing */
 export interface BufWrite extends BufPosition {
   write(bytes: ArrayLike<number>): void
   writeBuf(buf: Buf): void
@@ -20,6 +23,7 @@ export interface BufWrite extends BufPosition {
 }
 
 
+/** Shares the implementation of a positioned buffer */
 abstract class BufBase implements BufPosition {
   /** The current position in the buffer (offset in bytes) */
   public position: number = 0
@@ -195,6 +199,7 @@ export class Buf extends BufBase implements BufPosition, BufRead, BufWrite {
   }
 }
 
+/** A Buf which supports reads and is backed by a Uint8Array */
 export class BufReadonly extends BufBase implements BufPosition, BufRead {
   constructor(private readonly _bytes: Uint8Array) { super() }
 

@@ -1,7 +1,7 @@
 /*
  *  Variable-length integer encodings
  * 
- * This file is public domain, copy/paste at your leisure.
+ * This file and its contents are public domain, copy/paste at your leisure.
  */
 
 

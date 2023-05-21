@@ -6,13 +6,11 @@ import { Buf } from "./buf"
  */
 export class Header {
   flags: BitSet = 0n
-  constructor(readonly buf: Buf) {
-    this.noBlocks = true
-    this.selfDescribing = true
-  }
+  constructor(readonly buf: Buf) { }
 
   private static NoBlocks = 0
   private static SelfDescribing = 1
+  private static OutOfBandFieldErrors = 2
 
   read() {
     const bs = BitSet.Var.read(this.buf.uint8array)
@@ -40,4 +38,7 @@ export class Header {
 
   get selfDescribing(): boolean { return this.get(Header.SelfDescribing) }
   set selfDescribing(value: boolean) { this.set(Header.SelfDescribing, value) }
+
+  get outOfBandFieldErrors(): boolean { return this.get(Header.OutOfBandFieldErrors) }
+  set outOfBandFieldErrors(value: boolean) { this.set(Header.OutOfBandFieldErrors, value) }
 }

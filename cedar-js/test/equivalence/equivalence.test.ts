@@ -5,7 +5,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { buildSchema, parse, DocumentNode, GraphQLSchema } from 'graphql'
-import { Interpreter, Typer } from '../../src'
+import { ExecutionResultCodec, Typer } from '../../src'
 import { brotliCompressSync, gzipSync, constants } from 'zlib'
 import zstd from '@mongodb-js/zstd'
 import { StarWarsSchema } from './starwarsequivalence'
@@ -107,7 +107,7 @@ test('Typer', async () => {
 })
 
 async function runEquivalence(name: string, query: DocumentNode, json: string, schema: GraphQLSchema, expected: any) {
-  const ci = new Interpreter(schema, query)
+  const ci = new ExecutionResultCodec(schema, query)
 
   const cedarBytes = ci.jsToCedar(expected)
   cedarBytes.compact() // make sure we don't have usused space, since later we access the underlying array

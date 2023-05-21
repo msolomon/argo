@@ -1,3 +1,9 @@
+/*
+ * Bitset functions for packing booleans compactly into a bigint.
+ * Supports both fixed-length and variable-length bitsets.
+ * 
+ * This file and its contents are public domain, copy/paste at your leisure.
+ */
 
 export type BitSet = bigint
 

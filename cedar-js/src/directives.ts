@@ -1,9 +1,10 @@
 import { DirectiveLocation, DirectiveNode, GraphQLBoolean, GraphQLDirective, GraphQLEnumType, GraphQLInt, GraphQLNonNull, ConstDirectiveNode, GraphQLType, GraphQLScalarType, BooleanValueNode, StringValueNode, IntValueNode } from "graphql";
 import { Wire } from "./wire";
 
+/** Marks a type for de-duplication. Works best with large values which re-appear often. */
 export const CedarDeduplicateDirective = new GraphQLDirective({
   name: 'CedarDeduplicate',
-  description: 'Deduplicate the results of this field. Adding or removing this directive is typically a breaking change.',
+  description: 'Deduplicate values of this type. Adding or removing this directive is typically a breaking change.',
   locations: [
     DirectiveLocation.SCALAR,
     DirectiveLocation.ENUM,
@@ -11,7 +12,7 @@ export const CedarDeduplicateDirective = new GraphQLDirective({
   ], // TODO: support deduplicating selection sets?
   args: {
     deduplicate: {
-      description: 'Should the results of this field be deduplicated?',
+      description: 'Should values of this type be deduplicated?',
       type: new GraphQLNonNull(GraphQLBoolean),
       defaultValue: true,
     }
@@ -28,6 +29,7 @@ export enum CedarCodec {
   FIXED = 'FIXED',
 }
 
+/** Describes the Cedar codecs which are available */
 export const CedarCodecType = new GraphQLEnumType({
   name: 'CedarCodecType',
   description: 'Specifies how to serialize and deserialize this scalar. Adding, changing, or removing this directive is typically a breaking change.',
@@ -59,6 +61,7 @@ export const CedarCodecType = new GraphQLEnumType({
   }
 })
 
+/** Specifies how to encode and decode a (custom) Scalar */
 export const CedarCodecDirective = new GraphQLDirective({
   name: 'CedarCodec',
   description: 'Specifies how to serialize and deserialize this scalar. This is necessary for custom scalars to work with Cedar serialization. Adding, changing, or removing this directive is typically a breaking change.',

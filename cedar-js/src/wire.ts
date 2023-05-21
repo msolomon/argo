@@ -5,7 +5,10 @@ import { groupBy } from './util'
 import { CedarCodecDirective, CedarDeduplicateDirective, getCedarCodecDirectiveValue, getCedarDeduplicateDirectiveValue } from './directives'
 import { Label } from './label'
 
+/** Cedar Wire encoding */
 export namespace Wire {
+
+  /** All possible types of a value */
   export type Type =
     | Wire.STRING
     | Wire.BOOLEAN
@@ -21,6 +24,7 @@ export namespace Wire {
 
   export type BlockKey = string
 
+  /** The names of a value */
   export enum TypeKey {
     // Primitive types
     STRING = "STRING",
@@ -91,19 +95,24 @@ export namespace Wire {
     const idnt = (plus: number = 0) => " ".repeat(indent + plus)
     const recurse = (wt: Wire.Type): string => print(wt, indent + 1)
     const inner = () => {
-      if (Wire.isSTRING(wt)) return wt.type
-      else if (Wire.isVARINT(wt)) return wt.type
-      else if (Wire.isBOOLEAN(wt)) return wt.type
-      else if (Wire.isFLOAT64(wt)) return wt.type
-      else if (Wire.isBYTES(wt)) return wt.type
-      else if (Wire.isNULLABLE(wt)) return recurse(wt.of) + "?"
-      else if (Wire.isBLOCK(wt)) return recurse(wt.of) + wt.dedupe ? "<" : "{" + wt.key + wt.dedupe ? ">" : "}"
-      else if (Wire.isARRAY(wt)) return recurse(wt.of) + "[]"
-      else if (Wire.isRECORD(wt)) {
-        const fs = wt.fields.map(({ name, type, omittable }) => idnt(1) + `${name}${omittable ? "?" : ""}: ${recurse(type).trimStart()}`)
-        return "{\n" + fs.join("\n") + "\n" + idnt() + "}"
+      switch (wt.type) {
+        case 'STRING':
+        case 'VARINT':
+        case 'BOOLEAN':
+        case 'FLOAT64':
+        case 'BYTES':
+        case 'DESC':
+          return wt.type
+        case 'NULLABLE': return recurse(wt.of) + "?"
+        case 'FIXED': return `${wt.type}(${wt.length})`
+        case 'BLOCK':
+          return recurse(wt.of) + (wt.dedupe ? "<" : "{") + wt.key + (wt.dedupe ? ">" : "}")
+        case 'ARRAY': return recurse(wt.of) + "[]"
+        case 'RECORD':
+          const fs = wt.fields.map(({ name, type, omittable }) => idnt(1) + `${name}${omittable ? "?" : ""}: ${recurse(type).trimStart()}`)
+          return "{\n" + fs.join("\n") + "\n" + idnt() + "}"
+        default: throw "Programmer error: print can't handle " + JSON.stringify(wt)
       }
-      else throw "Programmer error: print can't handle " + JSON.stringify(wt)
     }
     return idnt() + inner()
   }

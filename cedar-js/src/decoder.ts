@@ -6,7 +6,6 @@ import { Buf, BufReadonly, BufRead } from './buf'
 import { Path, addPath, pathToArray } from 'graphql/jsutils/Path'
 import { jsonify } from './util'
 import { BlockReader, DeduplicatingLabelBlockReader, FixedSizeBlockReader, LabelBlockReader, UnlabeledVarIntBlockReader } from './blockReader'
-import { BitSet } from './bitset'
 import { Header } from './header'
 
 /**
@@ -46,7 +45,7 @@ export class CedarDecoder {
     let exn: any = null
     let result: any = null
     try {
-      result = this.readCedar(this.slicer.core, undefined, wt)
+      result = this.readCedar(this.slicer.core, undefined, this.slicer.header.selfDescribing ? Wire.DESC : wt)
     } catch (e) {
       exn = e
     } finally {
@@ -192,7 +191,6 @@ export class CedarDecoder {
   }
 
   readSelfDescribing = (buf: BufRead, path: Path | undefined): any => {
-
     switch (Label.read(buf)) {
       case Wire.SelfDescribing.NullMarker: return null
       case Wire.SelfDescribing.AbsentMarker: return undefined
