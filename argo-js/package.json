@@ -29,6 +29,7 @@
   ],
   "main": "src/index.js",
   "devDependencies": {
+    "@capnp-js/trans-packing": "^0.4.0",
     "@mongodb-js/zstd": "^1.1.0",
     "@types/jest": "^29.1.2",
     "@types/lz4": "^0.6.1",

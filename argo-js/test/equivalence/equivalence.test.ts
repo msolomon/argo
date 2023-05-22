@@ -9,6 +9,7 @@ import { ExecutionResultCodec, Typer } from '../../src'
 import { brotliCompressSync, gzipSync, constants } from 'zlib'
 import zstd from '@mongodb-js/zstd'
 import * as lz4 from 'lz4'
+import { transEncodeSync } from '@capnp-js/trans-packing'
 import { StarWarsSchema } from './starwarsequivalence'
 
 jest.setTimeout(10000)
@@ -81,6 +82,30 @@ async function* walk(dir: string, dirsOnly: boolean = false): AsyncGenerator<str
   }
 }
 
+// this is Cap'n Proto's packing algorithm, which basically compresses long strings of 0 bytes
+// see https://capnproto.org/encoding.html#packing
+function capnpPackedLength(bytes: Uint8Array): number {
+  const encode = transEncodeSync(new Uint8Array(2048));
+  let done = false
+  const source = {
+    next() {
+      if (!done) {
+        done = true
+        return { done: false, value: bytes }
+      }
+      else return { done }
+    },
+  }
+  const packed = encode(source);
+  let length = 0
+  let p = packed.next()
+  while (!p.done) {
+    length += p.value.length
+    p = packed.next()
+  }
+  return length
+}
+
 test('Star Wars equivalence tests', async () => {
   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
   for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
@@ -122,24 +147,29 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
   const argoToJson = JSON.stringify(fromArgoResult, null, 2)
   expect(argoToJson).toEqual(json)
 
-  // Compression levels have to be picked somehow, so this is all (very roughly) normalized around gzip level 6 performance
+  // Compression levels have to be picked somehow, so this is (very roughly) normalized around gzip level 6 performance
   // For GraphQL responses, I would suggest using Brotli where supported (at quality level 4) and falling back to gzip (level 6) otherwise
   const GzipLevel = 6 // Apache and CLI default. NGINX uses 1
   const BrotliQuality = 4 // rough equivalent of gzip 6 based on https://dev.to/coolblue/improving-website-performance-with-brotli-5h70
   const ZstdLevel = 6 // very rough single-core equivalent of above based on https://community.centminmod.com/threads/round-4-compression-comparison-benchmarks-zstd-vs-brotli-vs-pigz-vs-bzip2-vs-xz-etc.18669/
+  // LZ4 uses the default level (not high-compression mode) and is included for consideration as a fast compression algorithm
+  // Cap'n Proto's packing algorithm has no levels, and is included as an extremely fast pseudo-compression algorithm
 
   const brotliJsonSize = brotliCompressSync(compactJson, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
   const gzipJsonSize = gzipSync(compactJson, { level: GzipLevel }).byteLength
   const zstdJsonSize = (await zstd.compress(Buffer.from(compactJson), ZstdLevel)).byteLength
   const lz4JsonSize = lz4.encode(Buffer.from(compactJson), { streamChecksum: false }).byteLength
+  const capnpJsonSize = capnpPackedLength(Buffer.from(compactJson))
   const brotliArgoSize = brotliCompressSync(argoBytes.uint8array, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
   const gzipArgoSize = gzipSync(argoBytes.uint8array, { level: GzipLevel }).byteLength
   const zstdArgoSize = (await zstd.compress(Buffer.from(argoBytes.uint8array), ZstdLevel)).byteLength
   const lz4ArgoSize = lz4.encode(Buffer.from(argoBytes.uint8array), { streamChecksum: false }).byteLength
+  const capnpArgoSize = capnpPackedLength(Buffer.from(argoBytes.uint8array))
   const savedWithArgo = (json: number, argo: number) => `${(json - argo).toLocaleString("en-US")} bytes (${100 - Math.round(argo / json * 100)}%)`
 
   const sizes: { [index: string]: any } = {
     uncompressed: { level: 0, json: compactJsonLength, argo: argoBytes.length, saved: savedWithArgo(compactJsonLength, argoBytes.length) },
+    capnp_pack: { json: capnpJsonSize, argo: capnpArgoSize, saved: savedWithArgo(capnpJsonSize, capnpArgoSize) },
     lz4: { json: lz4JsonSize, argo: lz4ArgoSize, saved: savedWithArgo(lz4JsonSize, lz4ArgoSize) },
     gzip: { level: GzipLevel, json: gzipJsonSize, argo: gzipArgoSize, saved: savedWithArgo(gzipJsonSize, gzipArgoSize) },
     brotli: { level: BrotliQuality, json: brotliJsonSize, argo: brotliArgoSize, saved: savedWithArgo(brotliJsonSize, brotliArgoSize) },
