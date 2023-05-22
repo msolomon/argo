@@ -50,14 +50,14 @@ export namespace Unsigned {
 
   export function decode(buf: Uint8Array, offset: number = 0): { result: bigint, length: number } {
     let result = 0n
-    let shift = 0
+    let shift = 0n
     let pos = offset
     while (true) {
       let octet = buf[pos]
-      result |= BigInt((octet & 0x7f) << shift)
+      result |= BigInt((octet & 0x7f)) << shift
       ++pos
       if (!(octet & 0x80)) return { result, length: pos - offset }
-      shift += 7
+      shift += 7n
     }
   }
 }

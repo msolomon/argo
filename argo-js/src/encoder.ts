@@ -44,7 +44,7 @@ export class ArgoEncoder {
 
     let dataBytesNeeded = 0
     const blockLengthHeaders = new Map()
-    const bufLength = Label.encode(BigInt(this.buf.length))
+    const bufLength = Label.encode(this.buf.length)
 
     if (shouldWriteBlocks) {
       // calculate how much space we need for block values, which go in a series of blocks at the start
@@ -53,7 +53,7 @@ export class ArgoEncoder {
         for (const value of writer.valuesAsBytes) {
           blockBytesNeeded += value.length
         }
-        const blockLengthHeader = Label.encode(BigInt(blockBytesNeeded))
+        const blockLengthHeader = Label.encode(blockBytesNeeded)
         blockLengthHeaders.set(writer, blockLengthHeader)
         dataBytesNeeded += blockBytesNeeded // reserve space for data
         dataBytesNeeded += blockLengthHeader.length // reserve space for length header

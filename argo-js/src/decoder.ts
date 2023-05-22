@@ -296,7 +296,7 @@ class MessageSlicer {
         const blockLength = Number(Label.read(buf))
         if (blockLength < 0) throw 'Could not read invalid block length: ' + blockLength
         const block = buf.read(blockLength)
-        if (block.length != blockLength) throw 'Could not read block of length ' + blockLength + ', only got ' + block.length + ' bytes. Message is invalid for this query.'
+        if (block.length != blockLength) throw 'Could not read block of length ' + blockLength + ', only got ' + block.length + ' bytes. Message is invalid for this Wire schema.'
         this.blocks.push(block)
       } while (buf.position < buf.length)
     }
