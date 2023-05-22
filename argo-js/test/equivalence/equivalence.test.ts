@@ -8,6 +8,7 @@ import { buildSchema, parse, DocumentNode, GraphQLSchema } from 'graphql'
 import { ExecutionResultCodec, Typer } from '../../src'
 import { brotliCompressSync, gzipSync, constants } from 'zlib'
 import zstd from '@mongodb-js/zstd'
+import * as lz4 from 'lz4'
 import { StarWarsSchema } from './starwarsequivalence'
 
 jest.setTimeout(10000)
@@ -130,13 +131,16 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
   const brotliJsonSize = brotliCompressSync(compactJson, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
   const gzipJsonSize = gzipSync(compactJson, { level: GzipLevel }).byteLength
   const zstdJsonSize = (await zstd.compress(Buffer.from(compactJson), ZstdLevel)).byteLength
+  const lz4JsonSize = lz4.encode(Buffer.from(compactJson), { streamChecksum: false }).byteLength
   const brotliArgoSize = brotliCompressSync(argoBytes.uint8array, { params: { [constants.BROTLI_PARAM_QUALITY]: BrotliQuality } }).byteLength
   const gzipArgoSize = gzipSync(argoBytes.uint8array, { level: GzipLevel }).byteLength
   const zstdArgoSize = (await zstd.compress(Buffer.from(argoBytes.uint8array), ZstdLevel)).byteLength
+  const lz4ArgoSize = lz4.encode(Buffer.from(argoBytes.uint8array), { streamChecksum: false }).byteLength
   const savedWithArgo = (json: number, argo: number) => `${(json - argo).toLocaleString("en-US")} bytes (${100 - Math.round(argo / json * 100)}%)`
 
   const sizes: { [index: string]: any } = {
     uncompressed: { level: 0, json: compactJsonLength, argo: argoBytes.length, saved: savedWithArgo(compactJsonLength, argoBytes.length) },
+    lz4: { json: lz4JsonSize, argo: lz4ArgoSize, saved: savedWithArgo(lz4JsonSize, lz4ArgoSize) },
     gzip: { level: GzipLevel, json: gzipJsonSize, argo: gzipArgoSize, saved: savedWithArgo(gzipJsonSize, gzipArgoSize) },
     brotli: { level: BrotliQuality, json: brotliJsonSize, argo: brotliArgoSize, saved: savedWithArgo(brotliJsonSize, brotliArgoSize) },
     zstd: { level: ZstdLevel, json: zstdJsonSize, argo: zstdArgoSize, saved: savedWithArgo(zstdJsonSize, zstdArgoSize) },
