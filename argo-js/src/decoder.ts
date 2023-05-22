@@ -281,7 +281,7 @@ class MessageSlicer {
   readonly core: BufRead
 
   get nextBlock(): BufRead {
-    if (this.header.noBlocks) return this.core
+    if (this.header.inlineEverything) return this.core
     const next = this.blocks[this.nextBlockIndex++]
     return new BufReadonly(next)
   }
@@ -289,7 +289,7 @@ class MessageSlicer {
   constructor(readonly buf: Buf) {
     this.header = new Header(buf)
     this.header.read()
-    if (this.header.noBlocks) {
+    if (this.header.inlineEverything) {
       this.blocks.push(buf.read(buf.length - buf.position)) // read the entire message
     } else {
       do {

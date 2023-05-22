@@ -8,7 +8,7 @@ export class Header {
   flags: BitSet = 0n
   constructor(readonly buf: Buf) { }
 
-  private static NoBlocks = 0
+  private static InlineEverything = 0
   private static SelfDescribing = 1
   private static OutOfBandFieldErrors = 2
   private static NullTerminatedStrings = 3
@@ -34,8 +34,8 @@ export class Header {
 
   private get(flag: number): boolean { return BitSet.getBit(this.flags, flag) }
 
-  get noBlocks(): boolean { return this.get(Header.NoBlocks) }
-  set noBlocks(value: boolean) { this.set(Header.NoBlocks, value) }
+  get inlineEverything(): boolean { return this.get(Header.InlineEverything) }
+  set inlineEverything(value: boolean) { this.set(Header.InlineEverything, value) }
 
   get selfDescribing(): boolean { return this.get(Header.SelfDescribing) }
   set selfDescribing(value: boolean) { this.set(Header.SelfDescribing, value) }

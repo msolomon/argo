@@ -40,7 +40,7 @@ export class ArgoEncoder {
     const header = this.header.asUint8Array()
     this.track(undefined, 'header', this.buf, header)
 
-    const shouldWriteBlocks = !this.header.noBlocks
+    const shouldWriteBlocks = !this.header.inlineEverything
 
     let dataBytesNeeded = 0
     const blockLengthHeaders = new Map()
@@ -122,7 +122,7 @@ export class ArgoEncoder {
     const blockLengthBefore = writer.valuesAsBytes.length
     const label = writer.write(v)
     if (label != null) { this.buf.write(Label.encode(label)) }
-    if (this.header.noBlocks) { // write to buf instead of block
+    if (this.header.inlineEverything) { // write to buf instead of block
       if (writer.valuesAsBytes.length == blockLengthBefore + 1) writer.writeLastToBuf(this.buf)
     }
     return label
