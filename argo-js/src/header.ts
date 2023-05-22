@@ -11,6 +11,7 @@ export class Header {
   private static NoBlocks = 0
   private static SelfDescribing = 1
   private static OutOfBandFieldErrors = 2
+  private static NullTerminatedStrings = 3
 
   read() {
     const bs = BitSet.Var.read(this.buf.uint8array)
@@ -41,4 +42,7 @@ export class Header {
 
   get outOfBandFieldErrors(): boolean { return this.get(Header.OutOfBandFieldErrors) }
   set outOfBandFieldErrors(value: boolean) { this.set(Header.OutOfBandFieldErrors, value) }
+
+  get nullTerminatedStrings(): boolean { return this.get(Header.NullTerminatedStrings) }
+  set nullTerminatedStrings(value: boolean) { this.set(Header.NullTerminatedStrings, value) }
 }

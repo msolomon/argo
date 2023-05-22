@@ -5,6 +5,7 @@ import { Label, LabelKind } from './label'
 export abstract class BlockReader<Out> {
   constructor(public buf: BufRead) { }
   abstract read(parent: BufRead): Out | undefined | null
+  afterNewRead(): void { }
 }
 
 /** A BlockReader for length-prefixed values (with length encoded as a Label) */
@@ -16,7 +17,10 @@ export class LabelBlockReader<Out> extends BlockReader<Out> {
 
     switch (Label.kind(label)) {
       case LabelKind.Backreference: throw 'Programmer error: This type must not use backreferences'
-      case LabelKind.Length: return this.fromBytes(this.buf.read(Number(label)))
+      case LabelKind.Length:
+        const value = this.fromBytes(this.buf.read(Number(label)))
+        this.afterNewRead()
+        return value
       case LabelKind.Null: throw 'Programmer error: Reader cannot handle null labels'
       case LabelKind.Absent: throw 'Programmer error: Reader cannot handle absent labels'
       case LabelKind.Error: throw 'Programmer error: Reader cannot handle error labels'
@@ -44,6 +48,7 @@ export class DeduplicatingLabelBlockReader<Out> extends BlockReader<Out> {
         const bytes = this.buf.read(Number(label))
         const value = this.fromBytes(bytes)
         this.values.push(value)
+        this.afterNewRead()
         return value
       case LabelKind.Null: throw 'Programmer error: Reader cannot handle null labels'
       case LabelKind.Absent: throw 'Programmer error: Reader cannot handle absent labels'

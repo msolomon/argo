@@ -243,8 +243,13 @@ export class ArgoDecoder {
   makeBlockReader(t: Wire.Type, dedupe: boolean): BlockReader<any> {
     switch (t.type) {
       case "STRING":
-        if (dedupe) return new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, ArgoDecoder.utf8decode)
-        else return new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, ArgoDecoder.utf8decode)
+        let reader: BlockReader<string>
+        if (dedupe) reader = new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, ArgoDecoder.utf8decode)
+        else reader = new LabelBlockReader<string>(this.slicer.nextBlock, ArgoDecoder.utf8decode)
+        if (this.slicer.header.nullTerminatedStrings) {
+          reader.afterNewRead = () => reader.buf.incrementPosition() // skip the null byte
+        }
+        return reader
       case "BYTES":
         if (dedupe) return new DeduplicatingLabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
         else return new LabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)

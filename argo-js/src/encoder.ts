@@ -89,11 +89,17 @@ export class ArgoEncoder {
     return buf
   }
 
+  private static NullTerminator = new Uint8Array([0])
   makeBlockWriter(t: Wire.Type, dedupe: boolean): BlockWriter<any> {
     switch (t.type) {
       case "STRING":
-        if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(ArgoEncoder.utf8encode)
-        else return BlockWriter.lengthOfBytes(ArgoEncoder.utf8encode)
+        let writer: BlockWriter<string | undefined>
+        if (dedupe) writer = DeduplicatingBlockWriter.lengthOfBytes(ArgoEncoder.utf8encode)
+        else writer = BlockWriter.lengthOfBytes(ArgoEncoder.utf8encode)
+        if (this.header.nullTerminatedStrings) {
+          writer.afterNewWrite = () => writer.valuesAsBytes.push(ArgoEncoder.NullTerminator)
+        }
+        return writer
       case "BYTES":
         if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(bytes => bytes)
         else return BlockWriter.lengthOfBytes(bytes => bytes)

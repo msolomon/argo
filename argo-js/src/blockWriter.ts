@@ -22,9 +22,12 @@ export class BlockWriter<In> {
     return new BlockWriter<In>((v, bytes) => null, toBytes)
   }
 
+  afterNewWrite(): void { }
+
   write(v: In): Label | null {
     const bytes = this.valueToBytes(v)
     this.valuesAsBytes.push(bytes)
+    this.afterNewWrite()
     return this.makeLabel(v, bytes)
   }
 
@@ -70,6 +73,7 @@ export class DeduplicatingBlockWriter<In> extends BlockWriter<In> {
     const bytes = this.valueToBytes(v)
     if (bytes) {
       this.valuesAsBytes.push(bytes)
+      this.afterNewWrite()
       return this.labelForNew(v, bytes)
     } else return null
   }

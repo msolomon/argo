@@ -148,7 +148,11 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
   expect(argoToJson).toEqual(json)
 
   // Compression levels have to be picked somehow, so this is (very roughly) normalized around gzip level 6 performance
-  // For GraphQL responses, I would suggest using Brotli where supported (at quality level 4) and falling back to gzip (level 6) otherwise
+  // For GraphQL responses, I would suggest:
+  // 1. For small responses (say, < 500 bytes) don't compress
+  // 2. For other responses, use Brotli where supported (at quality level 4)
+  // 3. Fall back to gzip (level 6) where Brotli is not supported
+  // Additionally, if you are CPU-bound, either don't compress or use a fast algorithm like LZ4 (or, compress at a reverse proxy)
   const GzipLevel = 6 // Apache and CLI default. NGINX uses 1
   const BrotliQuality = 4 // rough equivalent of gzip 6 based on https://dev.to/coolblue/improving-website-performance-with-brotli-5h70
   const ZstdLevel = 6 // very rough single-core equivalent of above based on https://community.centminmod.com/threads/round-4-compression-comparison-benchmarks-zstd-vs-brotli-vs-pigz-vs-bzip2-vs-xz-etc.18669/
