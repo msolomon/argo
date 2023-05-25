@@ -191,11 +191,14 @@ export class ArgoDecoder {
   }
 
   readSelfDescribing = (buf: BufRead, path: Path | undefined): any => {
-    switch (Label.read(buf)) {
-      case Wire.SelfDescribing.NullMarker: return null
-      case Wire.SelfDescribing.AbsentMarker: return undefined
+    const label = Label.read(buf)
+    switch (label) {
 
-      case Wire.SelfDescribing.ObjectMarker: {
+      case Wire.SelfDescribing.TypeMarker.Null: return null
+      case Wire.SelfDescribing.TypeMarker.False: return false
+      case Wire.SelfDescribing.TypeMarker.True: return true
+
+      case Wire.SelfDescribing.TypeMarker.Object: {
         const obj: { [key: string]: any } = {}
         const length = Number(Label.read(buf))
         for (let i = 0; i < length; i++) {
@@ -207,27 +210,24 @@ export class ArgoDecoder {
         return obj
       }
 
-      case Wire.SelfDescribing.StringMarker:
-        return this.readArgo(buf, path, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
-
-      case Wire.SelfDescribing.BooleanMarker:
-        const label = Label.read(buf)
-        switch (label) {
-          case Label.TrueMarker: return true
-          case Label.FalseMarker: return false
-          default: throw `Invalid boolean label ${label} at ${path}`
-        }
-
-      case Wire.SelfDescribing.IntMarker:
-        return this.readArgo(buf, path, Wire.VARINT, Wire.SelfDescribing.Blocks.VARINT)
-
-      case Wire.SelfDescribing.FloatMarker:
-        return this.readArgo(buf, path, Wire.FLOAT64, Wire.SelfDescribing.Blocks.FLOAT64)
-
-      case Wire.SelfDescribing.ListMarker:
+      case Wire.SelfDescribing.TypeMarker.List:
         const length = Number(Label.read(buf))
         return new Array(length).fill(undefined)
           .map((_, i) => this.readSelfDescribing(buf, addPath(path, i, undefined)))
+
+      case Wire.SelfDescribing.TypeMarker.String:
+        return this.readArgo(buf, path, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
+
+      case Wire.SelfDescribing.TypeMarker.Bytes:
+        return this.readArgo(buf, path, Wire.BYTES, Wire.SelfDescribing.Blocks.BYTES)
+
+      case Wire.SelfDescribing.TypeMarker.Int:
+        return this.readArgo(buf, path, Wire.VARINT, Wire.SelfDescribing.Blocks.VARINT)
+
+      case Wire.SelfDescribing.TypeMarker.Float:
+        return this.readArgo(buf, path, Wire.FLOAT64, Wire.SelfDescribing.Blocks.FLOAT64)
+
+      default: throw 'Invalid self-describing type marker: ' + label
     }
   }
 

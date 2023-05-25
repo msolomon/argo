@@ -130,26 +130,31 @@ export namespace Wire {
   }
 
   export namespace SelfDescribing {
-    // Each of these marks a self-describing value, which follows
-    export const AbsentMarker = Label.AbsentMarker // -2n
-    export const Absent = Label.Absent
-    export const NullMarker = Label.NullMarker // -1n
+    export namespace TypeMarker {
+      export const Null = Label.NullMarker // -1
+      export const False = Label.FalseMarker // 0
+      export const True = Label.TrueMarker // 1
+      export const Object = 2n
+      export const List = 3n
+      export const String = 4n
+      export const Bytes = 5n
+      export const Int = 6n
+      export const Float = 7n
+    }
+    // Each of these marks a self-describing value, which generally follows it
     export const Null = Label.Null
-    export const ObjectMarker = 0n
-    export const Object = Label.encode(ObjectMarker)
-    export const StringMarker = 1n
-    export const String = Label.encode(StringMarker)
-    export const BooleanMarker = 2n
-    export const Boolean = Label.encode(BooleanMarker)
-    export const IntMarker = 3n
-    export const Int = Label.encode(IntMarker)
-    export const FloatMarker = 4n
-    export const Float = Label.encode(FloatMarker)
-    export const ListMarker = 5n
-    export const List = Label.encode(ListMarker)
+    export const False = Label.False
+    export const True = Label.True
+    export const Object = Label.encode(TypeMarker.Object)
+    export const String = Label.encode(TypeMarker.String)
+    export const Bytes = Label.encode(TypeMarker.Bytes)
+    export const Int = Label.encode(TypeMarker.Int)
+    export const Float = Label.encode(TypeMarker.Float)
+    export const List = Label.encode(TypeMarker.List)
 
     export namespace Blocks {
       export const STRING = Wire.block(Wire.STRING, 'String', deduplicateByDefault(Wire.STRING))
+      export const BYTES = Wire.block(Wire.BYTES, 'Bytes', deduplicateByDefault(Wire.BYTES))
       export const VARINT = Wire.block(Wire.VARINT, 'Int', deduplicateByDefault(Wire.VARINT))
       export const FLOAT64 = Wire.block(Wire.FLOAT64, 'Float', deduplicateByDefault(Wire.FLOAT64))
     }

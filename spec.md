@@ -1,11 +1,10 @@
 # Argo
 
-_Version May 2023 DRAFT_.
+_Version 0.0.1 DRAFT_.
 _Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
 
-Argo is a compact, streamable, binary serialization format for [GraphQL](https://graphql.org).
-
-Argo aims to:
+Argo is a compact and compressible binary serialization format for [GraphQL](https://graphql.org).
+It aims to:
 
 - **Minimize end-to-end latency** of GraphQL responses
   - Including serialization, transport, and deserialization
@@ -14,44 +13,26 @@ Argo aims to:
 
 Argo\:
 
-- Takes the place of JSON in GraphQL responses
-- Usually meets the needs of mobile clients (and server clients) better than web clients
-- Works best with code generation, but also works well with interpretation
+- **Takes the place of JSON** in GraphQL responses
+- Usually **meets the needs of mobile clients** (and server clients) better than web clients
+- **Works best with code generation**, but also works well with interpretation
 - Does not currently support GraphQL Input types
 
-** Notes (TODO: remove) **
+---
 
-hmm... i added in null bitmasks for objects, and it made things a tad worse. trying coalescing null markers and bit masks... still have a problem with error vs. absent vs. null.
+- compute wire schema
+- encode
+- decode
 
-- idea: use Label before double to represent length of 0s to pad with. due to json/js, many doubles are actually smallish ints, which in ieee754 means leading w/ 0-bytes. might work out on average, esp. since 0 takes 1 byte (iirc).
-- Idea: Compact Paths to values to represent errors. A series of tags.
-  - If errors inlined, path up to propagation stop is implicit. The path from there down into any initiating non-nullable field would need to be explicit though, need to account for
-- need to handle input vs output types: arguments in particular
-  - First version: output types only?
-- i32, i64 are useful. but what about just a fixed length byte block in general? could represent that in the type system as well.
-- idea: null collapsing. nullable fields would normally start w/ a zero byte if null, 1 otherwise. for enum & union types, this could be collapsed into just the length, if we never used 0 in the type of an enum or union. is that worth it?
-- idea: we could explicitly mark values which have backrefs inline by using negative identifiers the first time. however, this would make encoding two-pass.
-- Idea. Directive on an object type or fragment to mark it as likely to repeat. Then both sides can keep back refs to it as elsewhere. This is free for nullable and unions, but need an extra byte for non nullable objects. I guess valid on custom scalars.
-- Idea: default values, should they have an implicit ref Identifier?
+TODO\:
+
+- document: null collapsing. nullable fields would normally start w/ a zero byte if null, 1 otherwise. for enum & union types, this could be collapsed into just the length, if we never used 0 in the type of an enum or union. is that worth it?
+
 - Document: defend against invalid back references (too low ids)
 - Document: limit read length allocations which exceed content size (if known) or a configurable limit, default 64MB
-- Idea: default backrefs for common strings: `__typename`, message, id, locations, line, column, path?
-- Problem: error extensions assumes self-describing format. so need to define that too
-- Idea: never backref empty string? or more generally, when encoding, check if backref length + value <= backref id size. may also combine w: -1 backref = empty string, which avoids separate representations of null + empty string, and can use a single reflen instead
-- Idea: as an optional flag, could return error extensions as a json string. this prevents the need for a custom decoder.
-- Question: can errors have entries that don't correspond to places in the response? If so need to figure out how to encode. nope, spec doesn't allow it
-- Todo: interfaces?
-- problem: write label even for nonnullable objects? or write presence label?
-
-** Problems (TODO: remove) **
-
-- Adding an enum: can't produce a reliable tag based on ordering, if the server adds a new enum value before the end, or removes one entirely
-- TODO: make sure the bounds of using 64bit varint can encode all the enums etc. that we need
-  TODO: JSON encoding. or, should it simply be a view on the binary encoding?
-  Named because it sounds sort of like
-- @encoding annotation isn't backwards compatible :(
-- de-dup all objects as soon as one object type is marked? on the reader, i think you have to, on the writer, seems crazy? i don't see any way around it though, without a verbose communcation of which types opted in... maybe we could do query-only, and ignore schema annotations? kinda anoying too
-- TODO: where to interfaces fit in? kinda just tagged selection sets
+- Document: never backref empty string? or more generally, when encoding, check if backref length + value <= backref id size. -
+- Document: Adding an enum: can't produce a reliable tag based on ordering, if the server adds a new enum value before the end, or removes one entirely
+- Document: why not input types.
 
 ** Introduction **
 
@@ -59,108 +40,40 @@ This document defines Argo.
 It is intended to be the authoritative specification.
 Implementations of Argo must adhere to this document.
 
-Design notes and motivations are included, but do not specify necessary technical details.
-
-# Motivation
-
-GraphQL typically serialzes data into JSON, but GraphQL is designed to support other serializations as well.
-Argo is purpose-made to improve on serialization for GraphQL.
-
-## JSON
-
-JSON is the standard serialization for GraphQL data.
-It has many strengths as well as a few weaknesses.
-
-**Strengths of JSON:**
-
-- Ubiquitous
-  - Many stable, high-performance implementations
-  - High quality tools for working with JSON
-- Self-describing (simple and usable even without tools)
-  - Independent of GraphQL schemas, documents, queries, and types
-- Human-readable and machine-readable
-
-**Weaknesses of JSON:**
-
-- Large data representation (relative to binary formats)
-  - Repetitive data format (e.g. field names) leads to large uncompressed sizes
-  - Self-delimited self-describing data uses additional space
-- Limited data type availability
-  - Byte string data must be "stuffed" into Unicode strings
-  - 64-bit integers don't work reliabily across all platforms
-  - "Stuffing" other types into e.g. String can introduce inefficiencies
-
-## Tradeoffs
-
-**In most cases JSON is a great choice for GraphQL.**
-However, it can be difficult to address the weaknesses.
-Primarily, these are related to performance: reducing the size of payloads, and reading and writing them quickly.
-
-The value of reading and writing data quickly is self-evident.
-The benefits of reduced payload sizes can be somewhat more subtle:
-
-- Decreased latency across the stack
-  - Most importantly, over the network
-    - [TCP Slow Start](https://developer.mozilla.org/en-US/docs/Glossary/TCP_slow_start), [QUIC Slow Start](https://www.rfc-editor.org/rfc/rfc9002.html#name-slow-start), and other congestion control mechanisms mean larger first response payloads can significantly increase user-observed latency (especially on app open)
-    - Dropped and retried packets are more likely with larger responses, especially over unreliable mobile connections
-    - Smaller payloads transfer more quickly
-  - Time spent serializing, deserializing, and copying around data
-  - Time spent cleaning up data, such as garbage collection
-- Increased I/O throughput across the stack
-
-## Argo
-
-To address the aforementioned weaknesses, Argo makes a different set of tradeoffs than JSON.
-
-**Strengths of Argo:**
-
-- Compact binary format
-  - Not self-describing: relies on GraphQL types instead
-- Unusually compressible
-  - Stores data of the same type in blocks to assist compression algorithms, e.g. all Strings are stored together
-- Maximizes re-use
-  - Deduplicates repeated values, so deserializing and converting to required types happens once
-- Flexible type availability
-  - GraphQL scalars specify their encoding/decoding with a directive
-  - Supports all GraphQL types
-  - Also natively supports:
-    - Variable-length byte strings
-    - Fixed-length byte strings
-    - Variable-length integers
-- Simple to implement relative to other binary formats (e.g. protobuf, Thrift, Avro)
-
-**Weaknesses of Argo:**
-
-- As of toady, reference implementation only
-  - No stable, high-performance implementations
-- Almost no tools for debugging or analysis
-- Binary format which is not self-describing
-  - Relatively difficult to debug or analyze without tools
-  - Requires GraphQL schema and query be known
-- Input types not supported
-  - Simpler implementation, but JSON still needed
-
-## Recommendation
-
-Overall, **JSON is the best choice for most GraphQL deployments.**
-However, Argo is a good choice for systems where performance is paramount.
-Please consider the tradeoffs above.
+[Design notes](#sec-Design-notes) and [motivations](#sec-Motivation) are included,
+but these sections do not specify necessary technical details.
 
 # Overview
 
-Argo is designed to work with GraphQL queries and schemas which are known in advance,
-but executed many times.
-It separates its work into two phases: _Registration Time_ and _Execution Time._
+Argo is designed to work with GraphQL queries and schemas which are known in advance, but executed many times.
+
+In advance, Argo walks over a given GraphQL query against a particular GraphQL schema and generates a _Wire schema_ which captures type and serialization information which will be used when \[de]serializing a response. Later, when serializing a GraphQL response, Argo relies on this and does not need to send this information over the network--this reduces the payload size. Similarly when deserializing, each client relies on the Wire schema to read the message.
+
+The serialization format itself is a compact binary format which uses techniques to minimize the payload size,
+make it unusually compressible (to further reduce the payload size over the network),
+permit high-performance implementations,
+and remain relatively simple. These techniques include:
+
+- Integers are written in a compact variable-length format
+- Scalar values are written into contiguous blocks to improve their compressibility
+- Many scalar values are deduplicated
+- Many scalars (particularly strings and byte strings) permit zero-copy implementations
+
+Argo separates its work into two phases: _Registration Time_ and _Execution Time._
 
 :: _Registration Time_ happens once, before a payload is serialized with Argo.
 On a mobile client, Registration Time is typically compile time.
-On a server, Registration Time is typically when a query is registered by a client application (perhaps at its compile time).
+On a server, Registration Time is typically when a query is registered by a client application (perhaps whenever a new client version is compiled).
 
 :: _Execution Time_ happens many times, whenever a payload is \[de]serialized with Argo.
 This relies on information generated during Registration Time.
 
 Note: Nothing prevents running Registration Time and Execution Time steps at Execution Time.
 However, this is a low-performance pattern, and is most likely only useful during development.
+
+At Registration Time, Argo generates a _Wire schema_ on both the server and the client.
+Optionally, code may be generated at Registration Time (based on the Wire schema) to decode messages.
+At Execution Time, Argo relies on the Wire schema (or code previously generated based on it) to read a binary message.
 
 ## Argo actions at Registration Time
 
@@ -195,9 +108,15 @@ TODO
 
 # Types
 
-GraphQL uses two type systems: _GraphQL types_, which may appear in any given GraphQL Schema, and _response types_, which are used when serializing responses.
-Argo introduces a third, called _wire types_, used when \[de]serializing to or from byte streams.
-Internally, Argo uses a fourth, called _self-describing types_, primarily used when \[de]serializing errors.
+GraphQL uses two type systems:
+
+- _GraphQL types_, which may appear in any given GraphQL Schema
+- _Response types_, which are used when serializing responses
+
+Argo uses these and introduces:
+
+- _Wire types_, used when \[de]serializing to or from byte streams
+- _Self-describing types_, primarily used when \[de]serializing errors
 
 ## GraphQL types
 
@@ -227,7 +146,7 @@ These do not have rigorous definitions in the GraphQL spec. These include (but a
 - `FLOAT64`: an IEEE 754 double-precision binary floating-point (binary64)
 - `BYTES`: a variable-length byte string
 - `FIXED`: a fixed-length byte string
-- `RECORD`: an object, made up of potentially-omittable named fields and their values
+- `RECORD`: a selection set, made up of potentially-omittable named fields and their values
 - `ARRAY`: a variable-length list of a single type
 - `BLOCK`: describes how to store the underlying type in a block of value data
 - `NULLABLE`: may be null or have a value
@@ -238,10 +157,10 @@ These do not have rigorous definitions in the GraphQL spec. These include (but a
 :: _Self-describing types_ are used by Argo to encode values with types which are not known in advance (e.g. at Registration Time).
 Primarily, this is required to comply with the [GraphQL specification on Errors](https://spec.graphql.org/October2021/#sec-Errors).
 
-- `Absent`: marks that a value is not present (like `undefined` in JSON)
 - `Null`: marks that a value is not present (like `null` in JSON)
 - `Object`: an object, made up of named fields and their values
 - `String`: a UTF-8 string
+- `Bytes`: a variable-length byte string
 - `Boolean`: true or false
 - `Int`: a variable-length integer
 - `Float`: an IEEE 754 double-precision binary floating-point (binary64)
@@ -251,96 +170,280 @@ Primarily, this is required to comply with the [GraphQL specification on Errors]
 
 :: GraphQL uses a Schema to capture the names and types of data.
 GraphQL queries select a portion of data from that Schema.
-Given a Schema and a query on it, Argo produces a _wire schema_ with all the information needed to [de]serialize data powering that query against a compatible GraphQL Schema.
+Given a Schema and a query on it, Argo produces a _Wire schema_ with all the information needed to [de]serialize data powering that query against a compatible GraphQL Schema.
 
 Note: In a client-server architecture, GraphQL schemas frequently change on the server according to certain compatibility rules.
 Therefore, while Argo _cannot_ assume the Schema used for serializing data is the Schema used for deserializing,
 it _does_ assume they are compatible with each other (i.e. no [breaking changes](https://spec.graphql.org/October2021/#sel-EALJDCAgICCAogH) have been made).
 
-The wire schema
+The wire schema is a single WireType which describes how to encode an entire payload:
 
-Idea: take SDL, possibly with some directives such an @encode("fixed64") or @encode("string"). Also take a query, possibly with directives. Transform this into a wire schema. Use the wire schema to generate a codec.
+WireType ::
 
-A Schema is represented in JSON by one of:
+- `STRING()` | `BOOLEAN()` | `VARINT()` | `FLOAT64()` | `BYTES()` | `DESC()`
+- `FIXED(lengthInBytes: Int)`
+- `RECORD(fields: Field[])` where `Field(name: String, of: WireType, omittable: Boolean)`
+- `ARRAY(of: WireType)`
+- `BLOCK(of: WireType, key: String, dedupe: Boolean)`
+- `NULLABLE(of: WireType)`
 
-- A JSON string, naming a defined type.
-- A JSON object, of the form: `{"type": "typeName" ...attributes...}` where typeName is either a primitive or derived type name, as defined below. Attributes not defined in this document are permitted as metadata, but must not affect the format of serialized data.
-- A JSON array, representing a union of embedded types.
+## Wire schema serialization
 
-Primitive Types
-The set of primitive type names is taken from the GraphQL spec.
+A Wire schema or WireType may be serialized in JSON.
+It must be a JSON object of the form: `{"type": "typeName" ...attributes...}` where `typeName` is one of the _Wire types_ as a string, and the attributes are as sketched in _WireType_ above.
 
-- null: no value
-- boolean: a binary value
-- int: 32-bit signed integer
-- float: double precision (64-bit) IEEE 754 floating-point number
-- bytes: sequence of 8-bit unsigned bytes
-- string: utf8 character sequence
-  Primitive types have no specified attributes.
-  Primitive type names are also defined type names. Thus, for example, the schema "string" is equivalent to:
-  `{"type": "string"}`
+For example,
+
+```json
+{
+  "type": "RECORD",
+  "fields": [
+    {
+      "name": "errors",
+      "type": {
+        "type": "NULLABLE",
+        "of": { "type": "ARRAY", "of": { "type": "DESC" } }
+      },
+      "omittable": true
+    }
+  ]
+}
+```
+
+This serialization may be helpful to avoid recomputing Wire schemas on the server.
+Other serializations may be more efficient but are out of scope here.
 
 # Binary encoding
 
-Argo's binary encoding does not include field names, self-contained information about the types of individual bytes, nor field or record separators. Therefore readers are wholly reliant on the wire schema used when the data was encoded (or any compatible wire schema), along with any information about custom scalar encodings.
+Argo's binary encoding does not include field names, self-contained information about the types of individual bytes, nor field or record separators. Therefore readers are wholly reliant on the Wire schema used when the data was encoded (or any compatible Wire schema), along with any information about custom scalar encodings.
+
+Argo always uses a little-endian byte order.
 
 ## Message
 
-TODO: flags, then values etc,
+:: An Argo _Message_ consists of these concatenated parts:
 
-### Flags
+- A variable-length _Header_
+- 0 or more concatenated _Blocks_ containing scalar values, each prefixed by their length
+- 1 _Core_, which contains the Message's structure, prefixed by its length
 
-noBlocks
+## Header
 
-Every response starts with a flags byte. From most to least significant bits:
-0: 1 if big-endian, 0 if little-endian
-1: 1 if backreferences may be used for string values in this message, else 0
-2: 1 if backreferences may be used for object values in this message, else 0
-3: 1 if backreferences may be used for array values in this message, else 0
-...
+:: The _Header_ is encoded as a variable-length _BitSet_.
+After into a fixed bit array, each bit in the BitSet has a defined meaning described below.
 
-Note that backreferences are always enabled for enum values.
+Numbered least to most significant bits:
+
+```
+0: InlineEverything
+1: SelfDescribing
+2: OutOfBandFieldErrors
+3: NullTerminatedStrings
+4: HasUserFlags
+```
+
+:: When a given flag is set, Argo's behavior is modified as described below.
+Each may also be referred to as a _Mode_ of operation,
+and the corresponding bit must be set if and only if the messages uses the corresponding Mode.
+
+InlineEverything
+: In this Mode, _Blocks_ are omitted, along with their length prefixes.
+_Core_'s prefix is also omitted.
+Instead, scalar values are written inline in _Core_ (i.e. at the current position when they are encountered).
+: This generally results in smaller messages which do not compress as well.
+Useful when the Message will not be compressed.
+
+SelfDescribing
+: In this Mode, _Core_ is written exactly as if its type were `DESC`.
+This makes the message value self-describing.
+: This generally makes the payload much larger, and is primarily useful when debugging.
+
+OutOfBandFieldErrors
+: In this Mode, GraphQL [Field errors](https://spec.graphql.org/October2021/#sec-Errors.Field-errors)
+are not guaranteed to be written inline, and may appear in the `errors` array, if any.
+: This makes it easier to convert JSON payloads to Argo after the fact,
+but eliminates the benefits of inline errors.
+
+NullTerminatedStrings
+: In this Mode, all messages of type `String` are suffixed with a NUL byte.
+This byte is not included in the String's length, and is not considered part of the String.
+Other NUL bytes may still appear within each String.
+: This makes it possible to implement zero-copy in language environments relying on NUL-terminated strings,
+but generally makes the payload larger.
+
+HasUserFlags
+: In this Mode, the Header BitSet is followed by another variable-length BitSet called _UserFlags_.
+The meaning of entries in UserFlags is up to the implementation,
+and remain outside the scope of this specification.
+: This is useful to prototype custom implementations and extensions of Argo.
+
+## Blocks
+
+:: Argo _Blocks_ are named contiguous blocks of encoded scalar values of the same type.
+
+Each begins with a _Label_ encoding the length of the block in bytes (not counting the length prefix).
+
+Concatenated to this is every value in the block.
+The encoding of each value is defined below.
+Generally, this will not include any metadata, only values.
+
+The name (or key) of each Block is not encoded in the message.
+
+## Core
+
+:: The _Core_ of a Message contains the primary structure of the payload.
+
+The Core is prefixed with a _Label_ encoding the its length in bytes (not counting the length prefix).
+This is omitted when operating in _InlineEverything_ mode.
+
+The rest of the Core consists of a single value which encodes the payload.
+This is almost always a `RECORD` corresponding to GraphQL's `ExecutionResult`.
+
+## Label
+
+:: Argo uses a multipurpose binary marker called a _Label_ which combines several use cases into one compact representation.
+A Label is written using the _variable-length zig-zag coding_.
+A Label is essentially a number which should be interpreted differently according to its value and the context in which it is used.
+
+- For variable-length data, such as a `STRING` or `ARRAY`, non-negative values represent the length of the data that is to follow
+  - The units depend on the data: `STRING` lengths are in bytes, while `ARRAY` lengths are in entries
+- For `BOOLEAN`s, 0 means `false` and 1 means `true`
+- For `NULLABLE` values, -1 means `null`
+- For `NULLABLE` values which are not `null` and are not normally prefixed by a Label, 0 means not-null
+  - Values which are prefixed by a Label even when non-nullable omit this non-null marker entirely,
+    since we can rely on the Label's value to tell us it is not null
+- For `NULLABLE` values, -3 means there was a Field Error which terminated its propogation (if any) here
+- For fields which may be omitted--such as fields that come from a selection set over a Union, and therefore may not appear at all--the value -2 is used to represent absence, called the _Absent Label_
+- All other negative numbers are used for _Backreferences_:
+  identification numbers which refer to values which appeared previously in the Message
+
+:: Types whose values are prefixed with a Label or are themselves a Label are called _Labeled_.
+For example, `STRING`, `ARRAY`, `BOOLEAN`, and all `NULLABLE` types are _Labeled_.
+
+:: Types whose values are not prefixed with a Label and are not themselves a Label are called _Unlabeled_.
+For example, non-nullable `RECORD` and non-nullable `FLOAT64` are _Unlabeled_.
 
 ### Primitive Types
 
-Primitive types are encoded in binary as follows:
+Primitive types are encoded in binary as described here.
 
-- `Null` is written as zero bytes
-- `Int`, `Boolean`, and `LABEL` values are written using variable-length zig-zag coding. For `Boolean`, 0 is false and 1 is true.
-- `Float` is written as `FIXED64`, a fixed-length 8-byte little-endian, same as `memcpy` of equivalent C type `int64_t`
-- `String`, `ID`, `Enum`, and custom scalars barked as `BLOCK` are encoded as `BLOCK`. `BLOCK` is encoded as a `LABEL`, possibly followed by data. If a backreference is being used, or if the value is `Null` or an error, the `LABEL` must be written according to the corresponding [Label encoding](#sec-LABELs). Otherwise, the `LABEL` specifies how many bytes of data follow for this value. It is then immediately followed by the bytes of the value. `String`, `ID`, and `Enum` data bytes MUST be UTF-8 encoded.
-- `Union`, interfaces, unions are represented as `VARIANT`. `VARIANT` is a `LABEL` where each member is numbered and identified by its order of appearance in the query (starting at 0), followed by corresponding object encoded as usual.
-- Interfaces? same as objects?
+STRING
+: `STRING` values are encoded as UTF-8 and written to their _Block_.
+In _Core_, a _Label_ is written which is the length of the encoded value in bytes.
+Typically, repeated `STRING` values may be deduplicated by instead writing a _backreference_ to _Core_.
 
-## LABELs
+BOOLEAN
+: `BOOLEAN` values use the value 0 for `false` and 1 for `true`, and are written as a _Label_ to _Core_.
 
-Argo uses a multipurpose binary marker called a `LABEL` which combines several use cases into one representation.
-A `LABEL` is written using variable-length zig-zag coding.
-A `LABEL` is essentially a number which should be interpreted differently according to its value.
+VARINT
+: `VARINT` (variable-length integer) values are written to _Core_ and use the _variable-length zig-zag coding_.
 
-Non-negative numbers >= 0 are interpreted one of two ways depending on context.
+FLOAT64
+: `FLOAT64` values are written to their _Block_ as 8 bytes in little endian order according to IEEE 754.
+Nothing is written to _Core_.
 
-For variable-length data, such as a string or list, it represents the length of the data that is to follow. The units depend on the data: string lengths are in bytes, while list lengths are in entries.
+BYTES
+: A `BYTES` is encoded as unaltered contiguous bytes and written to its _Block_.
+In _Core_, a _Label_ is written which is the length of the encoded value in bytes.
+Typically, repeated `BYTES` values may be deduplicated by instead writing a _backreference_ to _Core_.
 
-Non-negative numbers are also used to mark which member of a union selection is to follow. These are numbered starting at 0 and counting up.
+FIXED
+: `FIXED` values are written to their _Block_ as bytes in little endian order.
+Nothing is written to _Core_.
+The number of bytes is not included in the message in any way, since it is in the _Wire schema_.
 
-Argo reserves a few special negative values for certain purposes:
+RECORD
+: `RECORD` values are written as a concatenation of their _Fields_ to _Core_.
+Each _Field_ is written recursively in the order it appears in the _Wire schema_.
+If a Field is _omittable_ and absent, it is written as the _Absent Label_
+If a Field is _omittable_ and present, but its underyling type is _Unlabeled_,
+a non-null Label is written to _Core_ before writing the field's value.
+The number of fields and their types are not included in the message in any way, since that is in the _Wire schema_.
 
-1. -1 represents a `null` value, particularly for fields
-2. -2 represents an error
+ARRAY
+: `ARRAY` values are written as a _Label_ in _Core_ which contains the `ARRAY`'s length (in entries),
+followed by a concatenation of its entries recursively.
 
-:: All other negative numbers are used for _backreferences_.
-Backreferences are identification numbers which refer to values which appeared previously in the response. See [Backreferences](#sec-Backreferences) for more.
+BLOCK
+: `BLOCK` is not written to the _Message_ directly.
+Instead, it modifies its underlying type,
+naming which block it should be written to and whether values should be deduplicated.
 
-Note that `String` pre-fills certain backreference IDs.
+NULLABLE
+: `NULLABLE` values are written differently depending on whether the underlying value is _Labeled_ or _Unlabeled_.
+The value `null` is always written to _Core_ as the _Null Label_ with the value 0.
+If the underlying value is present and _Labeled_, non-null values are simply written recursively and unmodified using the underlying value's encoding.
+If the underlying value is present and _Unabeled_, first the _Non-null Label_ is written to _Core_, then the underlying value is written recursively.
 
-TODO: spell out bootstrap values for strings
+DESC
+: `DESC` values are self-describing, and primarily used to encode errors.
+This scheme is described in _Self-describing encoding_.
 
-1. Marking the length of a byte sequence
+#### Self-describing encoding
+
+Argo is intended to rely on known types taken from GraphQL queries and schemas.
+However, the `errors` array in GraphQL is very free-form [as specified in the GraphQL Spec](https://spec.graphql.org/October2021/#sec-Errors).
+To support this, as well as to ease debugging in certain circumstances, a self-describing format is included.
+
+:: Self-describing values use a _Type marker_,
+a _Label_ written to _Core_ with a predetermined value representing the type of the value to follow.
+
+In the self-describing format, most values are encoded as usual, including using _Blocks_.
+However, values in this format only use the following Blocks:
+
+- A block with key "String", used for all values marked `String`
+- A block with key "Bytes", used for all values marked `Bytes`
+- A block with key "Int", used for all values marked `Int`
+- A block with key "Float", used for all values marked `Float`
+
+Note: these Blocks may also be used for non-self-describing values. This is intentional.
+
+To write a _Type marker_, encode the given value as a _Label_ and write it to _Core_.
+
+To write a self-describing value, first map the desired value to the closest type described in _Self-describing types_.
+Then, write each type as below (reading follows the same pattern):
+
+Null (-1)
+: Written as _Type marker_ -1 in _Core_.
+
+Boolean false (0)
+: Written as _Type marker_ 0 in _Core_.
+
+Boolean true (1)
+: Written as _Type marker_ 1 in _Core_.
+
+Object (2)
+: Begins with _Type marker_ 2 in _Core_,
+followed by a second _Label_ in _Core_ encoding the number of fields which follow.
+All fields follow in order,
+each written as a `STRING` capturing the field name (with no preceding _Type marker_),
+then recursively written the field's value using the self-describing encoding.
+These alternate until completion, concatenated together.
+
+List (3)
+: Begins with _Type marker_ 3 in _Core_,
+followed by a second _Label_ in _Core_ encoding the length of the list.
+Each entry is then written recursively in the self-describing format, concatenated together.
+Note that heterogeneous types are allowed: this is important for GraphQL's error representation.
+
+String (4)
+: Written as _Type marker_ 4 in _Core_, followed by a non-self-describing `STRING` with Block key "String".
+
+Bytes (5)
+: Written as _Type marker_ 5 in _Core_, followed by a non-self-describing `BYTES` with Block key "Bytes".
+
+Int (6)
+: Written as _Type marker_ 5 in _Core_, followed by a non-self-describing `VARINT` with Block key "Int".
+
+Float (7)
+: Written as _Type marker_ 6 in _Core_, followed by a non-self-describing `FLOAT64` with Block key "Float".
 
 ## Backreferences
 
-Argo reduces data size on the wire by avoiding repeated values. Whenever a potentially-large value is read or written for the first time, it is stored in an array and given the next available backreference ID number (which is always negative). When it is next used, it can be identified by the backreference ID, eliminating the need to send the entire value again.
+:: Argo _Backreferences_ are numeric references to values which appeared previously in the Message.
+
+Argo reduces data size on the wire by avoiding repeated values. Whenever a potentially-large value is read or written for the first time, it is stored in an array and given the next available backreference ID number (which is always negative).
+When it is next used, it can be identified by the backreference ID, eliminating the need to encode the entire value again.
 
 Note: This is similar to how lossless compression algorithms use a [Huffman coding](https://en.wikipedia.org/wiki/Huffman_coding), but simpler and less effective. The upshot is that Argo representations can remain small even after decompression, in contrast to JSON.
 
@@ -494,7 +597,94 @@ Therefore, each key/value pair is written like this:
 [key][value type][value]
 where [key] is a string as serialized everywhere, [value type] is a lenref union marker (iff it marks a List, it is then followed by a second lenref union marker marking the value type).
 
+# Motivation
+
+GraphQL typically serializes data into JSON, but GraphQL is designed to support other serializations as well.
+Argo is purpose-made to improve on serialization for GraphQL.
+
+## JSON
+
+JSON is the standard serialization for GraphQL data.
+In the context of GraphQL responses, it has many strengths as well as a few weaknesses.
+
+**Strengths of JSON:**
+
+- Ubiquitous
+  - Many stable, high-performance implementations
+  - High quality tools for working with JSON
+- Self-describing (simple and usable even without tools)
+  - Independent of GraphQL schemas, documents, queries, and types
+- Human-readable and machine-readable
+
+**Weaknesses of JSON:**
+
+- Large data representation (relative to binary formats)
+  - Repetitive data format (e.g. field names) leads to large uncompressed sizes
+  - Self-delimited self-describing data uses additional space
+- Limited data type availability
+  - Byte string data must be "stuffed" into Unicode strings
+  - 64-bit integers don't work reliabily across all platforms
+  - "Stuffing" other types into e.g. String can introduce inefficiencies
+
+## Tradeoffs
+
+**In most cases JSON is a great choice for GraphQL.**
+However, it can be difficult to address the weaknesses.
+Primarily, these are related to performance: reducing the size of payloads, and reading and writing them quickly.
+
+The value of reading and writing data quickly is self-evident.
+The benefits of reduced payload sizes can be somewhat more subtle:
+
+- Decreased latency across the stack
+  - Most importantly, over the network
+    - [TCP Slow Start](https://developer.mozilla.org/en-US/docs/Glossary/TCP_slow_start), [QUIC Slow Start](https://www.rfc-editor.org/rfc/rfc9002.html#name-slow-start), and other congestion control mechanisms mean larger first response payloads can significantly increase user-observed latency (especially on app open)
+    - Dropped and retried packets are more likely with larger responses, especially over unreliable mobile connections
+    - Smaller payloads transfer more quickly
+  - Time spent serializing, deserializing, and copying around data
+  - Time spent cleaning up data, such as garbage collection
+- Increased I/O throughput across the stack
+
+## Argo
+
+To address the aforementioned weaknesses, Argo makes a different set of tradeoffs than JSON.
+
+**Strengths of Argo:**
+
+- Compact binary format
+  - Not self-describing: relies on GraphQL types instead
+- Unusually compressible
+  - Stores data of the same type in blocks to assist compression algorithms, e.g. all Strings are stored together
+- Maximizes re-use
+  - Deduplicates repeated values, so deserializing and converting to required types happens once
+- Flexible type availability
+  - GraphQL scalars specify their encoding/decoding with a directive
+  - Supports all GraphQL types
+  - Also natively supports:
+    - Variable-length byte strings
+    - Fixed-length byte strings
+    - Variable-length integers
+- Simple to implement relative to other binary formats (e.g. protobuf, Thrift, Avro)
+
+**Weaknesses of Argo:**
+
+- As of toady, reference implementation only
+  - No stable, high-performance implementations
+- Almost no tools for debugging or analysis
+- Binary format which is not self-describing in its intended mode of operation
+  - Relatively difficult to debug or analyze without tools
+  - Requires GraphQL schema and query be known
+- Input types not supported
+  - Simpler implementation, but JSON still needed
+
+## Recommendation
+
+Overall, **JSON is the best choice for most GraphQL deployments.**
+However, Argo is a good choice for systems where performance is paramount.
+Please consider the tradeoffs above.
+
 # Design notes
+
+This section is not a part of the technical specification, but instead provides additional background and insight.
 
 - Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as `JSON.parse`. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. A Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.
 - Byte alignment (instead of bit or word alignment) was chosen primarily for ease of implementation (e.g. no need to pack together consecutive booleans) balanced against the resulting size. Most GraphQL responses are unlikely to majorly benefit from bit packing anyway, and the use cases which would are probably better off using a custom scalar binary representation.
@@ -503,6 +693,29 @@ where [key] is a string as serialized everywhere, [value type] is a lenref union
   - In a reader, after reading a field you are guaranteed to know whether there was an error or just a null [TODO: require inline error?]
   - We know most of the `path` in the current response from our location, and do not need to write most of it explicitly, saving space [TODO: do this?]
 - Perhaps surprisingly, `Enum`s can't be safely represented as small numbers, since schema evolution rules allow for changes (e.g. reordering) which would alter the number on one side but not the other.
+- Argo permits zero-copy for types which tend to be larger (`String` and `Bytes`). Low-level languages can refer to these values directly in the source buffer. The `NullTerminatedStrings` flag assists can assist here for C-style strings.
+- De-duplication is never required on the writer. This permits optimizations like repeating label/value pairs which are shorter than a backreference to a previously-seen value.
+- High-performance decoding of the VarInts is possible with [a vectorized implementation](https://arxiv.org/abs/1503.07387)
+- For large payloads with lots of duplication, the de-duplication is valuable even when the entire payload is compressed: values need not be encoded or decoded multiple times, and it can be used to avoid duplicated objects on the client side.
+- The name "Argo" riffs on the pronunciation of "JSON" as "Jason," who in Greek mythology quested on a ship called the _Argo_.
+
+## Ideas which did not pan out
+
+- Use bitmasks on each selection set to mark null (or absent) fields. See Design Notes for more.
+- Require all Field Errors be represented inline. This would be nice, but it makes it more difficult to convert JSON responses to Argo. Therefore, this is left as an optional feature (see the `OutOfBandFieldErrors` flag).
+- Specify a Wire type definition for ExecutionResult, particularly `errors`. Unfortunately, error paths mix string and int, which has no corresponding GraphQL type. We could serialize this all as string and convert back later.
+- Make the self-describing format able to describe the Wire format. This made things more complex.
+
+## Ideas which were not pursued
+
+- Use Label before Floats to represent the number 0s to pad it with. Due to JSON/JS, many doubles are actually smallish Ints, which in IEEE 754 means leading with 0-bytes. This might work out on average, especially since 0 takes only 1 byte.
+- Specify how to write compact Paths to values to represent errors. A series of tags.
+  - If errors inlined, path up to propagation stop is implicit. The path from there down into any initiating non-nullable field would need to be explicit though, need to account for
+- Whenever a default value in encountered for a scalar type which is deduplicatable, implicitly store it with a backreference ID and use it later. This may break if the schema evolves.
+- Bake in default backrefs for common strings: 'line', 'column', 'path'. For certain small messages, this could make a difference. The extra complexity doesn't seem worth it though.
+- Instead of a self-describing format, simply embed JSON. This is not a knock-out win, especially for the resulting API.
+- Use a variable-length compact float format, such as [vf128](https://github.com/michaeljclark/vf128), [compact float](https://github.com/kstenerud/compact-float), or even ASN.1's REAL BER/DER. This would be most helpful for GraphQL APIs which return many Floats with values near zero.
+- Encode the entire `ExecutionResult`'s type in each _Wire schema_, including the errors array. In particular, the user would need to provide their intended `extensions` format and stick to it, and we'd need to fudge the type of `path` (which mixes numbers and strings in the GraphQL spec). The upshot would be total elimination of the self-describing format and the inconvenience, inefficiency, and complexity that causes.
 
 # Legal
 
@@ -533,4 +746,4 @@ Each version of Argo explicitly targets one version of the GraphQL spec, which i
 
 # Authors and contributors
 
-Argo is authored by [Michael Solomon](https://msol.io).
+Argo was created and authored by [Mike Solomon](https://msol.io).

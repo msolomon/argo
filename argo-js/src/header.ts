@@ -6,21 +6,31 @@ import { Buf } from "./buf"
  */
 export class Header {
   flags: BitSet = 0n
+  userFlags: BitSet | undefined
   constructor(readonly buf: Buf) { }
 
   private static InlineEverything = 0
   private static SelfDescribing = 1
   private static OutOfBandFieldErrors = 2
   private static NullTerminatedStrings = 3
+  private static HasUserFlags = 4
 
   read() {
+    this.flags = this.readBitSet()
+    if (this.hasUserFlags) this.userFlags = this.readBitSet()
+  }
+
+  private readBitSet(): BitSet {
     const bs = BitSet.Var.read(this.buf.uint8array)
     this.buf.incrementPosition(bs.length)
-    this.flags = bs.bitset
+    return bs.bitset
   }
 
   asUint8Array(): Uint8Array {
-    return new Uint8Array(BitSet.Var.write(this.flags))
+    const flags = BitSet.Var.write(this.flags)
+    const userFlags = this.userFlags ? BitSet.Var.write(this.userFlags) : null
+    if (userFlags) return new Uint8Array(Array.from(flags).concat(Array.from(userFlags)))
+    else return new Uint8Array(flags)
   }
 
   write() {
@@ -45,4 +55,7 @@ export class Header {
 
   get nullTerminatedStrings(): boolean { return this.get(Header.NullTerminatedStrings) }
   set nullTerminatedStrings(value: boolean) { this.set(Header.NullTerminatedStrings, value) }
+
+  get hasUserFlags(): boolean { return this.get(Header.HasUserFlags) }
+  set hasUserFlags(value: boolean) { this.set(Header.HasUserFlags, value) }
 }

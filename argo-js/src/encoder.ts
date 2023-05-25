@@ -145,6 +145,7 @@ export class ArgoEncoder {
 
   private writeArgo = (path: Path | undefined, js: any, wt: Wire.Type, block?: Wire.BLOCK): void => {
     switch (wt.type) {
+
       case 'NULLABLE':
         if (js == null) {
           this.track(path, 'null', this.buf, Label.Null)
@@ -163,10 +164,12 @@ export class ArgoEncoder {
           this.buf.write(Label.NonNull)
         }
         return this.writeArgo(path, js, wt.of)
+
       case 'BLOCK':
         if (block != null) { throw `Was already in block '${block}', unexpected to switch to '${wt.key}'. ${Wire.print(wt)}.` }
         this.track(path, 'block with key', this.buf, wt.key)
         return this.writeArgo(path, js, wt.of, wt)
+
       case 'RECORD': {
         this.track(path, 'record with num fields', this.buf, wt.fields.length)
 
@@ -237,6 +240,9 @@ export class ArgoEncoder {
           this.buf.write(Wire.SelfDescribing.List)
           this.buf.write(Label.encode(js.length))
           js.forEach((v, i) => this.writeSelfDescribing(addPath(path, i, undefined), v))
+        } else if (js instanceof Uint8Array) {
+          this.buf.write(Wire.SelfDescribing.Bytes)
+          this.write(Wire.SelfDescribing.Blocks.BYTES, Wire.BYTES, js)
         } else { // encode as if it's a regular javascript object
           this.buf.write(Wire.SelfDescribing.Object)
           this.buf.write(Label.encode(Object.keys(js).length))
@@ -264,8 +270,7 @@ export class ArgoEncoder {
         return
 
       case 'boolean':
-        this.buf.write(Wire.SelfDescribing.Boolean)
-        this.buf.write(js ? Label.True : Label.False)
+        this.buf.write(js ? Wire.SelfDescribing.True : Wire.SelfDescribing.False)
         return
 
       case 'undefined':
