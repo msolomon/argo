@@ -3,7 +3,7 @@
 _Version 1.0.0_.
 _Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
 
-Argo is a compact and compressible binary serialization format for [GraphQL](https://graphql.org).
+**Argo is a compact and compressible binary serialization format for** [GraphQL](https://graphql.org).
 It aims to:
 
 - **Minimize end-to-end latency** of GraphQL responses
