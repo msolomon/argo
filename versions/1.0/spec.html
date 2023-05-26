@@ -56,7 +56,8 @@
 </ol>
 </li>
 <li><a href="#sec-Creating-a-Wire-schema"><span class="spec-secid">4</span>Creating a Wire schema</a><ol>
-<li><a href="#sec-Algorithms"><span class="spec-secid">4.1</span>Algorithms</a></li>
+<li><a href="#sec-Directives"><span class="spec-secid">4.1</span>Directives</a></li>
+<li><a href="#sec-Algorithms"><span class="spec-secid">4.2</span>Algorithms</a></li>
 </ol>
 </li>
 <li><a href="#sec-Binary-encoding"><span class="spec-secid">5</span>Binary encoding</a><ol>
@@ -252,8 +253,36 @@ Though it seems more efficient to represent Enums as <code>VARINT</code>, there 
 <p><code>STRING, VARINT, FLOAT64, BYTES, FIXED</code></p>
 <p>These types will be marked to deduplicate within their Block by default (but it may be overridden by <code>@ArgoDeduplicate</code>):</p>
 <p><code>STRING, BYTES</code></p>
-<section id="sec-Algorithms" secid="4.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Algorithms">4.1</a></span>Algorithms</h2>
+<section id="sec-Directives" secid="4.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Directives">4.1</a></span>Directives</h2>
+<p>Argo uses the following directives in a GraphQL schema to customize the wire schema:</p>
+<pre data-language="graphql"><code><span class="token keyword">enum</span> <span class="token class-name">ArgoCodecType</span> <span class="token punctuation">{</span>
+  <span class="token scalar">String</span>
+  <span class="token scalar">Int</span>
+  <span class="token scalar">Float</span>
+  <span class="token scalar">Boolean</span>
+  <span class="token constant">BYTES</span>
+  <span class="token constant">FIXED</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">directive</span> <span class="token directive function">@ArgoCodec</span><span class="token punctuation">(</span><span class="token attr-name">codec</span><span class="token punctuation">:</span> <span class="token class-name">ArgoCodecType</span><span class="token operator">!</span><span class="token punctuation">,</span> <span class="token attr-name">fixedLength</span><span class="token punctuation">:</span> <span class="token scalar">Int</span><span class="token punctuation">)</span> <span class="token keyword">on</span> <span class="token constant">SCALAR</span> <span class="token operator">|</span> <span class="token constant">ENUM</span>
+<span class="token keyword">directive</span> <span class="token directive function">@ArgoDeduplicate</span><span class="token punctuation">(</span><span class="token attr-name">deduplicate</span><span class="token punctuation">:</span> <span class="token scalar">Boolean</span><span class="token operator">!</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token keyword">on</span> <span class="token constant">SCALAR</span> <span class="token operator">|</span> <span class="token constant">ENUM</span>
+</code></pre>
+<p>These directives may be omitted when custom scalars are not used and default behavior is desired. Otherwise, they must be added to the GraphQL schema.</p>
+<dl>
+<dt><dfn id="-argocodec"><a href="#-argocodec" data-name="-argocodec">@ArgoCodec</a></dfn></dt>
+<dd>Specifies the Wire type to use for a scalar. The <span class="spec-ref"><a href="#-argocodec" data-name="-argocodec">@ArgoCodec</a></span> directive is required for custom scalars, and may be used on any scalar or enum. It specifies the Wire type to use for that scalar or enum.</dd>
+<dd><code>String</code>, <code>Int</code>, <code>Float</code>, and <code>Boolean</code> match the behavior for these built-in GraphQL types (i.e. they are transformed to <code>STRING</code>, <code>VARINT</code>, <code>FLOAT64</code>, and <code>BOOLEAN</code> respectively). <code>BYTES</code> and <code>FIXED</code>, used for binary data, correspond to those <span class="spec-ref"><a href="#wire-types" data-name="wire-types">Wire types</a></span>.</dd>
+<dd>The <code>fixedLength</code> argument is required for <code>FIXED</code> scalars, and specifies the length of the fixed-length binary data. It is an error to specify <code>fixedLength</code> for any other Wire type.</dd>
+</dl>
+<dl>
+<dt><dfn id="-argodeduplicate"><a href="#-argodeduplicate" data-name="-argodeduplicate">@ArgoDeduplicate</a></dfn></dt>
+<dd>Specifies whether to deduplicate a scalar or enum within a <span class="spec-ref"><a href="#block" data-name="block">Block</a></span>.</dd>
+<dd>The <span class="spec-ref"><a href="#-argodeduplicate" data-name="-argodeduplicate">@ArgoDeduplicate</a></span> directive is optional, and may be used on any scalar or enum. The default deduplication behavior (used when the directive is absent) is described above in <a href="#sec-Creating-a-Wire-schema">Creating a Wire schema</a>, and is based on the codec used.</dd>
+</dl>
+</section>
+<section id="sec-Algorithms" secid="4.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Algorithms">4.2</a></span>Algorithms</h2>
 <p>A wire schema is generated by the following algorithms. Typically, <em>CollectFieldWireTypes()</em> should be called with the root type of the GraphQL Schema&rsquo;s operation (typically, <code>Query</code>) along with the selection set&mdash;usually from a Query, but potentially for that returned by a Mutation or Subscription.</p>
 <div id="note-5044d" class="spec-note">
 <a href="#note-5044d">Note</a>
@@ -805,7 +834,7 @@ Normally, Argo does not allow for direction extension to field error objects out
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-did-not-pan-out">B.1</a></span>Ideas which did not pan out</h2>
 <ul>
 <li>Use bitmasks on each selection set to mark null (or absent) fields. See Design Notes for more.</li>
-<li>Require all Field Errors be represented inline. This would be nice, but it makes it more difficult to convert JSON responses to Argo. Therefore, this is left as an optional feature (see the <code>OutOfBandFieldErrors</code> flag).</li>
+<li>Require all Field Errors be represented inline. This would be nice, but it makes it more difficult to convert JSON responses to Argo. Therefore, this is left as an optional feature (see the <span class="spec-ref"><a href="#outofbandfielderrors" data-name="outofbandfielderrors">OutOfBandFieldErrors</a></span> flag).</li>
 <li>Specify a Wire type definition for ExecutionResult, particularly <code>errors</code>. Unfortunately, error paths mix string and int, which has no corresponding GraphQL type. We could serialize this all as string and convert back later.</li>
 <li>Make the self-describing format able to describe the Wire format. This made things more complex.</li>
 <li>Avro uses an array format where an arbitrary number of &ldquo;segments&rdquo; can be added independently without knowing the final array length, which makes streaming encoding easier. During development Argo was focused on stream support and followed suit, but this was dropped due to lack of compelling GraphQL use cases, and because it conflicted with other techniques (namely <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>).</li>
@@ -861,6 +890,8 @@ Normally, Argo does not allow for direction extension to field error objects out
 <h1>
 <span class="spec-secid" title="link to the index"><a href="#index">§</a></span>Index</h1>
 <ol>
+<li><a href="#-argocodec">@ArgoCodec</a></li>
+<li><a href="#-argodeduplicate">@ArgoDeduplicate</a></li>
 <li><a href="#array">ARRAY</a></li>
 <li><a href="#backreferences">Backreferences</a></li>
 <li><a href="#block">BLOCK</a></li>
@@ -945,7 +976,8 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <li id="_sidebar_4"><a href="#sec-Creating-a-Wire-schema"><span class="spec-secid">4</span>Creating a Wire schema</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_4" /><label for="_toggle_4"></label>
 <ol>
-<li id="_sidebar_4.1"><a href="#sec-Algorithms"><span class="spec-secid">4.1</span>Algorithms</a></li>
+<li id="_sidebar_4.1"><a href="#sec-Directives"><span class="spec-secid">4.1</span>Directives</a></li>
+<li id="_sidebar_4.2"><a href="#sec-Algorithms"><span class="spec-secid">4.2</span>Algorithms</a></li>
 </ol>
 </li>
 <li id="_sidebar_5"><a href="#sec-Binary-encoding"><span class="spec-secid">5</span>Binary encoding</a>
