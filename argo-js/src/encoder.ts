@@ -274,7 +274,7 @@ export class ArgoEncoder {
         return
 
       case 'undefined':
-        this.buf.write(Wire.SelfDescribing.Absent)
+        this.buf.write(Wire.SelfDescribing.Null)
         return
 
       case 'symbol':

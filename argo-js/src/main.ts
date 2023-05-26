@@ -1,8 +1,9 @@
 import { ExecutionResult, DocumentNode, GraphQLSchema } from 'graphql'
 import { ArgoEncoder } from './encoder'
 import { ArgoDecoder } from './decoder'
-import { Typer, Wire } from './wire'
+import { Wire } from './wire'
 import { Buf } from './buf'
+import { Typer } from './typer'
 
 /**
  * Main entry point for encoding and decoding an ExecutionResult.
