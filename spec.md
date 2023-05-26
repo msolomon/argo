@@ -720,6 +720,43 @@ Instead, an Error or Null _Label_ is written to _Core_ (with no additional error
 and the error is written separately to the errors array.
 The `path` must include the full path from the root.
 
+# Argo APIs
+
+Argo is suitable for a variety of contexts,
+but it is primarily designed for encoding responses to GraphQL queries over HTTP.
+
+## HTTP considerations
+
+If a client initiating an Argo HTTP request prefers a specific Argo _Mode_,
+it MAY include the `Argo-Mode` header with the case-insensitive names of the preferred modes
+separated by semicolons.
+
+```http example
+Argo-Mode: SelfDescribingErrors;OutOfBandFieldErrors
+```
+
+### MIME type
+
+When an HTTP client supports Argo,
+it SHOULD use the MIME type `application/argo` in the `Accept` header,
+ideally with a [Quality Value](https://developer.mozilla.org/en-US/docs/Glossary/Quality_values)
+exceeding that of other encodings (such as `application/json`).
+
+When an HTTP response is encoded with Argo,
+the `Content-Type` header SHOULD also use the MIME type `application/argo`.
+
+### Compression
+
+Compression of Argo messages is generally recommended.
+The _Blocks_ are designed to make Argo amenable to compression.
+
+The reference implementation compares different compression schemes. Based on this,
+[Brotli](https://github.com/google/brotli) (at quality level 4) is recommended for most workloads.
+This is a nice balance of small payloads, fast compression and decompression, and wide support.
+
+Without compression, Argo results in much smaller payloads than uncompressed JSON.
+If CPU usage is a concern, consider using a very fast compression algorithm (e.g. [LZ4](https://github.com/lz4/lz4)).
+
 # A. Appendix: Motivation and background
 
 GraphQL typically serializes data into JSON, but GraphQL is designed to support other serializations as well.
@@ -830,13 +867,6 @@ This section is not a part of the technical specification, but instead provides 
     but less efficient for others (perhaps arrays of data with only slight duplication).
     This was rejected due to its higher complexity and somewhat low expected payoff.
     It would make an interesting prototype, one requiring interesting real-world payloads to test.
-- Compression of Argo messages is generally recommended.
-  The _Blocks_ are designed to be highly compressible.
-  - The reference implementation compares different compression schemes. Based on this,
-    [Brotli](https://github.com/google/brotli) (at quality level 4) is recommended for most workloads.
-    This is a nice balance of small payloads, fast compression and decompression, and wide support.
-  - Without compression, Argo results in much smaller payloads than uncompressed JSON.
-    If CPU usage is a concern, consider using a very fast compression algorithm (e.g. LZ4).
 - The name "Argo" riffs on the pronunciation of "JSON" as "Jason," who in Greek mythology quested on a ship called the _Argo_.
 
 ## Ideas which did not pan out

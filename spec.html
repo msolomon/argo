@@ -79,6 +79,14 @@
 </li>
 </ol>
 </li>
+<li><a href="#sec-Argo-APIs"><span class="spec-secid">6</span>Argo APIs</a><ol>
+<li><a href="#sec-HTTP-considerations"><span class="spec-secid">6.1</span>HTTP considerations</a><ol>
+<li><a href="#sec-MIME-type"><span class="spec-secid">6.1.1</span>MIME type</a></li>
+<li><a href="#sec-Compression"><span class="spec-secid">6.1.2</span>Compression</a></li>
+</ol>
+</li>
+</ol>
+</li>
 <li><a href="#sec-Appendix-Motivation-and-background"><span class="spec-secid">A</span>Appendix: Motivation and background</a><ol>
 <li><a href="#sec-JSON"><span class="spec-secid">A.1</span>JSON</a></li>
 <li><a href="#sec-Tradeoffs"><span class="spec-secid">A.2</span>Tradeoffs</a></li>
@@ -687,6 +695,27 @@ Normally, Argo does not allow for direction extension to field error objects out
 </section>
 </section>
 </section>
+<section id="sec-Argo-APIs" secid="6">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Argo-APIs">6</a></span>Argo APIs</h1>
+<p>Argo is suitable for a variety of contexts, but it is primarily designed for encoding responses to GraphQL queries over HTTP.</p>
+<section id="sec-HTTP-considerations" secid="6.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-HTTP-considerations">6.1</a></span>HTTP considerations</h2>
+<p>If a client initiating an Argo HTTP request prefers a specific Argo <span class="spec-ref"><a href="#mode" data-name="mode">Mode</a></span>, it MAY include the <code>Argo-Mode</code> header with the case-insensitive names of the preferred modes separated by semicolons.</p>
+<pre id="example-9155c" class="spec-example" data-language="http"><a href="#example-9155c">Example № 2</a><code><span class="token header"><span class="token header-name keyword">Argo-Mode</span><span class="token punctuation">:</span> <span class="token header-value">SelfDescribingErrors;OutOfBandFieldErrors</span></span>
+</code></pre>
+<section id="sec-MIME-type" secid="6.1.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-MIME-type">6.1.1</a></span>MIME type</h3>
+<p>When an HTTP client supports Argo, it SHOULD use the MIME type <code>application/argo</code> in the <code>Accept</code> header, ideally with a <a href="https://developer.mozilla.org/en-US/docs/Glossary/Quality_values">Quality Value</a> exceeding that of other encodings (such as <code>application/json</code>).</p>
+<p>When an HTTP response is encoded with Argo, the <code>Content-Type</code> header SHOULD also use the MIME type <code>application/argo</code>.</p>
+</section>
+<section id="sec-Compression" secid="6.1.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Compression">6.1.2</a></span>Compression</h3>
+<p>Compression of Argo messages is generally recommended. The <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> are designed to make Argo amenable to compression.</p>
+<p>The reference implementation compares different compression schemes. Based on this, <a href="https://github.com/google/brotli">Brotli</a> (at quality level 4) is recommended for most workloads. This is a nice balance of small payloads, fast compression and decompression, and wide support.</p>
+<p>Without compression, Argo results in much smaller payloads than uncompressed JSON. If CPU usage is a concern, consider using a very fast compression algorithm (e.g. <a href="https://github.com/lz4/lz4">LZ4</a>).</p>
+</section>
+</section>
+</section>
 <section id="sec-Appendix-Motivation-and-background" secid="A">
 <h1><span class="spec-secid" title="link to this section"><a href="#sec-Appendix-Motivation-and-background">A</a></span>Appendix: Motivation and background</h1>
 <p>GraphQL typically serializes data into JSON, but GraphQL is designed to support other serializations as well. Argo is purpose-made to improve on serialization for GraphQL.</p>
@@ -821,11 +850,6 @@ Normally, Argo does not allow for direction extension to field error objects out
 <li>There are some options to improve on the non-null <span class="spec-ref"><a href="#label" data-name="label">Label</a></span>:<ul>
 <li><span class="spec-ref"><a href="#nullable" data-name="nullable">Nullable</a></span> but otherwise <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span> values could have their own <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>, and therefore be eligible for deduplication. This would help for large and highly duplicated Float and Int values, which seems like a pretty small win.</li>
 <li>Another alternative is to use &ldquo;Blocks and Labels for everything,&rdquo; a scheme where all values (even those presently <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>) use Labels and have corresponding Blocks. This would mean separate Blocks for each <code>RECORD</code> type (requires a naming/numbering scheme), and would probably be more efficient for many workloads (due to more contiguous data), but less efficient for others (perhaps arrays of data with only slight duplication). This was rejected due to its higher complexity and somewhat low expected payoff. It would make an interesting prototype, one requiring interesting real-world payloads to test.</li>
-</ul>
-</li>
-<li>Compression of Argo messages is generally recommended. The <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> are designed to be highly compressible.<ul>
-<li>The reference implementation compares different compression schemes. Based on this, <a href="https://github.com/google/brotli">Brotli</a> (at quality level 4) is recommended for most workloads. This is a nice balance of small payloads, fast compression and decompression, and wide support.</li>
-<li>Without compression, Argo results in much smaller payloads than uncompressed JSON. If CPU usage is a concern, consider using a very fast compression algorithm (e.g. LZ4).</li>
 </ul>
 </li>
 <li>The name &ldquo;Argo&rdquo; riffs on the pronunciation of &ldquo;JSON&rdquo; as &ldquo;Jason,&rdquo; who in Greek mythology quested on a ship called the <em>Argo</em>.</li>
@@ -1001,6 +1025,18 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <li id="_sidebar_5.8.1"><a href="#sec-Error-values"><span class="spec-secid">5.8.1</span>Error values</a></li>
 <li id="_sidebar_5.8.2"><a href="#sec-Request-errors"><span class="spec-secid">5.8.2</span>Request errors</a></li>
 <li id="_sidebar_5.8.3"><a href="#sec-Field-errors"><span class="spec-secid">5.8.3</span>Field errors</a></li>
+</ol>
+</li>
+</ol>
+</li>
+<li id="_sidebar_6"><a href="#sec-Argo-APIs"><span class="spec-secid">6</span>Argo APIs</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_6" /><label for="_toggle_6"></label>
+<ol>
+<li id="_sidebar_6.1"><a href="#sec-HTTP-considerations"><span class="spec-secid">6.1</span>HTTP considerations</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_6.1" /><label for="_toggle_6.1"></label>
+<ol>
+<li id="_sidebar_6.1.1"><a href="#sec-MIME-type"><span class="spec-secid">6.1.1</span>MIME type</a></li>
+<li id="_sidebar_6.1.2"><a href="#sec-Compression"><span class="spec-secid">6.1.2</span>Compression</a></li>
 </ol>
 </li>
 </ol>
