@@ -1,0 +1,8 @@
+src/
+test/
+
+capnp-js.trans-packing.d.ts
+jest.config.js
+test-report.html
+tsconfig.json
+yarn-error.log
