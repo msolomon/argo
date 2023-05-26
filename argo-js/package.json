@@ -27,13 +27,15 @@
     "data",
     "api"
   ],
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "devDependencies": {
     "@capnp-js/trans-packing": "^0.4.0",
     "@mongodb-js/zstd": "^1.1.0",
-    "@types/jest": "^29.1.2",
+    "@types/jest": "^29.5.1",
     "@types/lz4": "^0.6.1",
-    "jest": "^29.1.2",
+    "@types/node": "^20.2.5",
+    "jest": "^29.5.0",
     "jest-html-reporter": "3.9.0",
     "lz4": "^0.6.5",
     "spec-md": "^3.0.2",
@@ -42,10 +44,10 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@types/node": "^18.8.5",
     "graphql": "^16.6.0"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepublish": "tsc"
   }
 }

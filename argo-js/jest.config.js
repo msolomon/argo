@@ -12,5 +12,9 @@ module.exports = {
   reporters: [
     'default',
     ["./node_modules/jest-html-reporter", { includeConsoleLog: true }]
+  ],
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "<rootDir>/dist/",
   ]
 }
