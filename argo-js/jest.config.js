@@ -9,5 +9,8 @@ module.exports = {
       { tsconfig: './tsconfig.json' },
     ]
   },
-
-};
+  reporters: [
+    'default',
+    ["./node_modules/jest-html-reporter", { includeConsoleLog: true }]
+  ]
+}
