@@ -20,10 +20,8 @@ export class Typer {
   private _operation: graphql.OperationDefinitionNode | undefined;
   public get operation(): graphql.OperationDefinitionNode { return this._operation! }
 
-  // private _directives: graphql.DirectiveDefinitionNode | undefined;
-  public get directives(): graphql.GraphQLDirective[] {
-    return [ArgoCodecDirective, ArgoDeduplicateDirective]
-  }
+  static readonly directives: graphql.GraphQLDirective[] =
+    [ArgoCodecDirective, ArgoDeduplicateDirective]
 
   constructor(readonly schema: GraphQLSchema, readonly query: DocumentNode, operationName?: string) {
     for (const definition of query.definitions) {
@@ -116,10 +114,6 @@ export class Typer {
   /**
    * This recursively determines the wire types for a given selectionset.
    * It also populates `this.types` so that wire types may be looked up by FieldNode.
-   * 
-   * @param selectionSet 
-   * @param getField 
-   * @returns 
    */
   collectFieldWireTypes = (
     selectionType: GraphQLType,
@@ -195,36 +189,39 @@ export class Typer {
   }
 
 
-  /**
-   * Converts a GraphQL type to a wire type, provided it is _not_ a record, union, or interface.
-   * 
-   * @param t 
-   * @returns 
-   */
+  /** Converts a GraphQL type to a wire type, provided it is _not_ a record, union, or interface. */
   typeToWireType = (t: GraphQLType): Wire.Type => {
-    if (graphql.isScalarType(t)) {
+    if (graphql.isScalarType(t) || graphql.isEnumType(t)) {
       let wtype: Wire.Type
       const codec = getArgoCodecDirectiveValue(t)
       const deduplicate = getArgoDeduplicateDirectiveValue(t)
 
-      switch (t) {
-        case graphql.GraphQLString:
-        case graphql.GraphQLID:
-          wtype = Wire.block(Wire.STRING, t.name, deduplicate ?? Wire.deduplicateByDefault(Wire.STRING))
-          break
-        case graphql.GraphQLInt:
-          wtype = Wire.block(codec ?? Wire.VARINT, t.name, deduplicate ?? Wire.deduplicateByDefault(Wire.VARINT))
-          break
-        case graphql.GraphQLFloat:
-          wtype = Wire.block(codec ?? Wire.FLOAT64, t.name, deduplicate ?? Wire.deduplicateByDefault(Wire.FLOAT64))
-          break
-        case graphql.GraphQLBoolean:
-          if (deduplicate) throw 'Boolean fields cannot be deduplicated'
-          wtype = Wire.BOOLEAN
-          break
-        default:
-          if (codec == null) throw 'Custom scalars must have a ArgoCodec directive. Missing on ' + t.name
-          wtype = Wire.block(codec, t.name, deduplicate ?? Wire.deduplicateByDefault(codec))
+      const mkBlockType = (type: Wire.Type) =>
+        Wire.block(codec ?? type, t.name, deduplicate ?? Wire.deduplicateByDefault(type))
+
+
+      if (graphql.isEnumType(t)) {
+        wtype = mkBlockType(Wire.STRING)
+      } else {
+        switch (t) {
+          case graphql.GraphQLString:
+          case graphql.GraphQLID:
+            wtype = mkBlockType(Wire.STRING)
+            break
+          case graphql.GraphQLInt:
+            wtype = mkBlockType(Wire.VARINT)
+            break
+          case graphql.GraphQLFloat:
+            wtype = mkBlockType(Wire.FLOAT64)
+            break
+          case graphql.GraphQLBoolean:
+            if (deduplicate) throw 'Boolean fields cannot be deduplicated'
+            wtype = Wire.BOOLEAN
+            break
+          default:
+            if (codec == null) throw 'Custom scalars must have a ArgoCodec directive. Missing on ' + t.name
+            wtype = mkBlockType(codec)
+        }
       }
       return Wire.nullable(wtype)
     } else if (graphql.isListType(t)) {
@@ -234,8 +231,6 @@ export class Typer {
     } else if (graphql.isNonNullType(t)) {
       const nullable = this.typeToWireType(t.ofType)
       return (nullable as { type: Wire.TypeKey.NULLABLE, of: Wire.Type }).of
-    } else if (graphql.isEnumType(t)) {
-      return Wire.nullable(Wire.block(Wire.STRING, t.name, true))
     } else {
       throw 'unsupported type ' + t
     }

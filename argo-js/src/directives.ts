@@ -89,8 +89,8 @@ function getDirectiveByName(directives: readonly ConstDirectiveNode[] | undefine
 
 // TODO: make the directive reading below more robust
 
-export function getArgoCodecDirectiveValue(scalar: GraphQLScalarType): Wire.Type | undefined {
-  const directive = getDirectiveByName(scalar.astNode?.directives, ArgoCodecDirective.name)
+export function getArgoCodecDirectiveValue(node: GraphQLScalarType | GraphQLEnumType): Wire.Type | undefined {
+  const directive = getDirectiveByName(node.astNode?.directives, ArgoCodecDirective.name)
   if (directive == undefined) return undefined
   const codec = (directive.arguments?.find(a => a.name.value === 'codec')?.value as StringValueNode)?.value
   const fixedLengthNode = directive.arguments?.find(a => a.name.value === 'fixedLength')?.value
@@ -118,8 +118,8 @@ export function getArgoCodecDirectiveValue(scalar: GraphQLScalarType): Wire.Type
   return wire
 }
 
-export function getArgoDeduplicateDirectiveValue(scalar: GraphQLScalarType): boolean | undefined {
-  const directive = getDirectiveByName(scalar.astNode?.directives, ArgoDeduplicateDirective.name)
+export function getArgoDeduplicateDirectiveValue(node: GraphQLScalarType | GraphQLEnumType): boolean | undefined {
+  const directive = getDirectiveByName(node.astNode?.directives, ArgoDeduplicateDirective.name)
   if (directive == undefined) return undefined
   const deduplicateNode = directive.arguments?.find(a => a.name.value === 'deduplicate')?.value
   let deduplicate: boolean | undefined

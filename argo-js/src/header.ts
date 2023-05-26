@@ -12,9 +12,10 @@ export class Header {
   private static InlineEverything = 0
   private static SelfDescribing = 1
   private static OutOfBandFieldErrors = 2
-  private static NullTerminatedStrings = 3
-  private static NoDeduplication = 4
-  private static HasUserFlags = 5
+  private static SelfDescribingErrors = 3
+  private static NullTerminatedStrings = 4
+  private static NoDeduplication = 5
+  private static HasUserFlags = 6
 
   read() {
     this.flags = this.readBitSet()
@@ -53,6 +54,9 @@ export class Header {
 
   get outOfBandFieldErrors(): boolean { return this.get(Header.OutOfBandFieldErrors) }
   set outOfBandFieldErrors(value: boolean) { this.set(Header.OutOfBandFieldErrors, value) }
+
+  get selfDescribingErrors(): boolean { return this.get(Header.SelfDescribingErrors) }
+  set selfDescribingErrors(value: boolean) { this.set(Header.SelfDescribingErrors, value) }
 
   get nullTerminatedStrings(): boolean { return this.get(Header.NullTerminatedStrings) }
   set nullTerminatedStrings(value: boolean) { this.set(Header.NullTerminatedStrings, value) }

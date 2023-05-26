@@ -26,9 +26,13 @@ export class ExecutionResultCodec {
   jsToArgo(js: object): Buf {
     const encoder = new ArgoEncoder()
     encoder.header.outOfBandFieldErrors = true // this reference implementation doesn't implement in-band field errors
-    // uncomment the following to try out noBlocks and selfDescribing modes
-    // encoder.header.noBlocks = true
+    encoder.header.selfDescribingErrors = true // this reference implementation doesn't implement non-self-describing errors
+    // uncomment the following to try out other modes
+    // encoder.header.inlineEverything = true
     // encoder.header.selfDescribing = true
+    // encoder.header.nullTerminatedStrings = true
+    // encoder.header.noDeduplication = true
+    // encoder.header.hasUserFlags = true
     const type = encoder.header.selfDescribing ? Wire.DESC : this.typer.rootWireType()
     encoder.jsToArgoWithType(js, type)
     return encoder.getResult()

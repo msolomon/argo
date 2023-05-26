@@ -12,7 +12,7 @@
 <header>
 <h1>Argo</h1>
 <section id="intro">
-<p><em>Version 0.0.1 DRAFT</em>. <em>Compatible with <a href="https://spec.graphql.org/October2021">GraphQL October 2021 Edition</a>.</em></p>
+<p><em>Version 1.0.0</em>. <em>Compatible with <a href="https://spec.graphql.org/October2021">GraphQL October 2021 Edition</a>.</em></p>
 <p>Argo is a compact and compressible binary serialization format for <a href="https://graphql.org">GraphQL</a>. It aims to:</p>
 <ul>
 <li><strong>Minimize end-to-end latency</strong> of GraphQL responses<ul>
@@ -27,23 +27,7 @@
 <li><strong>Takes the place of JSON</strong> in GraphQL responses</li>
 <li>Usually <strong>meets the needs of mobile clients</strong> (and server clients) better than web clients</li>
 <li><strong>Works best with code generation</strong>, but also works well with interpretation</li>
-<li>Does not currently support GraphQL Input types</li>
-</ul>
-<p>---</p>
-<ul>
-<li>compute wire schema</li>
-<li>encode</li>
-<li>decode</li>
-</ul>
-<div class="spec-todo">
-:</div>
-<ul>
-<li>document: null collapsing. nullable fields would normally start w/ a zero byte if null, 1 otherwise. for enum &amp; union types, this could be collapsed into just the length, if we never used 0 in the type of an enum or union. is that worth it?</li>
-<li>Document: defend against invalid back references (too low ids)</li>
-<li>Document: limit read length allocations which exceed content size (if known) or a configurable limit, default 64MB</li>
-<li>Document: never backref empty string? or more generally, when encoding, check if backref length + value &le; backref id size. &ndash;</li>
-<li>Document: Adding an enum: can&rsquo;t produce a reliable tag based on ordering, if the server adds a new enum value before the end, or removes one entirely</li>
-<li>Document: why not input types.</li>
+<li>Does not currently support <a href="#sec-GraphQL-input-types">GraphQL Input types</a></li>
 </ul>
 <section id="sec--Introduction-" class="subsec">
 <h6><a href="#sec--Introduction-" title="link to this subsection"> Introduction </a></h6>
@@ -54,19 +38,14 @@
 <nav class="spec-toc">
 <div class="title">Contents</div>
 <ol>
-<li><a href="#sec-Overview"><span class="spec-secid">1</span>Overview</a><ol>
-<li><a href="#sec-Argo-actions-at-Registration-Time"><span class="spec-secid">1.1</span>Argo actions at Registration Time</a><ol>
-<li><a href="#sec-Registration-time-algorithm"><span class="spec-secid">1.1.1</span>Registration time algorithm</a></li>
-</ol>
-</li>
-<li><a href="#sec-Argo-actions-at-Execution-Time"><span class="spec-secid">1.2</span>Argo actions at Execution Time</a></li>
-</ol>
-</li>
+<li><a href="#sec-Overview"><span class="spec-secid">1</span>Overview</a></li>
 <li><a href="#sec-Types"><span class="spec-secid">2</span>Types</a><ol>
-<li><a href="#sec-GraphQL-types"><span class="spec-secid">2.1</span>GraphQL types</a></li>
-<li><a href="#sec-Response-types"><span class="spec-secid">2.2</span>Response types</a></li>
-<li><a href="#sec-Wire-types"><span class="spec-secid">2.3</span>Wire types</a><ol>
-<li><a href="#sec-Self-describing-types"><span class="spec-secid">2.3.1</span>Self-describing types</a></li>
+<li><a href="#sec-GraphQL-types"><span class="spec-secid">2.1</span>GraphQL types</a><ol>
+<li><a href="#sec-GraphQL-input-types"><span class="spec-secid">2.1.1</span>GraphQL input types</a></li>
+</ol>
+</li>
+<li><a href="#sec-Wire-types"><span class="spec-secid">2.2</span>Wire types</a><ol>
+<li><a href="#sec-Self-describing-types"><span class="spec-secid">2.2.1</span>Self-describing types</a></li>
 </ol>
 </li>
 </ol>
@@ -75,58 +54,52 @@
 <li><a href="#sec-Wire-schema-serialization"><span class="spec-secid">3.1</span>Wire schema serialization</a></li>
 </ol>
 </li>
-<li><a href="#sec-Binary-encoding"><span class="spec-secid">4</span>Binary encoding</a><ol>
-<li><a href="#sec-Message"><span class="spec-secid">4.1</span>Message</a></li>
-<li><a href="#sec-Header"><span class="spec-secid">4.2</span>Header</a></li>
-<li><a href="#sec-Blocks"><span class="spec-secid">4.3</span>Blocks</a></li>
-<li><a href="#sec-Core"><span class="spec-secid">4.4</span>Core</a></li>
-<li><a href="#sec-Label"><span class="spec-secid">4.5</span>Label</a><ol>
-<li><a href="#sec-Primitive-Types"><span class="spec-secid">4.5.1</span>Primitive Types</a><ol>
-<li><a href="#sec-Self-describing-encoding"><span class="spec-secid">4.5.1.1</span>Self-describing encoding</a></li>
+<li><a href="#sec-Creating-a-Wire-schema"><span class="spec-secid">4</span>Creating a Wire schema</a><ol>
+<li><a href="#sec-Algorithms"><span class="spec-secid">4.1</span>Algorithms</a></li>
+</ol>
+</li>
+<li><a href="#sec-Binary-encoding"><span class="spec-secid">5</span>Binary encoding</a><ol>
+<li><a href="#sec-Message"><span class="spec-secid">5.1</span>Message</a></li>
+<li><a href="#sec-Header"><span class="spec-secid">5.2</span>Header</a></li>
+<li><a href="#sec-Blocks"><span class="spec-secid">5.3</span>Blocks</a></li>
+<li><a href="#sec-Core"><span class="spec-secid">5.4</span>Core</a></li>
+<li><a href="#sec-Label"><span class="spec-secid">5.5</span>Label</a></li>
+<li><a href="#sec-Data-encoding"><span class="spec-secid">5.6</span>Data encoding</a><ol>
+<li><a href="#sec-Self-describing-encoding"><span class="spec-secid">5.6.1</span>Self-describing encoding</a></li>
+</ol>
+</li>
+<li><a href="#sec-Backreferences"><span class="spec-secid">5.7</span>Backreferences</a></li>
+<li><a href="#sec-Errors"><span class="spec-secid">5.8</span>Errors</a><ol>
+<li><a href="#sec-Error-values"><span class="spec-secid">5.8.1</span>Error values</a></li>
+<li><a href="#sec-Request-errors"><span class="spec-secid">5.8.2</span>Request errors</a></li>
+<li><a href="#sec-Field-errors"><span class="spec-secid">5.8.3</span>Field errors</a></li>
 </ol>
 </li>
 </ol>
 </li>
-<li><a href="#sec-Backreferences"><span class="spec-secid">4.6</span>Backreferences</a><ol>
-<li><a href="#sec-Write-side"><span class="spec-secid">4.6.1</span>Write-side</a></li>
-<li><a href="#sec-Read-side"><span class="spec-secid">4.6.2</span>Read-side</a></li>
-<li><a href="#sec-Types-which-support-backreferences"><span class="spec-secid">4.6.3</span>Types which support backreferences</a></li>
-<li><a href="#sec-Disabling-backreferences-for-a-given-type-in-a-message"><span class="spec-secid">4.6.4</span>Disabling backreferences for a given type in a message</a></li>
+<li><a href="#sec-Motivation"><span class="spec-secid">6</span>Motivation</a><ol>
+<li><a href="#sec-JSON"><span class="spec-secid">6.1</span>JSON</a></li>
+<li><a href="#sec-Tradeoffs"><span class="spec-secid">6.2</span>Tradeoffs</a></li>
+<li><a href="#sec-Argo"><span class="spec-secid">6.3</span>Argo</a></li>
+<li><a href="#sec-Recommendation"><span class="spec-secid">6.4</span>Recommendation</a></li>
 </ol>
 </li>
-<li><a href="#sec-Complex-types"><span class="spec-secid">4.7</span>Complex types</a></li>
-<li><a href="#sec-Nullable-types"><span class="spec-secid">4.8</span>Nullable types</a></li>
-<li><a href="#sec-Objects"><span class="spec-secid">4.9</span>Objects</a></li>
-<li><a href="#sec-Enums"><span class="spec-secid">4.10</span>Enums</a></li>
-<li><a href="#sec-Lists"><span class="spec-secid">4.11</span>Lists</a></li>
-<li><a href="#sec-Unions"><span class="spec-secid">4.12</span>Unions</a></li>
-<li><a href="#sec-Fixed"><span class="spec-secid">4.13</span>Fixed</a></li>
-<li><a href="#sec-Errors"><span class="spec-secid">4.14</span>Errors</a></li>
+<li><a href="#sec-Design-notes"><span class="spec-secid">7</span>Design notes</a><ol>
+<li><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">7.1</span>Ideas which did not pan out</a></li>
+<li><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">7.2</span>Ideas which were not pursued</a></li>
 </ol>
 </li>
-<li><a href="#sec-Motivation"><span class="spec-secid">5</span>Motivation</a><ol>
-<li><a href="#sec-JSON"><span class="spec-secid">5.1</span>JSON</a></li>
-<li><a href="#sec-Tradeoffs"><span class="spec-secid">5.2</span>Tradeoffs</a></li>
-<li><a href="#sec-Argo"><span class="spec-secid">5.3</span>Argo</a></li>
-<li><a href="#sec-Recommendation"><span class="spec-secid">5.4</span>Recommendation</a></li>
+<li><a href="#sec-Legal"><span class="spec-secid">8</span>Legal</a><ol>
+<li><a href="#sec-Copyright-notice"><span class="spec-secid">8.1</span>Copyright notice</a></li>
+<li><a href="#sec-License"><span class="spec-secid">8.2</span>License</a></li>
 </ol>
 </li>
-<li><a href="#sec-Design-notes"><span class="spec-secid">6</span>Design notes</a><ol>
-<li><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">6.1</span>Ideas which did not pan out</a></li>
-<li><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">6.2</span>Ideas which were not pursued</a></li>
+<li><a href="#sec-Formal"><span class="spec-secid">9</span>Formal</a><ol>
+<li><a href="#sec-Conformance"><span class="spec-secid">9.1</span>Conformance</a></li>
+<li><a href="#sec-Versioning"><span class="spec-secid">9.2</span>Versioning</a></li>
 </ol>
 </li>
-<li><a href="#sec-Legal"><span class="spec-secid">7</span>Legal</a><ol>
-<li><a href="#sec-Copyright-notice"><span class="spec-secid">7.1</span>Copyright notice</a></li>
-<li><a href="#sec-License"><span class="spec-secid">7.2</span>License</a></li>
-</ol>
-</li>
-<li><a href="#sec-Formal"><span class="spec-secid">8</span>Formal</a><ol>
-<li><a href="#sec-Conformance"><span class="spec-secid">8.1</span>Conformance</a></li>
-<li><a href="#sec-Versioning"><span class="spec-secid">8.2</span>Versioning</a></li>
-</ol>
-</li>
-<li><a href="#sec-Authors-and-contributors"><span class="spec-secid">9</span>Authors and contributors</a></li>
+<li><a href="#sec-Authors-and-contributors"><span class="spec-secid">10</span>Authors and contributors</a></li>
 <li><a href="#index"><span class="spec-secid">§</span>Index</a></li>
 </ol>
 </nav>
@@ -137,54 +110,26 @@
 <p>In advance, Argo walks over a given GraphQL query against a particular GraphQL schema and generates a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span> which captures type and serialization information which will be used when [de]serializing a response. Later, when serializing a GraphQL response, Argo relies on this and does not need to send this information over the network&mdash;this reduces the payload size. Similarly when deserializing, each client relies on the Wire schema to read the message.</p>
 <p>The serialization format itself is a compact binary format which uses techniques to minimize the payload size, make it unusually compressible (to further reduce the payload size over the network), permit high-performance implementations, and remain relatively simple. These techniques include:</p>
 <ul>
-<li>Integers are written in a compact variable-length format</li>
 <li>Scalar values are written into contiguous blocks to improve their compressibility</li>
 <li>Many scalar values are deduplicated</li>
 <li>Many scalars (particularly strings and byte strings) permit zero-copy implementations</li>
+<li>Integers are written in a compact variable-length format</li>
 </ul>
 <p>Argo separates its work into two phases: <span class="spec-ref"><a href="#registration-time" data-name="registration-time">Registration Time</a></span> and <em>Execution Time.</em></p>
 <p><dfn id="registration-time"><a href="#registration-time" data-name="registration-time">Registration Time</a></dfn> happens once, before a payload is serialized with Argo. On a mobile client, Registration Time is typically compile time. On a server, Registration Time is typically when a query is registered by a client application (perhaps whenever a new client version is compiled).</p>
-<p><dfn id="execution-time"><a href="#execution-time" data-name="execution-time">Execution Time</a></dfn> happens many times, whenever a payload is [de]serialized with Argo. This relies on information generated during Registration Time.</p>
+<p>At Registration Time, Argo generates a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span> on both the server and the client. Optionally, code may be generated at Registration Time (based on the Wire schema) to decode messages. See <a href="#sec-Creating-a-Wire-schema">Creating a Wire schema</a>.</p>
+<p><dfn id="execution-time"><a href="#execution-time" data-name="execution-time">Execution Time</a></dfn> happens many times, whenever a payload is [de]serialized with Argo.</p>
+<p>At Execution Time, Argo relies on the Wire schema (or code previously generated based on it) to read a binary message. This only works because information was collected previously during Registration Time. See <a href="#sec-Binary-encoding">Binary encoding</a></p>
 <div id="note-24ce0" class="spec-note">
 <a href="#note-24ce0">Note</a>
 Nothing prevents running Registration Time and Execution Time steps at Execution Time. However, this is a low-performance pattern, and is most likely only useful during development.</div>
-<p>At Registration Time, Argo generates a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span> on both the server and the client. Optionally, code may be generated at Registration Time (based on the Wire schema) to decode messages. At Execution Time, Argo relies on the Wire schema (or code previously generated based on it) to read a binary message.</p>
-<section id="sec-Argo-actions-at-Registration-Time" secid="1.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Argo-actions-at-Registration-Time">1.1</a></span>Argo actions at Registration Time</h2>
-<p>Argo is designed to work with GraphQL queries and schemas which are known in advance. It generates a description of the types which may be returned by a query (one time), and uses this to serialize or deserialize (many times). This description is called a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">wire schema</a></span>.</p>
-<p>A wire schema is generated by the following high-level algorithm.</p>
-<section id="sec-Registration-time-algorithm" secid="1.1.1">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-Registration-time-algorithm">1.1.1</a></span>Registration time algorithm</h3>
-<p>Given a GraphQL <code>schema</code>, and a GraphQL <code>query</code> on it:</p>
-<div class="spec-algo" id="ArgoAlgorithm()">
-<span class="spec-call"><a href="#ArgoAlgorithm()" data-name="ArgoAlgorithm">ArgoAlgorithm</a>(<var data-name="schema">schema</var>, <var data-name="query">query</var>)</span><ol>
-<li>Walk over the <code>schema</code> to get each type. At each <code>type</code>:<ol>
-<li>Produce a corresponding <a href="#sec-Wire-types">wire type</a>, accounting for any <code>@ArgoCodec</code> or <code>@ArgoDeduplicate</code> directives</li>
-</ol>
-</li>
-<li>Store the resulting <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">wire schema</a></span></li>
-<li>Walk over the <code>query</code> to get the type of everything selected. At each selection, look up the corresponding wire type in the wire schema produced above:<ol>
-<li>For each selection set, produce a new wire type which is a subset of the selected object <code>type</code>s</li>
-<li>For leaf selections, copy the corresponding wire type</li>
-</ol>
-</li>
-<li>Return the <code>wire schema</code></li>
-</ol>
-</div>
-</section>
-</section>
-<section id="sec-Argo-actions-at-Execution-Time" secid="1.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Argo-actions-at-Execution-Time">1.2</a></span>Argo actions at Execution Time</h2>
-<div class="spec-todo">
-</div>
-</section>
 </section>
 <section id="sec-Types" secid="2">
 <h1><span class="spec-secid" title="link to this section"><a href="#sec-Types">2</a></span>Types</h1>
 <p>GraphQL uses two type systems:</p>
 <ul>
 <li><span class="spec-ref"><a href="#graphql-types" data-name="graphql-types">GraphQL types</a></span>, which may appear in any given GraphQL Schema</li>
-<li><span class="spec-ref"><a href="#response-types" data-name="response-types">Response types</a></span>, which are used when serializing responses</li>
+<li><span class="spec-ref"><a href="#graphql-response-types" data-name="graphql-response-types">GraphQL response types</a></span>, which are used when serializing responses</li>
 </ul>
 <p>Argo uses these and introduces:</p>
 <ul>
@@ -198,19 +143,21 @@ Nothing prevents running Registration Time and Execution Time steps at Execution
 <li><code>Scalar</code>, <code>Enum</code>, <code>Object</code>, <code>Input Object</code>, <code>Interface</code>, <code>Union</code>, <code>List</code></li>
 <li>Scalar includes, at minimum: <code>Int</code>, <code>Float</code>, <code>String</code>, <code>Boolean</code>, <code>ID</code></li>
 </ul>
-<p>GraphQL also allows for <a href="https://spec.graphql.org/October2021/#sec-Scalars.Custom-Scalars">custom scalars</a>. Argo supports this, though a <code>@ArgoCodec</code> directive is required to tell Argo how to represent it on the wire.</p>
-</section>
-<section id="sec-Response-types" secid="2.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Response-types">2.2</a></span>Response types</h2>
-<p><dfn id="response-types"><a href="#response-types" data-name="response-types">Response types</a></dfn> refers to the <a href="https://spec.graphql.org/October2021/#sec-Serialization-Format">serialization types sketched in the GraphQL spec</a>. These do not have rigorous definitions in the GraphQL spec. These include (but are not limited to):</p>
+<p>GraphQL also allows for <a href="https://spec.graphql.org/October2021/#sec-Scalars.Custom-Scalars">custom scalars</a>. Argo supports this, though an <code>@ArgoCodec</code> directive is required to tell Argo how to represent it on the wire.</p>
+<p><dfn id="graphql-response-types"><a href="#graphql-response-types" data-name="graphql-response-types">GraphQL response types</a></dfn> refers to the <a href="https://spec.graphql.org/October2021/#sec-Serialization-Format">serialization types sketched in the GraphQL spec</a>. These do not have rigorous definitions in the GraphQL spec. These include (but are not limited to):</p>
 <ul>
 <li><code>Map</code>, <code>List</code>, <code>String</code>, <code>Null</code></li>
 <li>Optionally, <code>Boolean</code>, <code>Int</code>, <code>Float</code>, and <code>Enum Value</code></li>
 </ul>
+<section id="sec-GraphQL-input-types" secid="2.1.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-GraphQL-input-types">2.1.1</a></span>GraphQL input types</h3>
+<p>GraphQL also includes Input types, which encode arguments and requests. Presently, Argo does not specify how to encode GraphQL input types because the expected benefits are small. However, this is a natural, straightforward, and backwards-compatible extension which may be added in a future version.</p>
 </section>
-<section id="sec-Wire-types" secid="2.3">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Wire-types">2.3</a></span>Wire types</h2>
+</section>
+<section id="sec-Wire-types" secid="2.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Wire-types">2.2</a></span>Wire types</h2>
 <p><dfn id="wire-types"><a href="#wire-types" data-name="wire-types">Wire types</a></dfn> are used by Argo to encode GraphQL values as bytes.</p>
+<p>Argo uses the following named Wire types:</p>
 <ul>
 <li><code>STRING</code>: a UTF-8 string</li>
 <li><code>BOOLEAN</code>: true or false</li>
@@ -224,18 +171,19 @@ Nothing prevents running Registration Time and Execution Time steps at Execution
 <li><code>NULLABLE</code>: may be null or have a value</li>
 <li><code>DESC</code>: a self-describing type</li>
 </ul>
-<section id="sec-Self-describing-types" secid="2.3.1">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-Self-describing-types">2.3.1</a></span>Self-describing types</h3>
+<section id="sec-Self-describing-types" secid="2.2.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Self-describing-types">2.2.1</a></span>Self-describing types</h3>
 <p><dfn id="self-describing-types"><a href="#self-describing-types" data-name="self-describing-types">Self-describing types</a></dfn> are used by Argo to encode values with types which are not known in advance (e.g. at Registration Time). Primarily, this is required to comply with the <a href="https://spec.graphql.org/October2021/#sec-Errors">GraphQL specification on Errors</a>.</p>
+<p>Argo uses the following named self-describing types:</p>
 <ul>
-<li><code>Absent</code>: marks that a value is not present (like <code>undefined</code> in JSON)</li>
 <li><code>Null</code>: marks that a value is not present (like <code>null</code> in JSON)</li>
 <li><code>Object</code>: an object, made up of named fields and their values</li>
+<li><code>List</code>: a variable-length list of (potentially) mixed types</li>
 <li><code>String</code>: a UTF-8 string</li>
+<li><code>Bytes</code>: a variable-length byte string</li>
 <li><code>Boolean</code>: true or false</li>
 <li><code>Int</code>: a variable-length integer</li>
 <li><code>Float</code>: an IEEE 754 double-precision binary floating-point (binary64)</li>
-<li><code>List</code>: a variable-length list of (potentially) mixed types</li>
 </ul>
 </section>
 </section>
@@ -258,8 +206,7 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 <section id="sec-Wire-schema-serialization" secid="3.1">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Wire-schema-serialization">3.1</a></span>Wire schema serialization</h2>
 <p>A Wire schema or WireType may be serialized in JSON. It must be a JSON object of the form: <code>{"type": "typeName" ...attributes...}</code> where <code>typeName</code> is one of the <span class="spec-ref"><a href="#wire-types" data-name="wire-types">Wire types</a></span> as a string, and the attributes are as sketched in <em>WireType</em> above.</p>
-<p>For example,</p>
-<pre data-language="json"><code><span class="token punctuation">{</span>
+<pre id="example-b1dcc" class="spec-example" data-language="json"><a href="#example-b1dcc">Example № 1</a><code><span class="token punctuation">{</span>
   <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"RECORD"</span><span class="token punctuation">,</span>
   <span class="token property">"fields"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
     <span class="token punctuation">{</span>
@@ -276,12 +223,186 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 <p>This serialization may be helpful to avoid recomputing Wire schemas on the server. Other serializations may be more efficient but are out of scope here.</p>
 </section>
 </section>
-<section id="sec-Binary-encoding" secid="4">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Binary-encoding">4</a></span>Binary encoding</h1>
+<section id="sec-Creating-a-Wire-schema" secid="4">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Creating-a-Wire-schema">4</a></span>Creating a Wire schema</h1>
+<p>Argo is designed to work with GraphQL queries and schemas which are known in advance. It generates a description of the types which may be returned by a query (one time), and uses this to serialize or deserialize (many times). This description is called a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>.</p>
+<p>It is helpful to first describe this process informally. Each selection set is walked over with the corresponding GraphQL schema easily available. Selection sets and selections are handled differently.</p>
+<ul>
+<li>Each selection set collapses direct selections with any fragments, union, or interface selections down into a single Wire <code>RECORD</code><ul>
+<li>This <code>RECORD</code> retains the order of the selections, marks any fields which may be omitted in the response as omittable, and de-duplicates repeated selections recursively</li>
+</ul>
+</li>
+<li>Other selections are transformed into analogous wire types<ul>
+<li>String, ID, and any Enum types become <code>STRING</code></li>
+<li>Int becomes <code>VARINT</code></li>
+<li>Float becomes <code>FLOAT64</code></li>
+<li>Boolean becomes <code>BOOLEAN</code></li>
+<li>List becomes <code>ARRAY</code></li>
+<li>All types are non-null by default, and nullable types are wrapped in <code>NULLABLE</code></li>
+<li>Custom scalars (and any built-ins which set it) use the <code>@ArgoCodec</code> directive to choose a wire type</li>
+<li>Scalars (except Boolean) may use the <code>@ArgoDeduplicate</code> directive to opt in or out of deduplication</li>
+</ul>
+</li>
+</ul>
+<div id="note-1ae20" class="spec-note">
+<a href="#note-1ae20">Note</a>
+Though it seems more efficient to represent Enums as <code>VARINT</code>, there is no guarantee that the writer&rsquo;s view of the Enum type exactly matches the reader&rsquo;s. The schema may have changed: in the writer&rsquo;s schema, if an Enum&rsquo;s values have been reordered, or if an Enum value has been added before the end (but will otherwise never be sent to this particular reader), the reader and writer do not have enough information to agree on the correct numbering.</div>
+<p>The following types will always be marked with <code>BLOCK</code>, with a key set to the GraphQL type was generated from:</p>
+<p><code>STRING, VARINT, FLOAT64, BYTES, FIXED</code></p>
+<p>These types will be marked to deduplicate within their Block by default (but it may be overridden by <code>@ArgoDeduplicate</code>):</p>
+<p><code>STRING, BYTES</code></p>
+<section id="sec-Algorithms" secid="4.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Algorithms">4.1</a></span>Algorithms</h2>
+<p>A wire schema is generated by the following algorithms. Typically, <em>CollectFieldWireTypes()</em> should be called with the root type of the GraphQL Schema&rsquo;s operation (typically, <code>Query</code>) along with the selection set&mdash;usually from a Query, but potentially for that returned by a Mutation or Subscription.</p>
+<div id="note-5044d" class="spec-note">
+<a href="#note-5044d">Note</a>
+Much of this code may be easier to follow in the <a href="https://github.com/msolomon/argo/blob/main/argo-js/src/typer.ts">reference implementation&rsquo;s <code>Typer</code> class</a>.</div>
+<div id="note-e369d" class="spec-note">
+<a href="#note-e369d">Note</a>
+<em>CollectFieldsStatic()</em> is based on GraphQLs <a href="https://spec.graphql.org/October2021/#CollectFields()">CollectFields() algorithm</a>.</div>
+<div class="spec-algo" id="GraphQLTypeToWireType()">
+<span class="spec-call"><a href="#GraphQLTypeToWireType()" data-name="GraphQLTypeToWireType">GraphQLTypeToWireType</a>(<var data-name="graphQLType">graphQLType</var>)</span><ol>
+<li>If <var data-name="graphQLType">graphQLType</var> is a Scalar or Enum:<ol>
+<li>If <var data-name="graphQLType">graphQLType</var> has an <span class="spec-t">@ArgoCodecDirective</span>, set <var data-name="codec">codec</var> to its argument</li>
+<li>If <var data-name="graphQLType">graphQLType</var> has an <span class="spec-t">@ArgoDeduplicateDirective</span>, set <var data-name="deduplicate">deduplicate</var> to its argument</li>
+<li>Otherwise, let <var data-name="deduplicate">deduplicate</var> be false</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is an Enum:</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a String or ID:<ol>
+<li>If <var data-name="codec">codec</var> is not set, set it to use the <span class="spec-nt"><span data-name="STRING">STRING</span></span> codec</li>
+<li>Set <var data-name="deduplicate">deduplicate</var> to true</li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is an Int:<ol>
+<li>If <var data-name="codec">codec</var> is not set, set it to use the <span class="spec-nt"><span data-name="VARINT">VARINT</span></span> codec</li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a Float:<ol>
+<li>If <var data-name="codec">codec</var> is not set, set it to use the <span class="spec-nt"><span data-name="FLOAT64">FLOAT64</span></span> codec</li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a Boolean:<ol>
+<li>If <var data-name="deduplicate">deduplicate</var> is set, fail with an error because <span class="spec-nt"><span data-name="BOOLEAN">BOOLEAN</span></span> cannot be deduplicated</li>
+<li>return <code>Nullable(BOOLEAN)</code></li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a custom scalar:<ol>
+<li>If <var data-name="codec">codec</var> is not set, fail with an error because <var data-name="codec">codec</var> is required for custom scalars</li>
+<li>If <var data-name="deduplicate">deduplicate</var> is not set, set it to the corresponding value above for the type of <var data-name="codec">codec</var></li>
+</ol>
+</li>
+<li>Set <var data-name="blockID">blockID</var> to the name of the <var data-name="graphQLType">graphQLType</var>&lsquo;s type</li>
+<li>Return <code>Nullable(Block(codec, blockId, deduplicate))</code></li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a List:<ol>
+<li>Set <var data-name="underlyingType">underlyingType</var> to the result of calling <span class="spec-call"><a href="#GraphQLTypeToWireType()" data-name="GraphQLTypeToWireType">GraphQLTypeToWireType</a>()</span> with the underlying type of the List</li>
+<li>Return <code>Nullable(Array(underlyingType))</code></li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is an Object, Interface, or Union:<ol>
+<li>Set <var data-name="fields">fields</var> to the empty list</li>
+<li>Return <code>Nullable(Record(fields))</code></li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is NonNull:<ol>
+<li>Set <var data-name="type">type</var> to the result of calling <span class="spec-call"><a href="#GraphQLTypeToWireType()" data-name="GraphQLTypeToWireType">GraphQLTypeToWireType</a>()</span> with the underlying type of the NonNull, then removing its Nullable wrapper</li>
+<li>Return <var data-name="type">type</var></li>
+</ol>
+</li>
+</ol>
+</div>
+<div class="spec-algo" id="CollectFieldWireTypes()">
+<span class="spec-call"><a href="#CollectFieldWireTypes()" data-name="CollectFieldWireTypes">CollectFieldWireTypes</a>(<var data-name="selectionType">selectionType</var>, <var data-name="selectionSet">selectionSet</var>)</span><ol>
+<li>Initialize <var data-name="recordFields">recordFields</var> to an empty list.</li>
+<li>For each <var data-name="alias">alias</var> and ordered set of <var data-name="fields">fields</var> in <span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="selectionSet">selectionSet</var>)</span>:<ol>
+<li>For each <var data-name="field">field</var> in <var data-name="fields">fields</var>:<ol>
+<li>Initialize <var data-name="omittable">omittable</var> to <span class="spec-keyword">false</span></li>
+<li>If <var data-name="field">field</var> was selected by a fragment spread, set <var data-name="typeCondition">typeCondition</var> to the name of the fragment</li>
+<li>If <var data-name="field">field</var> was selected by an inline fragment, set <var data-name="typeCondition">typeCondition</var> to the name of the type condition specified in the inline fragment</li>
+<li>If <var data-name="typeCondition">typeCondition</var> is set, but not set to the name of <var data-name="selectionType">selectionType</var>, set omittable to <span class="spec-keyword">true</span></li>
+<li>If <var data-name="field">field</var> is a selection set:<ol>
+<li>Set <var data-name="wrapped">wrapped</var> to the result of calling <span class="spec-call"><span data-name="TypeToWireType">TypeToWireType</span>()</span> with the <var data-name="field">field</var>&lsquo;s GraphQL type &ndash;</li>
+<li>Let <span class="spec-call"><span data-name="wrap">wrap</span>(<var data-name="wireType">wireType</var>)</span> be a function which recursively applies <code>NULLABLE</code>, <code>BLOCK</code>, and <code>ARRAY</code> wrappers around <var data-name="wireType">wireType</var> in the same order they appear in <var data-name="wrapped">wrapped</var></li>
+<li>Set <var data-name="type">type</var> to the result of calling <code>CollectFieldWireTypes(field.type, field.selectionSet)</code></li>
+<li>Set <var data-name="type">type</var> to the result of calling <span class="spec-call"><span data-name="wrap">wrap</span>(<var data-name="type">type</var>)</span></li>
+<li>Append <span class="spec-call"><span data-name="Field">Field</span>(<var data-name="alias">alias</var>, <var data-name="type">type</var>, <var data-name="omittable">omittable</var>)</span> to <var data-name="recordFields">recordFields</var></li>
+</ol>
+</li>
+<li>Otherwise:<ol>
+<li>Set <var data-name="type">type</var> to the result of calling <code>TypeToWireType(field.type)</code></li>
+<li>Append <span class="spec-call"><span data-name="Field">Field</span>(<var data-name="alias">alias</var>, <var data-name="type">type</var>, <var data-name="omittable">omittable</var>)</span> to <var data-name="recordFields">recordFields</var></li>
+</ol>
+</li>
+<li>For any <var data-name="field">field</var> in <var data-name="recordFields">recordFields</var> which share a name, recursively combine fields into a single selection set <var data-name="field">field</var> which orders selections in the same order as in <var data-name="recordFields">recordFields</var></li>
+<li>Return <var data-name="recordFields">recordFields</var></li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</div>
+<div class="spec-algo" id="CollectFieldsStatic()">
+<span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="selectionSet">selectionSet</var>, <var data-name="visitedFragments">visitedFragments</var>)</span><ol>
+<li>If <var data-name="visitedFragments">visitedFragments</var> is not provided, initialize it to the empty set.</li>
+<li>Initialize <var data-name="groupedFields">groupedFields</var> to an empty ordered map of lists.</li>
+<li>For each <var data-name="selection">selection</var> in <var data-name="selectionSet">selectionSet</var>:<ol>
+<li>If <var data-name="selection">selection</var> provides the directive <code>@skip</code>, let <var data-name="skipDirective">skipDirective</var> be that directive.<ol>
+<li>If <var data-name="skipDirective">skipDirective</var>&lsquo;s <var data-name="if">if</var> argument is always <span class="spec-keyword">true</span>, continue with the next <var data-name="selection">selection</var> in <var data-name="selectionSet">selectionSet</var>.</li>
+</ol>
+</li>
+<li>If <var data-name="selection">selection</var> provides the directive <code>@include</code>, let <var data-name="includeDirective">includeDirective</var> be that directive.<ol>
+<li>If <var data-name="includeDirective">includeDirective</var>&lsquo;s <var data-name="if">if</var> argument is never <span class="spec-keyword">true</span>, continue with the next <var data-name="selection">selection</var> in <var data-name="selectionSet">selectionSet</var>.</li>
+</ol>
+</li>
+<li>If <var data-name="selection">selection</var> is a <span class="spec-nt"><span data-name="Field">Field</span></span>:<ol>
+<li>Let <var data-name="responseKey">responseKey</var> be the response key of <var data-name="selection">selection</var> (the alias if defined, otherwise the field name).</li>
+<li>Let <var data-name="groupForResponseKey">groupForResponseKey</var> be the list in <var data-name="groupedFields">groupedFields</var> for <var data-name="responseKey">responseKey</var>; if no such list exists, create it as an empty list.</li>
+<li>Append <var data-name="selection">selection</var> to the <var data-name="groupForResponseKey">groupForResponseKey</var>.</li>
+</ol>
+</li>
+<li>If <var data-name="selection">selection</var> is a <span class="spec-nt"><span data-name="FragmentSpread">FragmentSpread</span></span>:<ol>
+<li>Let <var data-name="fragmentSpreadName">fragmentSpreadName</var> be the name of <var data-name="selection">selection</var>.</li>
+<li>If <var data-name="fragmentSpreadName">fragmentSpreadName</var> is in <var data-name="visitedFragments">visitedFragments</var>, continue with the next <var data-name="selection">selection</var> in <var data-name="selectionSet">selectionSet</var>.</li>
+<li>Add <var data-name="fragmentSpreadName">fragmentSpreadName</var> to <var data-name="visitedFragments">visitedFragments</var>.</li>
+<li>Let <var data-name="fragment">fragment</var> be the Fragment in the current Document whose name is <var data-name="fragmentSpreadName">fragmentSpreadName</var>.</li>
+<li>If no such <var data-name="fragment">fragment</var> exists, fail with an error because the referenced <var data-name="fragment">fragment</var> must exist.</li>
+<li>Let <var data-name="fragmentSelectionSet">fragmentSelectionSet</var> be the top-level selection set of <var data-name="fragment">fragment</var>.</li>
+<li>Let <var data-name="fragmentGroupedFieldSet">fragmentGroupedFieldSet</var> be the result of calling <span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="fragmentSelectionSet">fragmentSelectionSet</var>, <var data-name="visitedFragments">visitedFragments</var>)</span>.</li>
+<li>For each <var data-name="fragmentGroup">fragmentGroup</var> in <var data-name="fragmentGroupedFieldSet">fragmentGroupedFieldSet</var>:<ol>
+<li>Let <var data-name="responseKey">responseKey</var> be the response key shared by all fields in <var data-name="fragmentGroup">fragmentGroup</var>.</li>
+<li>Let <var data-name="groupForResponseKey">groupForResponseKey</var> be the list in <var data-name="groupedFields">groupedFields</var> for <var data-name="responseKey">responseKey</var>; if no such list exists, create it as an empty list.</li>
+<li>Append all items in <var data-name="fragmentGroup">fragmentGroup</var> to <var data-name="groupForResponseKey">groupForResponseKey</var>.</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>If <var data-name="selection">selection</var> is an <span class="spec-nt"><span data-name="InlineFragment">InlineFragment</span></span>:<ol>
+<li>Let <var data-name="fragmentSelectionSet">fragmentSelectionSet</var> be the top-level selection set of <var data-name="selection">selection</var>.</li>
+<li>Let <var data-name="fragmentGroupedFieldSet">fragmentGroupedFieldSet</var> be the result of calling <span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="fragmentSelectionSet">fragmentSelectionSet</var>, <var data-name="visitedFragments">visitedFragments</var>)</span>.</li>
+<li>For each <var data-name="fragmentGroup">fragmentGroup</var> in <var data-name="fragmentGroupedFieldSet">fragmentGroupedFieldSet</var>:<ol>
+<li>Let <var data-name="responseKey">responseKey</var> be the response key shared by all fields in <var data-name="fragmentGroup">fragmentGroup</var>.</li>
+<li>Let <var data-name="groupForResponseKey">groupForResponseKey</var> be the list in <var data-name="groupedFields">groupedFields</var> for <var data-name="responseKey">responseKey</var>; if no such list exists, create it as an empty list.</li>
+<li>Append all items in <var data-name="fragmentGroup">fragmentGroup</var> to <var data-name="groupForResponseKey">groupForResponseKey</var>.</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>Return <var data-name="groupedFields">groupedFields</var>.</li>
+</ol>
+</div>
+</section>
+</section>
+<section id="sec-Binary-encoding" secid="5">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Binary-encoding">5</a></span>Binary encoding</h1>
 <p>Argo&rsquo;s binary encoding does not include field names, self-contained information about the types of individual bytes, nor field or record separators. Therefore readers are wholly reliant on the Wire schema used when the data was encoded (or any compatible Wire schema), along with any information about custom scalar encodings.</p>
 <p>Argo always uses a little-endian byte order.</p>
-<section id="sec-Message" secid="4.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Message">4.1</a></span>Message</h2>
+<div id="note-86a67" class="spec-note">
+<a href="#note-86a67">Note</a>
+Reading Argo messages often involves reading length prefixes followed by that many bytes. As always in situations like this, use bounds checking to avoid buffer over-read.</div>
+<section id="sec-Message" secid="5.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Message">5.1</a></span>Message</h2>
 <p>An Argo <dfn id="message"><a href="#message" data-name="message">Message</a></dfn> consists of these concatenated parts:</p>
 <ul>
 <li>A variable-length <span class="spec-ref"><a href="#header" data-name="header">Header</a></span></li>
@@ -289,21 +410,23 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 <li>1 <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, which contains the Message&rsquo;s structure, prefixed by its length</li>
 </ul>
 </section>
-<section id="sec-Header" secid="4.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Header">4.2</a></span>Header</h2>
+<section id="sec-Header" secid="5.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Header">5.2</a></span>Header</h2>
 <p>The <dfn id="header"><a href="#header" data-name="header">Header</a></dfn> is encoded as a variable-length <em>BitSet</em>. After into a fixed bit array, each bit in the BitSet has a defined meaning described below.</p>
 <p>Numbered least to most significant bits:</p>
 <pre><code>0: InlineEverything
 1: SelfDescribing
 2: OutOfBandFieldErrors
-3: NullTerminatedStrings
-4: HasUserFlags
+3: SelfDescribingErrors
+4: NullTerminatedStrings
+5: NoDeduplication
+6: HasUserFlags
 </code></pre>
 <p>When a given flag is set, Argo&rsquo;s behavior is modified as described below. Each may also be referred to as a <dfn id="mode"><a href="#mode" data-name="mode">Mode</a></dfn> of operation, and the corresponding bit must be set if and only if the messages uses the corresponding Mode.</p>
 <dl>
 <dt><dfn id="inlineeverything"><a href="#inlineeverything" data-name="inlineeverything">InlineEverything</a></dfn></dt>
-<dd>In this Mode, <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> are omitted, along with their length prefixes. <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>&lsquo;s prefix is also omitted. Instead, scalar values are written inline in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> (i.e. at the current position when they are encountered).</dd>
-<dd>This generally results in smaller messages which do not compress as well. Useful when the Message will not be compressed.</dd>
+<dd>In this Mode, <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> are omitted, along with their length prefixes. <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>&lsquo;s length prefix is also omitted. Instead, scalar values are written inline in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> (i.e. at the current position when they are encountered).</dd>
+<dd>This generally results in smaller messages which do not compress as well. Useful when the Message will not be compressed. For tiny messages (say, dozens of bytes) this usually results in the smallest possible payloads.</dd>
 </dl>
 <dl>
 <dt><dfn id="selfdescribing"><a href="#selfdescribing" data-name="selfdescribing">SelfDescribing</a></dfn></dt>
@@ -312,13 +435,22 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 </dl>
 <dl>
 <dt><dfn id="outofbandfielderrors"><a href="#outofbandfielderrors" data-name="outofbandfielderrors">OutOfBandFieldErrors</a></dfn></dt>
-<dd>In this Mode, GraphQL <a href="https://spec.graphql.org/October2021/#sec-Errors.Field-errors">Field errors</a> are not guaranteed to be written inline, and may appear in the <code>errors</code> array, if any.</dd>
+<dd>In this Mode, GraphQL <a href="https://spec.graphql.org/October2021/#sec-Errors.Field-errors">Field errors</a> are guaranteed not to be written inline, and instead appear in the <code>errors</code> array, if any.</dd>
 <dd>This makes it easier to convert JSON payloads to Argo after the fact, but eliminates the benefits of inline errors.</dd>
 </dl>
 <dl>
+<dt><dfn id="selfdescribingerrors"><a href="#selfdescribingerrors" data-name="selfdescribingerrors">SelfDescribingErrors</a></dfn></dt>
+<dd>In this Mode, errors are not encoded as usual. Instead, each is encoded as a self-describing value (which must adhere to the GraphQL spec). This applies to both Field errors and Request errors.</dd>
+<dd>This makes it easier to convert JSON payloads to Argo after the fact, but gives less type safety and generally results in larger error payloads.</dd>
+</dl>
+<dl>
 <dt><dfn id="nullterminatedstrings"><a href="#nullterminatedstrings" data-name="nullterminatedstrings">NullTerminatedStrings</a></dfn></dt>
-<dd>In this Mode, all messages of type <code>String</code> are suffixed with a NUL byte. This byte is not included in the String&rsquo;s length, and is not considered part of the String. Other NUL bytes may still appear within each String.</dd>
+<dd>In this Mode, all messages of type <code>String</code> are suffixed with a UTF-8 NUL (i.e. a 0x00 byte). This byte is not included in the String&rsquo;s length, and is not considered part of the String. Other NUL bytes may still appear within each String.</dd>
 <dd>This makes it possible to implement zero-copy in language environments relying on NUL-terminated strings, but generally makes the payload larger.</dd>
+</dl>
+<dl>
+<dt><dfn id="nodeduplication"><a href="#nodeduplication" data-name="nodeduplication">NoDeduplication</a></dfn></dt>
+<dd>In this Mode, the message is guaranteed to never use backreferences. This may be because the encoder chose to duplicate values, or because duplicates were never encountered. The decoder MAY safely skip calculating backreference IDs, which carries a small cost.</dd>
 </dl>
 <dl>
 <dt><dfn id="hasuserflags"><a href="#hasuserflags" data-name="hasuserflags">HasUserFlags</a></dfn></dt>
@@ -326,21 +458,21 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 <dd>This is useful to prototype custom implementations and extensions of Argo.</dd>
 </dl>
 </section>
-<section id="sec-Blocks" secid="4.3">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Blocks">4.3</a></span>Blocks</h2>
+<section id="sec-Blocks" secid="5.3">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Blocks">5.3</a></span>Blocks</h2>
 <p>Argo <dfn id="blocks"><a href="#blocks" data-name="blocks">Blocks</a></dfn> are named contiguous blocks of encoded scalar values of the same type.</p>
 <p>Each begins with a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> encoding the length of the block in bytes (not counting the length prefix).</p>
 <p>Concatenated to this is every value in the block. The encoding of each value is defined below. Generally, this will not include any metadata, only values.</p>
 <p>The name (or key) of each Block is not encoded in the message.</p>
 </section>
-<section id="sec-Core" secid="4.4">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Core">4.4</a></span>Core</h2>
+<section id="sec-Core" secid="5.4">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Core">5.4</a></span>Core</h2>
 <p>The <dfn id="core"><a href="#core" data-name="core">Core</a></dfn> of a Message contains the primary structure of the payload.</p>
 <p>The Core is prefixed with a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> encoding the its length in bytes (not counting the length prefix). This is omitted when operating in <span class="spec-ref"><a href="#inlineeverything" data-name="inlineeverything">InlineEverything</a></span> mode.</p>
 <p>The rest of the Core consists of a single value which encodes the payload. This is almost always a <code>RECORD</code> corresponding to GraphQL&rsquo;s <code>ExecutionResult</code>.</p>
 </section>
-<section id="sec-Label" secid="4.5">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Label">4.5</a></span>Label</h2>
+<section id="sec-Label" secid="5.5">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Label">5.5</a></span>Label</h2>
 <p>Argo uses a multipurpose binary marker called a <dfn id="label"><a href="#label" data-name="label">Label</a></dfn> which combines several use cases into one compact representation. A Label is written using the <em>variable-length zig-zag coding</em>. A Label is essentially a number which should be interpreted differently according to its value and the context in which it is used.</p>
 <ul>
 <li>For variable-length data, such as a <code>STRING</code> or <code>ARRAY</code>, non-negative values represent the length of the data that is to follow<ul>
@@ -353,18 +485,20 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 <li>Values which are prefixed by a Label even when non-nullable omit this non-null marker entirely, since we can rely on the Label&rsquo;s value to tell us it is not null</li>
 </ul>
 </li>
-<li>For <code>NULLABLE</code> values, -3 means there was a Field Error which terminated its propogation (if any) here</li>
+<li>For <code>NULLABLE</code> values, -3 means there was a Field Error which terminated its propagation (if any) here</li>
 <li>For fields which may be omitted&mdash;such as fields that come from a selection set over a Union, and therefore may not appear at all&mdash;the value -2 is used to represent absence, called the <em>Absent Label</em></li>
 <li>All other negative numbers are used for <span class="spec-ref"><a href="#backreferences" data-name="backreferences">Backreferences</a></span>: identification numbers which refer to values which appeared previously in the Message</li>
 </ul>
 <p>Types whose values are prefixed with a Label or are themselves a Label are called <dfn id="labeled"><a href="#labeled" data-name="labeled">Labeled</a></dfn>. For example, <code>STRING</code>, <code>ARRAY</code>, <code>BOOLEAN</code>, and all <code>NULLABLE</code> types are <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span>.</p>
 <p>Types whose values are not prefixed with a Label and are not themselves a Label are called <dfn id="unlabeled"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></dfn>. For example, non-nullable <code>RECORD</code> and non-nullable <code>FLOAT64</code> are <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>.</p>
-<section id="sec-Primitive-Types" secid="4.5.1">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-Primitive-Types">4.5.1</a></span>Primitive Types</h3>
-<p>Primitive types are encoded in binary as described here.</p>
+</section>
+<section id="sec-Data-encoding" secid="5.6">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Data-encoding">5.6</a></span>Data encoding</h2>
+<p>Data are encoded in binary as described here.</p>
 <dl>
 <dt><dfn id="string"><a href="#string" data-name="string">STRING</a></dfn></dt>
 <dd><code>STRING</code> values are encoded as UTF-8 and written to their <span class="spec-ref"><a href="#block" data-name="block">Block</a></span>. In <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> is written which is the length of the encoded value in bytes. Typically, repeated <code>STRING</code> values may be deduplicated by instead writing a <em>backreference</em> to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+<dd>In <span class="spec-ref"><a href="#nullterminatedstrings" data-name="nullterminatedstrings">NullTerminatedStrings</a></span> mode, an additional UTF-8 NUL (0x00) is written to the block following the UTF-8 value (this is not counted in the length written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>).</dd>
 </dl>
 <dl>
 <dt><dfn id="boolean"><a href="#boolean" data-name="boolean">BOOLEAN</a></dfn></dt>
@@ -388,7 +522,7 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 </dl>
 <dl>
 <dt><dfn id="record"><a href="#record" data-name="record">RECORD</a></dfn></dt>
-<dd><code>RECORD</code> values are written as a concatenation of their <em>Fields</em> to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>. Each <em>Field</em> is written recursively in the order it appears in the <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>. If a Field is <em>omittable</em> and absent, it is written as the <em>Absent Label</em> If a Field is <em>omittable</em> and present, but its underyling type is <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>, a non-null Label is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> before writing the field&rsquo;s value. The number of fields and their types are not included in the message in any way, since that is in the <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>.</dd>
+<dd><code>RECORD</code> values are written as a concatenation of their <em>Fields</em> to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>. Each <em>Field</em> is written recursively in the order it appears in the <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>. If a Field is <em>omittable</em> and absent, it is written as the <em>Absent Label</em>. If a Field is <em>omittable</em> and present, but its underlying type is <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>, a non-null Label is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> before writing the field&rsquo;s value. The number of fields and their types are not included in the message in any way, since that is in the <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>.</dd>
 </dl>
 <dl>
 <dt><dfn id="array"><a href="#array" data-name="array">ARRAY</a></dfn></dt>
@@ -396,45 +530,32 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 </dl>
 <dl>
 <dt><dfn id="block"><a href="#block" data-name="block">BLOCK</a></dfn></dt>
-<dd><code>BLOCK</code> is not written to the <span class="spec-ref"><a href="#message" data-name="message">Message</a></span> directly. Instead, it modifies its underlying type, naming which block it should be written to and whether values should be deduplicated.</dd>
+<dd><code>BLOCK</code> is not written to the <span class="spec-ref"><a href="#message" data-name="message">Message</a></span> directly. Instead, it modifies its underlying type, naming which block it should be written to and whether values should be deduplicated. Block keys match the name of the type in the GraphQL schema it is generated from. For example, &lsquo;String&rsquo; for the built-in type, or a custom scalar&rsquo;s name. Deduplication is configurable with the ArgoDeduplicate directive, with defaults specified under <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>.</dd>
 </dl>
 <dl>
 <dt><dfn id="nullable"><a href="#nullable" data-name="nullable">NULLABLE</a></dfn></dt>
-<dd><code>NULLABLE</code> values are written differently depending on whether the underlying value is <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span> or <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>. The value <code>null</code> is always written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> as the <em>Null Label</em> with the value 0. If the underlying value is present and <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span>, non-null values are simply written recursively and unmodified using the underlying value&rsquo;s encoding. If the underlying value is present and <em>Unabeled</em>, first the <em>Non-null Label</em> is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, then the underlying value is written recursively.</dd>
+<dd><code>NULLABLE</code> values are written differently depending on whether the underlying value is <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span> or <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>. The value <code>null</code> is always written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> as the <em>Null Label</em> with the value 0. If the underlying value is present and <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span>, non-null values are simply written recursively and unmodified using the underlying value&rsquo;s encoding. If the underlying value is present and <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>, first the <em>Non-null Label</em> is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, then the underlying value is written recursively.</dd>
 </dl>
 <dl>
 <dt><dfn id="desc"><a href="#desc" data-name="desc">DESC</a></dfn></dt>
-<dd><code>DESC</code> values are self-describing, and primarily used to encode errors. This scheme is described in <em>Self-describing encoding</em></dd>
+<dd><code>DESC</code> values are self-describing, and primarily used to encode errors. This scheme is described in <em>Self-describing encoding</em>.</dd>
 </dl>
-<section id="sec-Self-describing-encoding" secid="4.5.1.1">
-<h4><span class="spec-secid" title="link to this section"><a href="#sec-Self-describing-encoding">4.5.1.1</a></span>Self-describing encoding</h4>
+<section id="sec-Self-describing-encoding" secid="5.6.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Self-describing-encoding">5.6.1</a></span>Self-describing encoding</h3>
 <p>Argo is intended to rely on known types taken from GraphQL queries and schemas. However, the <code>errors</code> array in GraphQL is very free-form <a href="https://spec.graphql.org/October2021/#sec-Errors">as specified in the GraphQL Spec</a>. To support this, as well as to ease debugging in certain circumstances, a self-describing format is included.</p>
-<p>Self-describing values frequently use a <dfn id="type-marker"><a href="#type-marker" data-name="type-marker">Type marker</a></dfn>, a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> with a predetermined value representing the type of the value to follow.</p>
-<p>In the self-describing format, most values are encoded as usual, including using <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>. However, values in this format only use up to 3 Blocks:</p>
+<p>Self-describing values use a <dfn id="type-marker"><a href="#type-marker" data-name="type-marker">Type marker</a></dfn>, a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> with a predetermined value representing the type of the value to follow.</p>
+<p>In the self-describing format, most values are encoded as usual, including using <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>. However, values in this format only use the following Blocks:</p>
 <ul>
 <li>A block with key &ldquo;String&rdquo;, used for all values marked <code>String</code></li>
+<li>A block with key &ldquo;Bytes&rdquo;, used for all values marked <code>Bytes</code></li>
 <li>A block with key &ldquo;Int&rdquo;, used for all values marked <code>Int</code></li>
 <li>A block with key &ldquo;Float&rdquo;, used for all values marked <code>Float</code></li>
 </ul>
-<div id="note-6224a" class="spec-note">
-<a href="#note-6224a">Note</a>
-these Blocks may also be used for non-self-describing values. This is intentional.</div>
+<div id="note-2e1b2" class="spec-note">
+<a href="#note-2e1b2">Note</a>
+These Blocks may also be used for non-self-describing values. This is intentional.</div>
 <p>To write a <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span>, encode the given value as a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> and write it to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</p>
 <p>To write a self-describing value, first map the desired value to the closest type described in <span class="spec-ref"><a href="#self-describing-types" data-name="self-describing-types">Self-describing types</a></span>. Then, write each type as below (reading follows the same pattern):</p>
-<ul>
-<li><code>Absent</code> (-2): marks that a value is not present (like <code>undefined</code> in JSON)</li>
-<li><code>Null</code> (-1): marks that a value is not present (like <code>null</code> in JSON)</li>
-<li><code>Object</code> (0): an object, made up of named fields and their values</li>
-<li><code>String</code> (1): a UTF-8 string</li>
-<li><code>Boolean</code> (2): true or false</li>
-<li><code>Int</code> (3): a variable-length integer</li>
-<li><code>Float</code> (4): an IEEE 754 double-precision binary floating-point (binary64)</li>
-<li><code>List</code> (5): a variable-length list of (potentially) mixed types</li>
-</ul>
-<dl>
-<dt><dfn id="absent--2-"><a href="#absent--2-" data-name="absent--2-">Absent (-2)</a></dfn></dt>
-<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> -2 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
-</dl>
 <dl>
 <dt><dfn id="null--1-"><a href="#null--1-" data-name="null--1-">Null (-1)</a></dfn></dt>
 <dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> -1 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
@@ -460,158 +581,87 @@ these Blocks may also be used for non-self-describing values. This is intentiona
 <dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 4 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a non-self-describing <code>STRING</code> with Block key &ldquo;String&rdquo;.</dd>
 </dl>
 <dl>
-<dt><dfn id="int-5-"><a href="#int-5-" data-name="int-5-">Int (5)</a></dfn></dt>
+<dt><dfn id="bytes-5-"><a href="#bytes-5-" data-name="bytes-5-">Bytes (5)</a></dfn></dt>
+<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 5 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a non-self-describing <code>BYTES</code> with Block key &ldquo;Bytes&rdquo;.</dd>
+</dl>
+<dl>
+<dt><dfn id="int-6-"><a href="#int-6-" data-name="int-6-">Int (6)</a></dfn></dt>
 <dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 5 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a non-self-describing <code>VARINT</code> with Block key &ldquo;Int&rdquo;.</dd>
 </dl>
 <dl>
-<dt><dfn id="float-6-"><a href="#float-6-" data-name="float-6-">Float (6)</a></dfn></dt>
+<dt><dfn id="float-7-"><a href="#float-7-" data-name="float-7-">Float (7)</a></dfn></dt>
 <dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 6 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a non-self-describing <code>FLOAT64</code> with Block key &ldquo;Float&rdquo;.</dd>
 </dl>
 </section>
 </section>
+<section id="sec-Backreferences" secid="5.7">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Backreferences">5.7</a></span>Backreferences</h2>
+<p>Argo <dfn id="backreferences"><a href="#backreferences" data-name="backreferences">Backreferences</a></dfn> are numeric references to values which appeared previously in the Message. Backreferences are encoded as <em>Labels</em> with negative values.</p>
+<p>Argo reduces data size on the wire by avoiding repeated values. Whenever a potentially-large value is read or written for the first time in a given <span class="spec-ref"><a href="#block" data-name="block">Block</a></span>, it is remembered and given the next available backreference ID number (which is always negative). When it is next used, it can be identified by the backreference ID, eliminating the need to encode (and later decode) the entire value again.</p>
+<p>Each <span class="spec-ref"><a href="#block" data-name="block">Block</a></span> has a separate backreference ID space. This means backreference IDs are not unique across types: a backreference ID -5 refers to a different value for <code>String</code> than it does for a hypothetical <code>MyEnum</code>. Backreference IDs count down, beginning at the largest non-reserved negative label value: this is -3, since the <em>Absent label</em> (-2) is the smallest reserved value.</p>
+<div id="note-16b58" class="spec-note">
+<a href="#note-16b58">Note</a>
+For certain messages, this allows Argo representations to remain small in memory by avoiding duplication even after decompression (and further, after parsing). It also helps keep Argo messages small without compression.</div>
+<p>When encoding, the encoder SHOULD deduplicate by returning backreference IDs instead of re-encoding duplicated values. This is typically implemented with a Map data structure.</p>
+<div id="note-6de3c" class="spec-note">
+<a href="#note-6de3c">Note</a>
+The encoder MAY choose to duplicate values instead of returning backreferences whenever it chooses. For example, an easy optimization is to simply duplicate values which are smaller than the backreference ID itself.</div>
+<p>When decoding, the decoder MUST track backreference IDs for <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> with deduplication enabled, usually by storing an array of previously-encountered values. However, this MAY be skipped for messages in <code>NoDeduplication</code> mode.</p>
+<p>In order to maintain a compact data representation, backreferences (and therefore deduplication) are only supported for <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span> types.</p>
 </section>
-<section id="sec-Backreferences" secid="4.6">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Backreferences">4.6</a></span>Backreferences</h2>
-<p>Argo <dfn id="backreferences"><a href="#backreferences" data-name="backreferences">Backreferences</a></dfn> are numeric references to values which appeared previously in the Message.</p>
-<p>Argo reduces data size on the wire by avoiding repeated values. Whenever a potentially-large value is read or written for the first time, it is stored in an array and given the next available backreference ID number (which is always negative). When it is next used, it can be identified by the backreference ID, eliminating the need to encode the entire value again.</p>
-<div id="note-f061c" class="spec-note">
-<a href="#note-f061c">Note</a>
-This is similar to how lossless compression algorithms use a <a href="https://en.wikipedia.org/wiki/Huffman_coding">Huffman coding</a>, but simpler and less effective. The upshot is that Argo representations can remain small even after decompression, in contrast to JSON.</div>
-<section id="sec-Write-side" secid="4.6.1">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-Write-side">4.6.1</a></span>Write-side</h3>
-<p>On the write-side, backreferences SHOULD be supported.</p>
-<p>Before writing a response, a writer SHOULD create several lists (called <dfn id="memo-lists"><a href="#memo-lists" data-name="memo-lists">memo lists</a></dfn>, one for each type which is eligible for backreferences (see below). Then, the array for <code>String</code>s should insert the bootstrap values (see below), [TODO: and lists for all types with defaults should insert their defaults? does this break schema evolution?]. Memo lists are indexed by backreference ID, starting at -3 (the first non-reserved value) and counting down.</p>
-<div class="spec-production" id="Algorithm">
-<span class="spec-nt"><a href="#Algorithm" data-name="Algorithm">Algorithm</a></span><div class="spec-rhs"><span class="spec-nt"><span data-name="Whenever">Whenever</span></span><span class="spec-t">a</span><span class="spec-t">type</span><span class="spec-t">which</span><span class="spec-t">supports</span><span class="spec-t">backreferences</span><span class="spec-t">is</span><span class="spec-t">to</span><span class="spec-t">be</span><span class="spec-t">written</span><span class="spec-t">,</span><span class="spec-t">the</span><span class="spec-t">writer</span><span class="spec-nt"><span data-name="MAY">MAY</span></span><span class="spec-t">first</span><span class="spec-t">look</span><span class="spec-t">for</span><span class="spec-t">an</span><span class="spec-t">identical</span><span class="spec-t">value</span><span class="spec-t">in</span><span class="spec-t">the</span><span class="spec-t">corresponding</span><span class="spec-t">memo</span><span class="spec-t">list.</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">it</span><span class="spec-t">finds</span><span class="spec-t">a</span><span class="spec-t">value</span><span class="spec-t">,</span><span class="spec-t">it</span><span class="spec-nt"><span data-name="MAY">MAY</span></span><span class="spec-t">write</span><span class="spec-t">out</span><span class="spec-t">the</span><span class="spec-t">backreference</span><span class="spec-nt"><span data-name="ID">ID</span></span><span class="spec-t">in</span><span class="spec-t">lieu</span><span class="spec-t">of</span><span class="spec-t">the</span><span class="spec-t">value</span><span class="spec-t">as</span><span class="spec-t">usual.</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">it</span><span class="spec-t">does</span><span class="spec-t">not</span><span class="spec-t">,</span><span class="spec-t">or</span><span class="spec-t">if</span><span class="spec-t">it</span><span class="spec-t">chooses</span><span class="spec-t">not</span><span class="spec-t">to</span><span class="spec-t">(perhaps</span><span class="spec-t">for</span><span class="spec-t">simplicity)</span><span class="spec-t">,</span><span class="spec-t">it</span><span class="spec-t">writes</span><span class="spec-t">out</span><span class="spec-t">the</span><span class="spec-t">full</span><span class="spec-t">value</span><span class="spec-t">as</span><span class="spec-t">usual</span><span class="spec-t">(all</span><span class="spec-t">types</span><span class="spec-t">which</span><span class="spec-t">support</span><span class="spec-t">backreferences</span><span class="spec-t">begin</span><span class="spec-t">with</span><span class="spec-t">a</span><span class="spec-t">LABEL</span><span class="spec-t">).</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">it</span><span class="spec-t">did</span><span class="spec-t">not</span><span class="spec-t">write</span><span class="spec-t">out</span><span class="spec-t">a</span><span class="spec-t">backreference</span><span class="spec-t">,</span><span class="spec-t">it</span><span class="spec-nt"><span data-name="MUST">MUST</span></span><span class="spec-t">increment</span><span class="spec-t">the</span><span class="spec-t">highest</span><span class="spec-t">backreference</span><span class="spec-nt"><span data-name="ID">ID</span></span><span class="spec-t">for</span><span class="spec-t">the</span><span class="spec-t">corresponding</span><span class="spec-t">type</span><span class="spec-t">,</span><span class="spec-t">typically</span><span class="spec-t">by</span><span class="spec-t">inserting</span><span class="spec-t">the</span><span class="spec-t">value</span><span class="spec-t">into</span><span class="spec-t">the</span><span class="spec-t">memo</span><span class="spec-t">list.</span></div>
-</div>
-<p>The writer MAY choose to write out full values when their representation is smaller than the backreference ID representation.</p>
-<div id="note-2bf5e" class="spec-note">
-<a href="#note-2bf5e">Note</a>
-Backreference IDs are not unique across types: a backreference ID -5 refers to a different value for <code>String</code> than it does for <code>Enum</code>.</div>
-</section>
-<section id="sec-Read-side" secid="4.6.2">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-Read-side">4.6.2</a></span>Read-side</h3>
-<p>On the read-side, backreferences MUST be supported.</p>
-<p>Before reading a response, a writer MUST create several lists (called <dfn id="memo-lists"><a href="#memo-lists" data-name="memo-lists">memo lists</a></dfn>, one for each type which is eligible for backreferences (see below). Then, the array for <code>String</code>s should insert the bootstrap values (see below), [TODO: and lists for all types with defaults should insert their defaults? does this break schema evolution?]. Memo lists are indexed by backreference ID, starting at -3 (the first non-reserved value) and counting down.</p>
-<div class="spec-production" id="Algorithm">
-<span class="spec-nt"><a href="#Algorithm" data-name="Algorithm">Algorithm</a></span><div class="spec-rhs"><span class="spec-nt"><span data-name="Whenever">Whenever</span></span><span class="spec-t">a</span><span class="spec-t">type</span><span class="spec-t">which</span><span class="spec-t">supports</span><span class="spec-t">backreferences</span><span class="spec-t">is</span><span class="spec-t">to</span><span class="spec-t">be</span><span class="spec-t">read</span><span class="spec-t">,</span><span class="spec-t">the</span><span class="spec-t">reader</span><span class="spec-t">will</span><span class="spec-t">first</span><span class="spec-t">read</span><span class="spec-t">a</span><span class="spec-t">LABEL</span><span class="spec-t">(see</span><span class="spec-t">[Labels</span><span class="spec-t">](#sec-Labels)</span><span class="spec-t">for</span><span class="spec-t">details).</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">the</span><span class="spec-t">label</span><span class="spec-t">is</span><span class="spec-t">a</span><span class="spec-t">length</span><span class="spec-t">(and</span><span class="spec-t">will</span><span class="spec-t">therefore</span><span class="spec-t">be</span><span class="spec-t">followed</span><span class="spec-t">by</span><span class="spec-t">a</span><span class="spec-t">normal</span><span class="spec-t">value)</span><span class="spec-t">,</span><span class="spec-t">the</span><span class="spec-t">value</span><span class="spec-t">should</span><span class="spec-t">be</span><span class="spec-t">read</span><span class="spec-t">as</span><span class="spec-t">usual</span><span class="spec-t">,</span><span class="spec-t">then</span><span class="spec-t">stored</span><span class="spec-t">in</span><span class="spec-t">the</span><span class="spec-t">corresponding</span><span class="spec-t">memo</span><span class="spec-t">list</span><span class="spec-t">according</span><span class="spec-t">to</span><span class="spec-t">its</span><span class="spec-t">type</span><span class="spec-t">and</span><span class="spec-t">be</span><span class="spec-t">given</span><span class="spec-t">the</span><span class="spec-t">next</span><span class="spec-t">backreference</span><span class="spec-nt"><span data-name="ID">ID</span></span><span class="spec-t">.</span><span class="spec-nt"><span data-name="If">If</span></span><span class="spec-t">the</span><span class="spec-t">label</span><span class="spec-t">is</span><span class="spec-t">instead</span><span class="spec-t">a</span><span class="spec-t">backreference</span><span class="spec-t">,</span><span class="spec-t">the</span><span class="spec-t">reader</span><span class="spec-nt"><span data-name="MUST">MUST</span></span><span class="spec-t">look</span><span class="spec-t">up</span><span class="spec-t">the</span><span class="spec-t">value</span><span class="spec-t">in</span><span class="spec-t">the</span><span class="spec-t">corresponding</span><span class="spec-t">type's</span><span class="spec-t">memo</span><span class="spec-t">list</span><span class="spec-t">using</span><span class="spec-t">the</span><span class="spec-nt"><span data-name="ID">ID</span></span><span class="spec-t">and</span><span class="spec-t">yield</span><span class="spec-t">that</span><span class="spec-t">value.</span></div>
-</div>
-</section>
-<section id="sec-Types-which-support-backreferences" secid="4.6.3">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-Types-which-support-backreferences">4.6.3</a></span>Types which support backreferences</h3>
-<p>In order to maintain a compact data representation, backreferences are only supported for certain types:</p>
-<ul>
-<li>Supported: <code>Enum</code>, <code>Object</code>, <code>Input Object</code>, <code>Interface</code>, <code>Union</code>, <code>List</code>, <code>String</code>, <code>ID</code>. Nullable <code>Int</code> and <code>Float</code> also support backreferences, even though their non-nullable counterparts do not.</li>
-<li>Unsupported: <code>Int</code>, <code>Float</code>, <code>Boolean</code></li>
-</ul>
-<div class="spec-todo">
-should we support them for optional fields? mayhap</div>
-</section>
-<section id="sec-Disabling-backreferences-for-a-given-type-in-a-message" secid="4.6.4">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-Disabling-backreferences-for-a-given-type-in-a-message">4.6.4</a></span>Disabling backreferences for a given type in a message</h3>
-<p>While many types support backreferences, checking for equality in the writer can increase serialization costs without reducing response sizes. Writers MAY therefore choose not to de-duplicate data using backreferences, and they SHOULD communicate these choices to readers using <a href="#sec-Message-flags">Message flags</a>. Writers MAY also mark these features as unused in response flags whenever they chose not to for a given response, though this may require serializing most of the message first.</p>
-<p>By default, we recommend enabling backreference-based deduplication <em>only</em> for the following types in the writer:</p>
-<ul>
-<li><code>String</code>, <code>ID</code>, and <code>Enum</code> (all strongly recommended)</li>
-<li>Any type marked with the <code>@deduplicate</code> directive in the schema or query</li>
-</ul>
-</section>
-</section>
-<section id="sec-Complex-types" secid="4.7">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Complex-types">4.7</a></span>Complex types</h2>
-</section>
-<section id="sec-Nullable-types" secid="4.8">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Nullable-types">4.8</a></span>Nullable types</h2>
-<div class="spec-todo">
-lenref. -1 value means null, -2 means error. other negatives = backrefs, other non-negatives = length, if that makes sense. the upshot is lengths don&rsquo;t need to be repeated if required. because of this, all lenrefs should probably reserve -1, -2.</div>
-</section>
-<section id="sec-Objects" secid="4.9">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Objects">4.9</a></span>Objects</h2>
-<p>An object (technically, a <em>selection set</em>) is encoded by encoding the values of its selected fields in the order that they are selected in a query. In other words, an object is encoded as just the concatenation of the encodings of its selected fields. Field values are encoded per their schema. For example, the query:</p>
-<pre id="example-f789b" class="spec-example" data-language="graphql"><a href="#example-f789b">Example № 1</a><code><span class="token keyword">type</span> <span class="token class-name">Test</span> <span class="token punctuation">{</span>
-  <span class="token attr-name">a</span><span class="token punctuation">:</span> <span class="token scalar">Int</span>
-  <span class="token attr-name">b</span><span class="token punctuation">:</span> <span class="token scalar">String</span>
-  <span class="token attr-name">c</span><span class="token punctuation">:</span> <span class="token scalar">ID</span>
-<span class="token punctuation">}</span>
-<span class="token keyword">query</span> <span class="token punctuation">{</span>
-  <span class="token object">test</span> <span class="token punctuation">{</span>
-    <span class="token property">a</span>
-    <span class="token property">b</span>
-  <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
-</code></pre>
-<p>An instance of this record whose a field has value 27 (encoded as hex 36) and whose b field has value &ldquo;foo&rdquo; (encoded as hex bytes 06 66 6f 6f), would be encoded simply as the concatenation of these, namely the hex byte sequence: 36 06 66 6f 6f</p>
-</section>
-<section id="sec-Enums" secid="4.10">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Enums">4.10</a></span>Enums</h2>
-<p>An enum is represented exactly as a string (or due to the lenref, a reference to a previous string).</p>
-<p>Backreferences are always used for enums (i.e. there is no header flag to skip this feature). All enums share the same backreference ID space.</p>
-<div id="note-c650c" class="spec-note">
-<a href="#note-c650c">Note</a>
-you might expect an integer representation for enums. Unfortunately, we cannot guarantee the writer&rsquo;s view of the enum type matches the reader&rsquo;s, because the schema may have changed: in the writer&rsquo;s schema, if an enum value has been added before the end, or an enum value has been removed, the reader and writer do not have enough information to agree on the correct numbering.</div>
-</section>
-<section id="sec-Lists" secid="4.11">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Lists">4.11</a></span>Lists</h2>
-<p>Lists are encoded as a series of blocks. Each block consists of a lenref, followed by that many array items. A block with count zero indicates the end of the array. Each item is encoded per the array&rsquo;s item schema. The blocked representation permits one to read and write arrays without first fully beffering in memory, since one can start writing items without knowing the full length of the array.</p>
-</section>
-<section id="sec-Unions" secid="4.12">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Unions">4.12</a></span>Unions</h2>
-<p>A union is encoded by first writing an int value indicating the 0-based position within the union of the schema of its value. The value is then encoded per the indicated schema within the union. [question: should we reserve 0 for null, even in non-nullable types?] For example, the union schema <code>["null","string"]</code> would encode:</p>
-<ul>
-<li>null as zero (the index of &ldquo;null&rdquo; in the union):</li>
-<li>the string &ldquo;a&rdquo; as one (the index of &ldquo;string&rdquo; in the union, encoded as hex 02), followed by the serialized string:02 02 61</li>
-</ul>
-</section>
-<section id="sec-Fixed" secid="4.13">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Fixed">4.13</a></span>Fixed</h2>
-<p>Fixed instances are encoded using the number of bytes declared in the schema.</p>
-</section>
-<section id="sec-Errors" secid="4.14">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Errors">4.14</a></span>Errors</h2>
-<p>Errors have a very special representation for two reasons:</p>
+<section id="sec-Errors" secid="5.8">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Errors">5.8</a></span>Errors</h2>
+<p>Errors require special treatment for three reasons:</p>
 <ol>
-<li>Errors are inlined with data</li>
-<li>This makes them available for distinguishing between null and an error, and also makes their representation more compact.</li>
+<li><a href="#sec-Field-errors">Field errors</a> are inlined with data. This makes it easy to distinguish between null and an error as soon as a value is read, and also makes their representation more compact.</li>
 <li>The &ldquo;extensions&rdquo; portion of each errors object must be self-describing. This is in contrast to all other data: we don&rsquo;t know the schema/types of &ldquo;extensions&rdquo; data, and it may vary between objects.</li>
-<li>Note: this spec does not allow for direction extension to error objects outside of the extensions field, even though the GraphQL spec allows for (but discourages) it. This is on the grounds that it is very easy to recover this information by simply moving it to the extensions field when migrating to this data format, and it simplifies this spec.</li>
+<li>The &ldquo;path&rdquo; portion of each error object is not representable directly in GraphQL (or Argo) types. This is because it mixes String and Int primitive values, which GraphQL forbids for data.</li>
 </ol>
-<p>Nullable fields are the only valid location for errors. See &ldquo;Nullable fields&rdquo; for details on how nullable fields may mark the presence of an error.</p>
-<p>Error objects have this schema:</p>
+<div id="note-53715" class="spec-note">
+<a href="#note-53715">Note</a>
+Normally, Argo does not allow for direction extension to field error objects outside of the extensions field, even though the GraphQL spec allows for (but discourages) it. This is on the grounds that it is very easy to recover this information by simply moving it to the extensions field when migrating to this data format, and it simplifies Argo. If required, <span class="spec-ref"><a href="#selfdescribingerrors" data-name="selfdescribingerrors">SelfDescribingErrors</a></span> can be used to allow for this.</div>
+<section id="sec-Error-values" secid="5.8.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Error-values">5.8.1</a></span>Error values</h3>
+<p>Errors are written in a specific format, which has the following schema in GraphQL (and a corresponding schema in Argo):</p>
 <pre data-language="graphql"><code><span class="token keyword">type</span> <span class="token class-name">Location</span> <span class="token punctuation">{</span>
-    <span class="token attr-name">line</span><span class="token punctuation">:</span> <span class="token scalar">Int</span><span class="token operator">!</span>
+  <span class="token attr-name">line</span><span class="token punctuation">:</span> <span class="token scalar">Int</span><span class="token operator">!</span>
   <span class="token attr-name">column</span><span class="token punctuation">:</span> <span class="token scalar">Int</span><span class="token operator">!</span>
 <span class="token punctuation">}</span>
+
 <span class="token keyword">type</span> <span class="token class-name">Error</span> <span class="token punctuation">{</span>
-    <span class="token attr-name">message</span><span class="token punctuation">:</span> <span class="token scalar">String</span><span class="token operator">!</span>
+  <span class="token attr-name">message</span><span class="token punctuation">:</span> <span class="token scalar">String</span><span class="token operator">!</span>
   <span class="token attr-name">location</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token class-name">Location</span><span class="token operator">!</span><span class="token punctuation">]</span>
-  <span class="token attr-name">path</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token scalar">String</span> <span class="token operator">|</span> <span class="token scalar">Int</span><span class="token punctuation">]</span>
-  <span class="token attr-name">extensions</span><span class="token punctuation">:</span> <span class="token class-name">ExtensionsMap</span>
+  <span class="token attr-name">path</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token scalar">String</span><span class="token operator">!</span><span class="token punctuation">]</span>
 <span class="token punctuation">}</span>
 </code></pre>
-<div id="note-d2211" class="spec-note">
-<a href="#note-d2211">Note</a>
-that path and extensions are not representable as normal GraphQL responses:</div>
+<p>These all take the values described in the GraphQL spec with these exceptions:</p>
 <ol>
-<li>path mixes String and Int primitive values, which GraphQL forbids for data</li>
-<li>extensions must be a map, and has no other restrictions. Based on path&rsquo;s behavior (which violates GraphQL&rsquo;s typing rules), this seems to include values only representable in the transport layer (like JSON, or this spec). There is no information about the extensions map in the schema or any query.</li>
+<li>The <code>path</code> field uses String even for numeric path segments. Numeric path segments should be converted back to integers in the reader&rsquo;s code generator.</li>
+<li>The <code>extensions</code> field is encoded separately as described next</li>
 </ol>
-<p>Errors are encoded as an object with the schema above, ignoring the path and extensions fields. Then, the representations of path and extensions are respectively concatenated after it.</p>
-<p>Path is represented on the wire as a nullable array of unions with schema: [&ldquo;string&rdquo;, &ldquo;int&rdquo;]. The reader&rsquo;s code generator may choose a helpful representation for this.</p>
-<p>Extensions are more complex because they must be self-describing. They are encoded according to the following section.</p>
-<p>Self-describing data for error extensions Data in extensions must be a map. This is represented as an array of key value pairs, where all keys are strings, and values are self-describing.</p>
-<p>Maps, a new data type, are allowed in extensions. Maps are encoded as a series of blocks. Each block consists of a lenref value, followed by that many key/value pairs. A block with count zero indicates the end of the map.</p>
-<ul>
-<li>The blocked representation permits one to read and write maps larger than can be buffered in memory, since one can start writing items without knowing the full length of the map.</li>
-</ul>
-<p>Each key is a string. Each value is a union with the following schema: [&ldquo;Null&rdquo;, &ldquo;String&rdquo;, &ldquo;Int&rdquo;, &ldquo;Boolean&rdquo;, &ldquo;Float&rdquo;, &ldquo;List&rdquo;, &ldquo;Map&rdquo;] This tells us the type, which is then decoded as usual. Before values of List are written, an additional union marker is written to indicate the type of all following values in the list. Therefore, all lists must be homogeneous.</p>
-<p>Therefore, each key/value pair is written like this: [key][value type][value] where [key] is a string as serialized everywhere, [value type] is a lenref union marker (iff it marks a List, it is then followed by a second lenref union marker marking the value type).</p>
+<p>After this, the value of the <code>extensions</code> field follows in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>. This is written as an <code>Object</code> in the <em>Self-describing object</em> format with any values the writer chooses, or as <code>Null</code> if there are no extensions.</p>
+<div id="note-5a5e0" class="spec-note">
+<a href="#note-5a5e0">Note</a>
+<code>path</code> and <code>extensions</code> are not representable as normal GraphQL responses: <code>path</code> mixes String and Int primitive values, which GraphQL forbids for data; <code>extensions</code> must be a map, and has no other restrictions. Based on <code>path</code>&lsquo;s behavior (which violates GraphQL&rsquo;s typing rules), this seems to include values only representable in the transport layer (like JSON, or this spec). There is no information about the extensions map in the schema or any query.</div>
+<p>When operating in <span class="spec-ref"><a href="#selfdescribingerrors" data-name="selfdescribingerrors">SelfDescribingErrors</a></span> mode, errors are not encoded as described here. Instead, each is encoded as a self-describing value (which must adhere to the GraphQL spec). This applies to Field errors and Request errors.</p>
+</section>
+<section id="sec-Request-errors" secid="5.8.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Request-errors">5.8.2</a></span>Request errors</h3>
+<p>Request errors are stored in an <code>errors</code> array in the usual response location, encoded as <a href="#sec-Error-values">Error values</a>.</p>
+</section>
+<section id="sec-Field-errors" secid="5.8.3">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Field-errors">5.8.3</a></span>Field errors</h3>
+<p>Nullable fields are the only valid location for <a href="https://spec.graphql.org/October2021/#sec-Errors.Field-errors">Field errors</a>. When a Field error is encountered, the error propagates to the nearest nullable encompassing field, and then an <code>Error</code> <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</p>
+<p>The <a href="#sec-Error-value">Error value</a> should be then written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, using the format above. However, the <code>path</code> field should only encode the path from the field which the error propagated to to the field which the error occurred in. This is because the path from the root of the query is knowable due to where the <code>Error</code> Label is encountered. This makes the representation more compact.</p>
+<p>When operating in <span class="spec-ref"><a href="#outofbandfielderrors" data-name="outofbandfielderrors">OutOfBandFieldErrors</a></span> mode, errors are not written as described here. Instead, an Error or Null <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> (with no additional error data following), and the error is written separately to the errors array. The <code>path</code> must include the full path from the root.</p>
 </section>
 </section>
-<section id="sec-Motivation" secid="5">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Motivation">5</a></span>Motivation</h1>
+</section>
+<section id="sec-Motivation" secid="6">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Motivation">6</a></span>Motivation</h1>
 <p>GraphQL typically serializes data into JSON, but GraphQL is designed to support other serializations as well. Argo is purpose-made to improve on serialization for GraphQL.</p>
-<section id="sec-JSON" secid="5.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-JSON">5.1</a></span>JSON</h2>
+<section id="sec-JSON" secid="6.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-JSON">6.1</a></span>JSON</h2>
 <p>JSON is the standard serialization for GraphQL data. In the context of GraphQL responses, it has many strengths as well as a few weaknesses.</p>
 <section id="sec-JSON.Strengths-of-JSON-" class="subsec">
 <h6><a href="#sec-JSON.Strengths-of-JSON-" title="link to this subsection">Strengths of JSON:</a></h6>
@@ -638,15 +688,15 @@ that path and extensions are not representable as normal GraphQL responses:</div
 </li>
 <li>Limited data type availability<ul>
 <li>Byte string data must be &ldquo;stuffed&rdquo; into Unicode strings</li>
-<li>64-bit integers don&rsquo;t work reliabily across all platforms</li>
+<li>64-bit integers don&rsquo;t work reliably across all platforms</li>
 <li>&ldquo;Stuffing&rdquo; other types into e.g. String can introduce inefficiencies</li>
 </ul>
 </li>
 </ul>
 </section>
 </section>
-<section id="sec-Tradeoffs" secid="5.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Tradeoffs">5.2</a></span>Tradeoffs</h2>
+<section id="sec-Tradeoffs" secid="6.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Tradeoffs">6.2</a></span>Tradeoffs</h2>
 <p><strong>In most cases JSON is a great choice for GraphQL.</strong> However, it can be difficult to address the weaknesses. Primarily, these are related to performance: reducing the size of payloads, and reading and writing them quickly.</p>
 <p>The value of reading and writing data quickly is self-evident. The benefits of reduced payload sizes can be somewhat more subtle:</p>
 <ul>
@@ -664,8 +714,8 @@ that path and extensions are not representable as normal GraphQL responses:</div
 <li>Increased I/O throughput across the stack</li>
 </ul>
 </section>
-<section id="sec-Argo" secid="5.3">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Argo">5.3</a></span>Argo</h2>
+<section id="sec-Argo" secid="6.3">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Argo">6.3</a></span>Argo</h2>
 <p>To address the aforementioned weaknesses, Argo makes a different set of tradeoffs than JSON.</p>
 <section id="sec-Argo.Strengths-of-Argo-" class="subsec">
 <h6><a href="#sec-Argo.Strengths-of-Argo-" title="link to this subsection">Strengths of Argo:</a></h6>
@@ -716,41 +766,52 @@ that path and extensions are not representable as normal GraphQL responses:</div
 </ul>
 </section>
 </section>
-<section id="sec-Recommendation" secid="5.4">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Recommendation">5.4</a></span>Recommendation</h2>
+<section id="sec-Recommendation" secid="6.4">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Recommendation">6.4</a></span>Recommendation</h2>
 <p>Overall, <strong>JSON is the best choice for most GraphQL deployments.</strong> However, Argo is a good choice for systems where performance is paramount. Please consider the tradeoffs above.</p>
 </section>
 </section>
-<section id="sec-Design-notes" secid="6">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Design-notes">6</a></span>Design notes</h1>
+<section id="sec-Design-notes" secid="7">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Design-notes">7</a></span>Design notes</h1>
 <p>This section is not a part of the technical specification, but instead provides additional background and insight.</p>
 <ul>
 <li>Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as <code>JSON.parse</code>. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. A Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.</li>
 <li>Byte alignment (instead of bit or word alignment) was chosen primarily for ease of implementation (e.g. no need to pack together consecutive booleans) balanced against the resulting size. Most GraphQL responses are unlikely to majorly benefit from bit packing anyway, and the use cases which would are probably better off using a custom scalar binary representation.</li>
 <li>Null vs. present fields are marked with <code>LABEL</code> per-field instead of using a bitmask for an entire object. This is a tad easier to implement on both sides. Bitmasks for null and non-null values made payloads larger during development, and were backed out.</li>
 <li>Field Errors can be represented inline for a few reasons:<ul>
-<li>In a reader, after reading a field you are guaranteed to know whether there was an error or just a null [TODO: require inline error?]</li>
-<li>We know most of the <code>path</code> in the current response from our location, and do not need to write most of it explicitly, saving space [TODO: do this?]</li>
+<li>In a reader, after reading a field you are guaranteed to know whether there was an error or just a null (unless operating in <span class="spec-ref"><a href="#outofbandfielderrors" data-name="outofbandfielderrors">OutOfBandFieldErrors</a></span> mode)</li>
+<li>We know most of the <code>path</code> in the current response from our location, and do not need to write most of it explicitly, saving space.</li>
 </ul>
 </li>
 <li>Perhaps surprisingly, <code>Enum</code>s can&rsquo;t be safely represented as small numbers, since schema evolution rules allow for changes (e.g. reordering) which would alter the number on one side but not the other.</li>
 <li>Argo permits zero-copy for types which tend to be larger (<code>String</code> and <code>Bytes</code>). Low-level languages can refer to these values directly in the source buffer. The <code>NullTerminatedStrings</code> flag assists can assist here for C-style strings.</li>
 <li>De-duplication is never required on the writer. This permits optimizations like repeating label/value pairs which are shorter than a backreference to a previously-seen value.</li>
-<li>High-performance decoding of the VarInts is possible with <a href="https://arxiv.org/abs/1503.07387">a vectorized implementation</a></li>
+<li>High-performance decoding of <code>VARINT</code> is possible with <a href="https://arxiv.org/abs/1503.07387">a vectorized implementation</a></li>
 <li>For large payloads with lots of duplication, the de-duplication is valuable even when the entire payload is compressed: values need not be encoded or decoded multiple times, and it can be used to avoid duplicated objects on the client side.</li>
+<li>There are some options to improve on the non-null <span class="spec-ref"><a href="#label" data-name="label">Label</a></span>:<ul>
+<li><span class="spec-ref"><a href="#nullable" data-name="nullable">Nullable</a></span> but otherwise <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span> values could have their own <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>, and therefore be eligible for deduplication. This would help for large and highly duplicated Float and Int values, which seems like a pretty small win.</li>
+<li>Another alternative is to use &ldquo;Blocks and Labels for everything,&rdquo; a scheme where all values (even those presently <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>) use Labels and have corresponding Blocks. This would mean separate Blocks for each <code>RECORD</code> type (requires a naming/numbering scheme), and would probably be more efficient for many workloads (due to more contiguous data), but less efficient for others (perhaps arrays of data with only slight duplication). This was rejected due to its higher complexity and somewhat low expected payoff. It would make an interesting prototype, one requiring interesting real-world payloads to test.</li>
+</ul>
+</li>
+<li>Compression of Argo messages is generally recommended. The <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> are designed to be highly compressible.<ul>
+<li>The reference implementation compares different compression schemes. Based on this, <a href="https://github.com/google/brotli">Brotli</a> (at quality level 4) is recommended for most workloads. This is a nice balance of small payloads, fast compression and decompression, and wide support.</li>
+<li>Without compression, Argo results in much smaller payloads than uncompressed JSON. If CPU usage is a concern, consider using a very fast compression algorithm (e.g. LZ4).</li>
+</ul>
+</li>
 <li>The name &ldquo;Argo&rdquo; riffs on the pronunciation of &ldquo;JSON&rdquo; as &ldquo;Jason,&rdquo; who in Greek mythology quested on a ship called the <em>Argo</em>.</li>
 </ul>
-<section id="sec-Ideas-which-did-not-pan-out" secid="6.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-did-not-pan-out">6.1</a></span>Ideas which did not pan out</h2>
+<section id="sec-Ideas-which-did-not-pan-out" secid="7.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-did-not-pan-out">7.1</a></span>Ideas which did not pan out</h2>
 <ul>
 <li>Use bitmasks on each selection set to mark null (or absent) fields. See Design Notes for more.</li>
 <li>Require all Field Errors be represented inline. This would be nice, but it makes it more difficult to convert JSON responses to Argo. Therefore, this is left as an optional feature (see the <code>OutOfBandFieldErrors</code> flag).</li>
 <li>Specify a Wire type definition for ExecutionResult, particularly <code>errors</code>. Unfortunately, error paths mix string and int, which has no corresponding GraphQL type. We could serialize this all as string and convert back later.</li>
 <li>Make the self-describing format able to describe the Wire format. This made things more complex.</li>
+<li>Avro uses an array format where an arbitrary number of &ldquo;segments&rdquo; can be added independently without knowing the final array length, which makes streaming encoding easier. During development Argo was focused on stream support and followed suit, but this was dropped due to lack of compelling GraphQL use cases, and because it conflicted with other techniques (namely <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>).</li>
 </ul>
 </section>
-<section id="sec-Ideas-which-were-not-pursued" secid="6.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-were-not-pursued">6.2</a></span>Ideas which were not pursued</h2>
+<section id="sec-Ideas-which-were-not-pursued" secid="7.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-were-not-pursued">7.2</a></span>Ideas which were not pursued</h2>
 <ul>
 <li>Use Label before Floats to represent the number 0s to pad it with. Due to JSON/JS, many doubles are actually smallish Ints, which in IEEE 754 means leading with 0-bytes. This might work out on average, especially since 0 takes only 1 byte.</li>
 <li>Specify how to write compact Paths to values to represent errors. A series of tags.<ul>
@@ -758,49 +819,47 @@ that path and extensions are not representable as normal GraphQL responses:</div
 </ul>
 </li>
 <li>Whenever a default value in encountered for a scalar type which is deduplicatable, implicitly store it with a backreference ID and use it later. This may break if the schema evolves.</li>
-<li>Bake in default backrefs for common strings: &lsquo;line&rsquo;, &lsquo;column&rsquo;, &lsquo;path&rsquo;. For certain small messages, this could make a difference. The extra complexity doesn&rsquo;t seem worth it though.</li>
+<li>Bake in default backreferences for common strings: &lsquo;line&rsquo;, &lsquo;column&rsquo;, &lsquo;path&rsquo;. For certain small messages, this could make a difference. The extra complexity doesn&rsquo;t seem worth it though.</li>
 <li>Instead of a self-describing format, simply embed JSON. This is not a knock-out win, especially for the resulting API.</li>
 <li>Use a variable-length compact float format, such as <a href="https://github.com/michaeljclark/vf128">vf128</a>, <a href="https://github.com/kstenerud/compact-float">compact float</a>, or even ASN.1&rsquo;s REAL BER/DER. This would be most helpful for GraphQL APIs which return many Floats with values near zero.</li>
 <li>Encode the entire <code>ExecutionResult</code>&lsquo;s type in each <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>, including the errors array. In particular, the user would need to provide their intended <code>extensions</code> format and stick to it, and we&rsquo;d need to fudge the type of <code>path</code> (which mixes numbers and strings in the GraphQL spec). The upshot would be total elimination of the self-describing format and the inconvenience, inefficiency, and complexity that causes.</li>
+<li>Specifying which types actually use backreferences in a given message could be made more granular. For example, the header could be extended with scheme similar to <em>UserFlags</em>, where a flag is set in the main header and an extra BitSet follows the Flags BitSet. This extra BitSet would set one bit in order for each potentially-deduplicatable type encountered in the message, in order. This could work around client-side inefficiency in bimodal deduplication patterns. However, this seems unlikely to be enough of a problem to justify the complexity.</li>
 </ul>
 </section>
 </section>
-<section id="sec-Legal" secid="7">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Legal">7</a></span>Legal</h1>
-<section id="sec-Copyright-notice" secid="7.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Copyright-notice">7.1</a></span>Copyright notice</h2>
+<section id="sec-Legal" secid="8">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Legal">8</a></span>Legal</h1>
+<section id="sec-Copyright-notice" secid="8.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Copyright-notice">8.1</a></span>Copyright notice</h2>
 <p>Copyright © 2022, Michael Solomon</p>
 <p>THESE MATERIALS ARE PROVIDED &ldquo;AS IS.&rdquo; The parties expressly disclaim any warranties (express, implied, or otherwise), including implied warranties of merchantability, non-infringement, fitness for a particular purpose, or title, related to the materials. The entire risk as to implementing or otherwise using the materials is assumed by the implementer and user. IN NO EVENT WILL THE PARTIES BE LIABLE TO ANY OTHER PARTY FOR LOST PROFITS OR ANY FORM OF INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS DELIVERABLE OR ITS GOVERNING AGREEMENT, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND WHETHER OR NOT THE OTHER MEMBER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
 </section>
-<section id="sec-License" secid="7.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-License">7.2</a></span>License</h2>
+<section id="sec-License" secid="8.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-License">8.2</a></span>License</h2>
 <p>This specification is licensed under <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0">OWFa 1.0</a>.</p>
 </section>
 </section>
-<section id="sec-Formal" secid="8">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Formal">8</a></span>Formal</h1>
-<section id="sec-Conformance" secid="8.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Conformance">8.1</a></span>Conformance</h2>
+<section id="sec-Formal" secid="9">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Formal">9</a></span>Formal</h1>
+<section id="sec-Conformance" secid="9.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Conformance">9.1</a></span>Conformance</h2>
 <p>A conforming implementation of Argo must fulfill all normative requirements. Conformance requirements are described in this document via both descriptive assertions and key words with clearly defined meanings.</p>
 <p>The key words &ldquo;MUST&rdquo;, &ldquo;MUST NOT&rdquo;, &ldquo;REQUIRED&rdquo;, &ldquo;SHALL&rdquo;, &ldquo;SHALL NOT&rdquo;, &ldquo;SHOULD&rdquo;, &ldquo;SHOULD NOT&rdquo;, &ldquo;RECOMMENDED&rdquo;, &ldquo;MAY&rdquo;, and &ldquo;OPTIONAL&rdquo; in the normative portions of this document are to be interpreted as described in <a href="https://www.rfc-editor.org/rfc/rfc2119">IETF RFC 2119</a>. These key words may appear in lowercase and still retain their meaning unless explicitly declared as non-normative.</p>
 <p>A conforming implementation of Argo may provide additional functionality, but must not where explicitly disallowed or would otherwise result in non-conformance.</p>
 </section>
-<section id="sec-Versioning" secid="8.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Versioning">8.2</a></span>Versioning</h2>
+<section id="sec-Versioning" secid="9.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Versioning">9.2</a></span>Versioning</h2>
 <p>Argo is versioned using <a href="https://semver.org/spec/v2.0.0.html">SemVer 2.0.0</a>. Each version of Argo explicitly targets one version of the GraphQL spec, which is usually the latest at time of writing.</p>
 </section>
 </section>
-<section id="sec-Authors-and-contributors" secid="9">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Authors-and-contributors">9</a></span>Authors and contributors</h1>
+<section id="sec-Authors-and-contributors" secid="10">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Authors-and-contributors">10</a></span>Authors and contributors</h1>
 <p>Argo was created and authored by <a href="https://msol.io">Mike Solomon</a>. </p>
 </section>
 <section id="index" secid="index" class="spec-index">
 <h1>
 <span class="spec-secid" title="link to the index"><a href="#index">§</a></span>Index</h1>
 <ol>
-<li><a href="#absent--2-">Absent (-2)</a></li>
-<li><a href="#Algorithm">Algorithm</a></li>
-<li><a href="#ArgoAlgorithm()">ArgoAlgorithm</a></li>
 <li><a href="#array">ARRAY</a></li>
 <li><a href="#backreferences">Backreferences</a></li>
 <li><a href="#block">BLOCK</a></li>
@@ -809,23 +868,28 @@ that path and extensions are not representable as normal GraphQL responses:</div
 <li><a href="#boolean-false-0-">Boolean false (0)</a></li>
 <li><a href="#boolean-true-1-">Boolean true (1)</a></li>
 <li><a href="#bytes">BYTES</a></li>
+<li><a href="#bytes-5-">Bytes (5)</a></li>
+<li><a href="#CollectFieldsStatic()">CollectFieldsStatic</a></li>
+<li><a href="#CollectFieldWireTypes()">CollectFieldWireTypes</a></li>
 <li><a href="#core">Core</a></li>
 <li><a href="#desc">DESC</a></li>
 <li><a href="#execution-time">Execution Time</a></li>
 <li><a href="#fixed">FIXED</a></li>
-<li><a href="#float-6-">Float (6)</a></li>
+<li><a href="#float-7-">Float (7)</a></li>
 <li><a href="#float64">FLOAT64</a></li>
+<li><a href="#graphql-response-types">GraphQL response types</a></li>
 <li><a href="#graphql-types">GraphQL types</a></li>
+<li><a href="#GraphQLTypeToWireType()">GraphQLTypeToWireType</a></li>
 <li><a href="#hasuserflags">HasUserFlags</a></li>
 <li><a href="#header">Header</a></li>
 <li><a href="#inlineeverything">InlineEverything</a></li>
-<li><a href="#int-5-">Int (5)</a></li>
+<li><a href="#int-6-">Int (6)</a></li>
 <li><a href="#label">Label</a></li>
 <li><a href="#labeled">Labeled</a></li>
 <li><a href="#list-3-">List (3)</a></li>
-<li><a href="#memo-lists">memo lists</a></li>
 <li><a href="#message">Message</a></li>
 <li><a href="#mode">Mode</a></li>
+<li><a href="#nodeduplication">NoDeduplication</a></li>
 <li><a href="#null--1-">Null (-1)</a></li>
 <li><a href="#nullable">NULLABLE</a></li>
 <li><a href="#nullterminatedstrings">NullTerminatedStrings</a></li>
@@ -833,9 +897,9 @@ that path and extensions are not representable as normal GraphQL responses:</div
 <li><a href="#outofbandfielderrors">OutOfBandFieldErrors</a></li>
 <li><a href="#record">RECORD</a></li>
 <li><a href="#registration-time">Registration Time</a></li>
-<li><a href="#response-types">Response types</a></li>
 <li><a href="#self-describing-types">Self-describing types</a></li>
 <li><a href="#selfdescribing">SelfDescribing</a></li>
+<li><a href="#selfdescribingerrors">SelfDescribingErrors</a></li>
 <li><a href="#string">STRING</a></li>
 <li><a href="#string-4-">String (4)</a></li>
 <li><a href="#type-marker">Type marker</a></li>
@@ -853,27 +917,20 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <div class="spec-sidebar" aria-hidden>
 <div class="spec-toc">
 <div class="title"><a href="#">Argo</a></div>
-<ol><li id="_sidebar_1"><a href="#sec-Overview"><span class="spec-secid">1</span>Overview</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_1" /><label for="_toggle_1"></label>
-<ol>
-<li id="_sidebar_1.1"><a href="#sec-Argo-actions-at-Registration-Time"><span class="spec-secid">1.1</span>Argo actions at Registration Time</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_1.1" /><label for="_toggle_1.1"></label>
-<ol>
-<li id="_sidebar_1.1.1"><a href="#sec-Registration-time-algorithm"><span class="spec-secid">1.1.1</span>Registration time algorithm</a></li>
-</ol>
-</li>
-<li id="_sidebar_1.2"><a href="#sec-Argo-actions-at-Execution-Time"><span class="spec-secid">1.2</span>Argo actions at Execution Time</a></li>
-</ol>
-</li>
+<ol><li id="_sidebar_1"><a href="#sec-Overview"><span class="spec-secid">1</span>Overview</a></li>
 <li id="_sidebar_2"><a href="#sec-Types"><span class="spec-secid">2</span>Types</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_2" /><label for="_toggle_2"></label>
 <ol>
-<li id="_sidebar_2.1"><a href="#sec-GraphQL-types"><span class="spec-secid">2.1</span>GraphQL types</a></li>
-<li id="_sidebar_2.2"><a href="#sec-Response-types"><span class="spec-secid">2.2</span>Response types</a></li>
-<li id="_sidebar_2.3"><a href="#sec-Wire-types"><span class="spec-secid">2.3</span>Wire types</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_2.3" /><label for="_toggle_2.3"></label>
+<li id="_sidebar_2.1"><a href="#sec-GraphQL-types"><span class="spec-secid">2.1</span>GraphQL types</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_2.1" /><label for="_toggle_2.1"></label>
 <ol>
-<li id="_sidebar_2.3.1"><a href="#sec-Self-describing-types"><span class="spec-secid">2.3.1</span>Self-describing types</a></li>
+<li id="_sidebar_2.1.1"><a href="#sec-GraphQL-input-types"><span class="spec-secid">2.1.1</span>GraphQL input types</a></li>
+</ol>
+</li>
+<li id="_sidebar_2.2"><a href="#sec-Wire-types"><span class="spec-secid">2.2</span>Wire types</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_2.2" /><label for="_toggle_2.2"></label>
+<ol>
+<li id="_sidebar_2.2.1"><a href="#sec-Self-describing-types"><span class="spec-secid">2.2.1</span>Self-describing types</a></li>
 </ol>
 </li>
 </ol>
@@ -884,74 +941,68 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <li id="_sidebar_3.1"><a href="#sec-Wire-schema-serialization"><span class="spec-secid">3.1</span>Wire schema serialization</a></li>
 </ol>
 </li>
-<li id="_sidebar_4"><a href="#sec-Binary-encoding"><span class="spec-secid">4</span>Binary encoding</a>
+<li id="_sidebar_4"><a href="#sec-Creating-a-Wire-schema"><span class="spec-secid">4</span>Creating a Wire schema</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_4" /><label for="_toggle_4"></label>
 <ol>
-<li id="_sidebar_4.1"><a href="#sec-Message"><span class="spec-secid">4.1</span>Message</a></li>
-<li id="_sidebar_4.2"><a href="#sec-Header"><span class="spec-secid">4.2</span>Header</a></li>
-<li id="_sidebar_4.3"><a href="#sec-Blocks"><span class="spec-secid">4.3</span>Blocks</a></li>
-<li id="_sidebar_4.4"><a href="#sec-Core"><span class="spec-secid">4.4</span>Core</a></li>
-<li id="_sidebar_4.5"><a href="#sec-Label"><span class="spec-secid">4.5</span>Label</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_4.5" /><label for="_toggle_4.5"></label>
-<ol>
-<li id="_sidebar_4.5.1"><a href="#sec-Primitive-Types"><span class="spec-secid">4.5.1</span>Primitive Types</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_4.5.1" /><label for="_toggle_4.5.1"></label>
-<ol>
-<li id="_sidebar_4.5.1.1"><a href="#sec-Self-describing-encoding"><span class="spec-secid">4.5.1.1</span>Self-describing encoding</a></li>
+<li id="_sidebar_4.1"><a href="#sec-Algorithms"><span class="spec-secid">4.1</span>Algorithms</a></li>
 </ol>
 </li>
-</ol>
-</li>
-<li id="_sidebar_4.6"><a href="#sec-Backreferences"><span class="spec-secid">4.6</span>Backreferences</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_4.6" /><label for="_toggle_4.6"></label>
-<ol>
-<li id="_sidebar_4.6.1"><a href="#sec-Write-side"><span class="spec-secid">4.6.1</span>Write-side</a></li>
-<li id="_sidebar_4.6.2"><a href="#sec-Read-side"><span class="spec-secid">4.6.2</span>Read-side</a></li>
-<li id="_sidebar_4.6.3"><a href="#sec-Types-which-support-backreferences"><span class="spec-secid">4.6.3</span>Types which support backreferences</a></li>
-<li id="_sidebar_4.6.4"><a href="#sec-Disabling-backreferences-for-a-given-type-in-a-message"><span class="spec-secid">4.6.4</span>Disabling backreferences for a given type in a message</a></li>
-</ol>
-</li>
-<li id="_sidebar_4.7"><a href="#sec-Complex-types"><span class="spec-secid">4.7</span>Complex types</a></li>
-<li id="_sidebar_4.8"><a href="#sec-Nullable-types"><span class="spec-secid">4.8</span>Nullable types</a></li>
-<li id="_sidebar_4.9"><a href="#sec-Objects"><span class="spec-secid">4.9</span>Objects</a></li>
-<li id="_sidebar_4.10"><a href="#sec-Enums"><span class="spec-secid">4.10</span>Enums</a></li>
-<li id="_sidebar_4.11"><a href="#sec-Lists"><span class="spec-secid">4.11</span>Lists</a></li>
-<li id="_sidebar_4.12"><a href="#sec-Unions"><span class="spec-secid">4.12</span>Unions</a></li>
-<li id="_sidebar_4.13"><a href="#sec-Fixed"><span class="spec-secid">4.13</span>Fixed</a></li>
-<li id="_sidebar_4.14"><a href="#sec-Errors"><span class="spec-secid">4.14</span>Errors</a></li>
-</ol>
-</li>
-<li id="_sidebar_5"><a href="#sec-Motivation"><span class="spec-secid">5</span>Motivation</a>
+<li id="_sidebar_5"><a href="#sec-Binary-encoding"><span class="spec-secid">5</span>Binary encoding</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_5" /><label for="_toggle_5"></label>
 <ol>
-<li id="_sidebar_5.1"><a href="#sec-JSON"><span class="spec-secid">5.1</span>JSON</a></li>
-<li id="_sidebar_5.2"><a href="#sec-Tradeoffs"><span class="spec-secid">5.2</span>Tradeoffs</a></li>
-<li id="_sidebar_5.3"><a href="#sec-Argo"><span class="spec-secid">5.3</span>Argo</a></li>
-<li id="_sidebar_5.4"><a href="#sec-Recommendation"><span class="spec-secid">5.4</span>Recommendation</a></li>
+<li id="_sidebar_5.1"><a href="#sec-Message"><span class="spec-secid">5.1</span>Message</a></li>
+<li id="_sidebar_5.2"><a href="#sec-Header"><span class="spec-secid">5.2</span>Header</a></li>
+<li id="_sidebar_5.3"><a href="#sec-Blocks"><span class="spec-secid">5.3</span>Blocks</a></li>
+<li id="_sidebar_5.4"><a href="#sec-Core"><span class="spec-secid">5.4</span>Core</a></li>
+<li id="_sidebar_5.5"><a href="#sec-Label"><span class="spec-secid">5.5</span>Label</a></li>
+<li id="_sidebar_5.6"><a href="#sec-Data-encoding"><span class="spec-secid">5.6</span>Data encoding</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_5.6" /><label for="_toggle_5.6"></label>
+<ol>
+<li id="_sidebar_5.6.1"><a href="#sec-Self-describing-encoding"><span class="spec-secid">5.6.1</span>Self-describing encoding</a></li>
 </ol>
 </li>
-<li id="_sidebar_6"><a href="#sec-Design-notes"><span class="spec-secid">6</span>Design notes</a>
+<li id="_sidebar_5.7"><a href="#sec-Backreferences"><span class="spec-secid">5.7</span>Backreferences</a></li>
+<li id="_sidebar_5.8"><a href="#sec-Errors"><span class="spec-secid">5.8</span>Errors</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_5.8" /><label for="_toggle_5.8"></label>
+<ol>
+<li id="_sidebar_5.8.1"><a href="#sec-Error-values"><span class="spec-secid">5.8.1</span>Error values</a></li>
+<li id="_sidebar_5.8.2"><a href="#sec-Request-errors"><span class="spec-secid">5.8.2</span>Request errors</a></li>
+<li id="_sidebar_5.8.3"><a href="#sec-Field-errors"><span class="spec-secid">5.8.3</span>Field errors</a></li>
+</ol>
+</li>
+</ol>
+</li>
+<li id="_sidebar_6"><a href="#sec-Motivation"><span class="spec-secid">6</span>Motivation</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_6" /><label for="_toggle_6"></label>
 <ol>
-<li id="_sidebar_6.1"><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">6.1</span>Ideas which did not pan out</a></li>
-<li id="_sidebar_6.2"><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">6.2</span>Ideas which were not pursued</a></li>
+<li id="_sidebar_6.1"><a href="#sec-JSON"><span class="spec-secid">6.1</span>JSON</a></li>
+<li id="_sidebar_6.2"><a href="#sec-Tradeoffs"><span class="spec-secid">6.2</span>Tradeoffs</a></li>
+<li id="_sidebar_6.3"><a href="#sec-Argo"><span class="spec-secid">6.3</span>Argo</a></li>
+<li id="_sidebar_6.4"><a href="#sec-Recommendation"><span class="spec-secid">6.4</span>Recommendation</a></li>
 </ol>
 </li>
-<li id="_sidebar_7"><a href="#sec-Legal"><span class="spec-secid">7</span>Legal</a>
+<li id="_sidebar_7"><a href="#sec-Design-notes"><span class="spec-secid">7</span>Design notes</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_7" /><label for="_toggle_7"></label>
 <ol>
-<li id="_sidebar_7.1"><a href="#sec-Copyright-notice"><span class="spec-secid">7.1</span>Copyright notice</a></li>
-<li id="_sidebar_7.2"><a href="#sec-License"><span class="spec-secid">7.2</span>License</a></li>
+<li id="_sidebar_7.1"><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">7.1</span>Ideas which did not pan out</a></li>
+<li id="_sidebar_7.2"><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">7.2</span>Ideas which were not pursued</a></li>
 </ol>
 </li>
-<li id="_sidebar_8"><a href="#sec-Formal"><span class="spec-secid">8</span>Formal</a>
+<li id="_sidebar_8"><a href="#sec-Legal"><span class="spec-secid">8</span>Legal</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_8" /><label for="_toggle_8"></label>
 <ol>
-<li id="_sidebar_8.1"><a href="#sec-Conformance"><span class="spec-secid">8.1</span>Conformance</a></li>
-<li id="_sidebar_8.2"><a href="#sec-Versioning"><span class="spec-secid">8.2</span>Versioning</a></li>
+<li id="_sidebar_8.1"><a href="#sec-Copyright-notice"><span class="spec-secid">8.1</span>Copyright notice</a></li>
+<li id="_sidebar_8.2"><a href="#sec-License"><span class="spec-secid">8.2</span>License</a></li>
 </ol>
 </li>
-<li id="_sidebar_9"><a href="#sec-Authors-and-contributors"><span class="spec-secid">9</span>Authors and contributors</a></li>
+<li id="_sidebar_9"><a href="#sec-Formal"><span class="spec-secid">9</span>Formal</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_9" /><label for="_toggle_9"></label>
+<ol>
+<li id="_sidebar_9.1"><a href="#sec-Conformance"><span class="spec-secid">9.1</span>Conformance</a></li>
+<li id="_sidebar_9.2"><a href="#sec-Versioning"><span class="spec-secid">9.2</span>Versioning</a></li>
+</ol>
+</li>
+<li id="_sidebar_10"><a href="#sec-Authors-and-contributors"><span class="spec-secid">10</span>Authors and contributors</a></li>
 <li id="_sidebar_index"><a href="#index"><span class="spec-secid">§</span>Index</a></li>
 </ol>
 </div>

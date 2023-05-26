@@ -155,6 +155,7 @@ export class ArgoEncoder {
         if (js instanceof Error) {
           this.track(path, 'error', this.buf, js)
           this.buf.write(Label.Error)
+          if (!this.header.selfDescribingErrors) throw 'Unimplemented: non-self-describing errors'
           this.writeSelfDescribing(path, js)
           return
         }
