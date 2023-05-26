@@ -29,10 +29,11 @@
 <li><strong>Works best with code generation</strong>, but also works well with interpretation</li>
 <li>Does not currently support <a href="#sec-GraphQL-input-types">GraphQL Input types</a></li>
 </ul>
+<p>Compressed <strong>Argo responses are typically 5%-15% smaller</strong> than corresponding compressed JSON responses.</p>
 <section id="sec--Introduction-" class="subsec">
 <h6><a href="#sec--Introduction-" title="link to this subsection"> Introduction </a></h6>
 <p>This document defines Argo. It is intended to be the authoritative specification. Implementations of Argo must adhere to this document.</p>
-<p><a href="#sec-Design-notes">Design notes</a> and <a href="#sec-Motivation">motivations</a> are included, but these sections do not specify necessary technical details.</p>
+<p><a href="#sec-Appendix-Design-notes">Design notes</a> and <a href="#sec-Appendix-Motivation-and-background">motivations</a> are included, but these sections do not specify necessary technical details.</p>
 </section>
 </section>
 <nav class="spec-toc">
@@ -77,29 +78,29 @@
 </li>
 </ol>
 </li>
-<li><a href="#sec-Motivation"><span class="spec-secid">6</span>Motivation</a><ol>
-<li><a href="#sec-JSON"><span class="spec-secid">6.1</span>JSON</a></li>
-<li><a href="#sec-Tradeoffs"><span class="spec-secid">6.2</span>Tradeoffs</a></li>
-<li><a href="#sec-Argo"><span class="spec-secid">6.3</span>Argo</a></li>
-<li><a href="#sec-Recommendation"><span class="spec-secid">6.4</span>Recommendation</a></li>
+<li><a href="#sec-Appendix-Motivation-and-background"><span class="spec-secid">A</span>Appendix: Motivation and background</a><ol>
+<li><a href="#sec-JSON"><span class="spec-secid">A.1</span>JSON</a></li>
+<li><a href="#sec-Tradeoffs"><span class="spec-secid">A.2</span>Tradeoffs</a></li>
+<li><a href="#sec-Argo"><span class="spec-secid">A.3</span>Argo</a></li>
+<li><a href="#sec-Recommendation"><span class="spec-secid">A.4</span>Recommendation</a></li>
 </ol>
 </li>
-<li><a href="#sec-Design-notes"><span class="spec-secid">7</span>Design notes</a><ol>
-<li><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">7.1</span>Ideas which did not pan out</a></li>
-<li><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">7.2</span>Ideas which were not pursued</a></li>
+<li><a href="#sec-Appendix-Design-notes"><span class="spec-secid">B</span>Appendix: Design notes</a><ol>
+<li><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">B.1</span>Ideas which did not pan out</a></li>
+<li><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">B.2</span>Ideas which were not pursued</a></li>
 </ol>
 </li>
-<li><a href="#sec-Legal"><span class="spec-secid">8</span>Legal</a><ol>
-<li><a href="#sec-Copyright-notice"><span class="spec-secid">8.1</span>Copyright notice</a></li>
-<li><a href="#sec-License"><span class="spec-secid">8.2</span>License</a></li>
+<li><a href="#sec-Legal"><span class="spec-secid">C</span>Legal</a><ol>
+<li><a href="#sec-Copyright-notice"><span class="spec-secid">C.1</span>Copyright notice</a></li>
+<li><a href="#sec-License"><span class="spec-secid">C.2</span>License</a></li>
 </ol>
 </li>
-<li><a href="#sec-Formal"><span class="spec-secid">9</span>Formal</a><ol>
-<li><a href="#sec-Conformance"><span class="spec-secid">9.1</span>Conformance</a></li>
-<li><a href="#sec-Versioning"><span class="spec-secid">9.2</span>Versioning</a></li>
+<li><a href="#sec-Formal"><span class="spec-secid">D</span>Formal</a><ol>
+<li><a href="#sec-Conformance"><span class="spec-secid">D.1</span>Conformance</a></li>
+<li><a href="#sec-Versioning"><span class="spec-secid">D.2</span>Versioning</a></li>
 </ol>
 </li>
-<li><a href="#sec-Authors-and-contributors"><span class="spec-secid">10</span>Authors and contributors</a></li>
+<li><a href="#sec-Authors-and-contributors"><span class="spec-secid">E</span>Authors and contributors</a></li>
 <li><a href="#index"><span class="spec-secid">§</span>Index</a></li>
 </ol>
 </nav>
@@ -119,7 +120,7 @@
 <p><dfn id="registration-time"><a href="#registration-time" data-name="registration-time">Registration Time</a></dfn> happens once, before a payload is serialized with Argo. On a mobile client, Registration Time is typically compile time. On a server, Registration Time is typically when a query is registered by a client application (perhaps whenever a new client version is compiled).</p>
 <p>At Registration Time, Argo generates a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span> on both the server and the client. Optionally, code may be generated at Registration Time (based on the Wire schema) to decode messages. See <a href="#sec-Creating-a-Wire-schema">Creating a Wire schema</a>.</p>
 <p><dfn id="execution-time"><a href="#execution-time" data-name="execution-time">Execution Time</a></dfn> happens many times, whenever a payload is [de]serialized with Argo.</p>
-<p>At Execution Time, Argo relies on the Wire schema (or code previously generated based on it) to read a binary message. This only works because information was collected previously during Registration Time. See <a href="#sec-Binary-encoding">Binary encoding</a></p>
+<p>At Execution Time, Argo relies on the Wire schema (or code previously generated based on it) to read a binary message. This only works because information was collected previously during Registration Time. See <a href="#sec-Binary-encoding">Binary encoding</a>.</p>
 <div id="note-24ce0" class="spec-note">
 <a href="#note-24ce0">Note</a>
 Nothing prevents running Registration Time and Execution Time steps at Execution Time. However, this is a low-performance pattern, and is most likely only useful during development.</div>
@@ -657,11 +658,11 @@ Normally, Argo does not allow for direction extension to field error objects out
 </section>
 </section>
 </section>
-<section id="sec-Motivation" secid="6">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Motivation">6</a></span>Motivation</h1>
+<section id="sec-Appendix-Motivation-and-background" secid="A">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Appendix-Motivation-and-background">A</a></span>Appendix: Motivation and background</h1>
 <p>GraphQL typically serializes data into JSON, but GraphQL is designed to support other serializations as well. Argo is purpose-made to improve on serialization for GraphQL.</p>
-<section id="sec-JSON" secid="6.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-JSON">6.1</a></span>JSON</h2>
+<section id="sec-JSON" secid="A.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-JSON">A.1</a></span>JSON</h2>
 <p>JSON is the standard serialization for GraphQL data. In the context of GraphQL responses, it has many strengths as well as a few weaknesses.</p>
 <section id="sec-JSON.Strengths-of-JSON-" class="subsec">
 <h6><a href="#sec-JSON.Strengths-of-JSON-" title="link to this subsection">Strengths of JSON:</a></h6>
@@ -695,8 +696,8 @@ Normally, Argo does not allow for direction extension to field error objects out
 </ul>
 </section>
 </section>
-<section id="sec-Tradeoffs" secid="6.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Tradeoffs">6.2</a></span>Tradeoffs</h2>
+<section id="sec-Tradeoffs" secid="A.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Tradeoffs">A.2</a></span>Tradeoffs</h2>
 <p><strong>In most cases JSON is a great choice for GraphQL.</strong> However, it can be difficult to address the weaknesses. Primarily, these are related to performance: reducing the size of payloads, and reading and writing them quickly.</p>
 <p>The value of reading and writing data quickly is self-evident. The benefits of reduced payload sizes can be somewhat more subtle:</p>
 <ul>
@@ -714,8 +715,8 @@ Normally, Argo does not allow for direction extension to field error objects out
 <li>Increased I/O throughput across the stack</li>
 </ul>
 </section>
-<section id="sec-Argo" secid="6.3">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Argo">6.3</a></span>Argo</h2>
+<section id="sec-Argo" secid="A.3">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Argo">A.3</a></span>Argo</h2>
 <p>To address the aforementioned weaknesses, Argo makes a different set of tradeoffs than JSON.</p>
 <section id="sec-Argo.Strengths-of-Argo-" class="subsec">
 <h6><a href="#sec-Argo.Strengths-of-Argo-" title="link to this subsection">Strengths of Argo:</a></h6>
@@ -766,13 +767,13 @@ Normally, Argo does not allow for direction extension to field error objects out
 </ul>
 </section>
 </section>
-<section id="sec-Recommendation" secid="6.4">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Recommendation">6.4</a></span>Recommendation</h2>
+<section id="sec-Recommendation" secid="A.4">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Recommendation">A.4</a></span>Recommendation</h2>
 <p>Overall, <strong>JSON is the best choice for most GraphQL deployments.</strong> However, Argo is a good choice for systems where performance is paramount. Please consider the tradeoffs above.</p>
 </section>
 </section>
-<section id="sec-Design-notes" secid="7">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Design-notes">7</a></span>Design notes</h1>
+<section id="sec-Appendix-Design-notes" secid="B">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Appendix-Design-notes">B</a></span>Appendix: Design notes</h1>
 <p>This section is not a part of the technical specification, but instead provides additional background and insight.</p>
 <ul>
 <li>Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as <code>JSON.parse</code>. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. A Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.</li>
@@ -800,8 +801,8 @@ Normally, Argo does not allow for direction extension to field error objects out
 </li>
 <li>The name &ldquo;Argo&rdquo; riffs on the pronunciation of &ldquo;JSON&rdquo; as &ldquo;Jason,&rdquo; who in Greek mythology quested on a ship called the <em>Argo</em>.</li>
 </ul>
-<section id="sec-Ideas-which-did-not-pan-out" secid="7.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-did-not-pan-out">7.1</a></span>Ideas which did not pan out</h2>
+<section id="sec-Ideas-which-did-not-pan-out" secid="B.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-did-not-pan-out">B.1</a></span>Ideas which did not pan out</h2>
 <ul>
 <li>Use bitmasks on each selection set to mark null (or absent) fields. See Design Notes for more.</li>
 <li>Require all Field Errors be represented inline. This would be nice, but it makes it more difficult to convert JSON responses to Argo. Therefore, this is left as an optional feature (see the <code>OutOfBandFieldErrors</code> flag).</li>
@@ -810,8 +811,8 @@ Normally, Argo does not allow for direction extension to field error objects out
 <li>Avro uses an array format where an arbitrary number of &ldquo;segments&rdquo; can be added independently without knowing the final array length, which makes streaming encoding easier. During development Argo was focused on stream support and followed suit, but this was dropped due to lack of compelling GraphQL use cases, and because it conflicted with other techniques (namely <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>).</li>
 </ul>
 </section>
-<section id="sec-Ideas-which-were-not-pursued" secid="7.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-were-not-pursued">7.2</a></span>Ideas which were not pursued</h2>
+<section id="sec-Ideas-which-were-not-pursued" secid="B.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-were-not-pursued">B.2</a></span>Ideas which were not pursued</h2>
 <ul>
 <li>Use Label before Floats to represent the number 0s to pad it with. Due to JSON/JS, many doubles are actually smallish Ints, which in IEEE 754 means leading with 0-bytes. This might work out on average, especially since 0 takes only 1 byte.</li>
 <li>Specify how to write compact Paths to values to represent errors. A series of tags.<ul>
@@ -827,33 +828,33 @@ Normally, Argo does not allow for direction extension to field error objects out
 </ul>
 </section>
 </section>
-<section id="sec-Legal" secid="8">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Legal">8</a></span>Legal</h1>
-<section id="sec-Copyright-notice" secid="8.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Copyright-notice">8.1</a></span>Copyright notice</h2>
+<section id="sec-Legal" secid="C">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Legal">C</a></span>Legal</h1>
+<section id="sec-Copyright-notice" secid="C.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Copyright-notice">C.1</a></span>Copyright notice</h2>
 <p>Copyright © 2022, Michael Solomon</p>
 <p>THESE MATERIALS ARE PROVIDED &ldquo;AS IS.&rdquo; The parties expressly disclaim any warranties (express, implied, or otherwise), including implied warranties of merchantability, non-infringement, fitness for a particular purpose, or title, related to the materials. The entire risk as to implementing or otherwise using the materials is assumed by the implementer and user. IN NO EVENT WILL THE PARTIES BE LIABLE TO ANY OTHER PARTY FOR LOST PROFITS OR ANY FORM OF INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS DELIVERABLE OR ITS GOVERNING AGREEMENT, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND WHETHER OR NOT THE OTHER MEMBER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
 </section>
-<section id="sec-License" secid="8.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-License">8.2</a></span>License</h2>
+<section id="sec-License" secid="C.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-License">C.2</a></span>License</h2>
 <p>This specification is licensed under <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0">OWFa 1.0</a>.</p>
 </section>
 </section>
-<section id="sec-Formal" secid="9">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Formal">9</a></span>Formal</h1>
-<section id="sec-Conformance" secid="9.1">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Conformance">9.1</a></span>Conformance</h2>
+<section id="sec-Formal" secid="D">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Formal">D</a></span>Formal</h1>
+<section id="sec-Conformance" secid="D.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Conformance">D.1</a></span>Conformance</h2>
 <p>A conforming implementation of Argo must fulfill all normative requirements. Conformance requirements are described in this document via both descriptive assertions and key words with clearly defined meanings.</p>
 <p>The key words &ldquo;MUST&rdquo;, &ldquo;MUST NOT&rdquo;, &ldquo;REQUIRED&rdquo;, &ldquo;SHALL&rdquo;, &ldquo;SHALL NOT&rdquo;, &ldquo;SHOULD&rdquo;, &ldquo;SHOULD NOT&rdquo;, &ldquo;RECOMMENDED&rdquo;, &ldquo;MAY&rdquo;, and &ldquo;OPTIONAL&rdquo; in the normative portions of this document are to be interpreted as described in <a href="https://www.rfc-editor.org/rfc/rfc2119">IETF RFC 2119</a>. These key words may appear in lowercase and still retain their meaning unless explicitly declared as non-normative.</p>
 <p>A conforming implementation of Argo may provide additional functionality, but must not where explicitly disallowed or would otherwise result in non-conformance.</p>
 </section>
-<section id="sec-Versioning" secid="9.2">
-<h2><span class="spec-secid" title="link to this section"><a href="#sec-Versioning">9.2</a></span>Versioning</h2>
+<section id="sec-Versioning" secid="D.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Versioning">D.2</a></span>Versioning</h2>
 <p>Argo is versioned using <a href="https://semver.org/spec/v2.0.0.html">SemVer 2.0.0</a>. Each version of Argo explicitly targets one version of the GraphQL spec, which is usually the latest at time of writing.</p>
 </section>
 </section>
-<section id="sec-Authors-and-contributors" secid="10">
-<h1><span class="spec-secid" title="link to this section"><a href="#sec-Authors-and-contributors">10</a></span>Authors and contributors</h1>
+<section id="sec-Authors-and-contributors" secid="E">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Authors-and-contributors">E</a></span>Authors and contributors</h1>
 <p>Argo was created and authored by <a href="https://msol.io">Mike Solomon</a>. </p>
 </section>
 <section id="index" secid="index" class="spec-index">
@@ -972,37 +973,37 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 </li>
 </ol>
 </li>
-<li id="_sidebar_6"><a href="#sec-Motivation"><span class="spec-secid">6</span>Motivation</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_6" /><label for="_toggle_6"></label>
+<li id="_sidebar_A"><a href="#sec-Appendix-Motivation-and-background"><span class="spec-secid">A</span>Appendix: Motivation and background</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_A" /><label for="_toggle_A"></label>
 <ol>
-<li id="_sidebar_6.1"><a href="#sec-JSON"><span class="spec-secid">6.1</span>JSON</a></li>
-<li id="_sidebar_6.2"><a href="#sec-Tradeoffs"><span class="spec-secid">6.2</span>Tradeoffs</a></li>
-<li id="_sidebar_6.3"><a href="#sec-Argo"><span class="spec-secid">6.3</span>Argo</a></li>
-<li id="_sidebar_6.4"><a href="#sec-Recommendation"><span class="spec-secid">6.4</span>Recommendation</a></li>
+<li id="_sidebar_A.1"><a href="#sec-JSON"><span class="spec-secid">A.1</span>JSON</a></li>
+<li id="_sidebar_A.2"><a href="#sec-Tradeoffs"><span class="spec-secid">A.2</span>Tradeoffs</a></li>
+<li id="_sidebar_A.3"><a href="#sec-Argo"><span class="spec-secid">A.3</span>Argo</a></li>
+<li id="_sidebar_A.4"><a href="#sec-Recommendation"><span class="spec-secid">A.4</span>Recommendation</a></li>
 </ol>
 </li>
-<li id="_sidebar_7"><a href="#sec-Design-notes"><span class="spec-secid">7</span>Design notes</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_7" /><label for="_toggle_7"></label>
+<li id="_sidebar_B"><a href="#sec-Appendix-Design-notes"><span class="spec-secid">B</span>Appendix: Design notes</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_B" /><label for="_toggle_B"></label>
 <ol>
-<li id="_sidebar_7.1"><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">7.1</span>Ideas which did not pan out</a></li>
-<li id="_sidebar_7.2"><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">7.2</span>Ideas which were not pursued</a></li>
+<li id="_sidebar_B.1"><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">B.1</span>Ideas which did not pan out</a></li>
+<li id="_sidebar_B.2"><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">B.2</span>Ideas which were not pursued</a></li>
 </ol>
 </li>
-<li id="_sidebar_8"><a href="#sec-Legal"><span class="spec-secid">8</span>Legal</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_8" /><label for="_toggle_8"></label>
+<li id="_sidebar_C"><a href="#sec-Legal"><span class="spec-secid">C</span>Legal</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_C" /><label for="_toggle_C"></label>
 <ol>
-<li id="_sidebar_8.1"><a href="#sec-Copyright-notice"><span class="spec-secid">8.1</span>Copyright notice</a></li>
-<li id="_sidebar_8.2"><a href="#sec-License"><span class="spec-secid">8.2</span>License</a></li>
+<li id="_sidebar_C.1"><a href="#sec-Copyright-notice"><span class="spec-secid">C.1</span>Copyright notice</a></li>
+<li id="_sidebar_C.2"><a href="#sec-License"><span class="spec-secid">C.2</span>License</a></li>
 </ol>
 </li>
-<li id="_sidebar_9"><a href="#sec-Formal"><span class="spec-secid">9</span>Formal</a>
-<input hidden class="toggle" type="checkbox" id="_toggle_9" /><label for="_toggle_9"></label>
+<li id="_sidebar_D"><a href="#sec-Formal"><span class="spec-secid">D</span>Formal</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_D" /><label for="_toggle_D"></label>
 <ol>
-<li id="_sidebar_9.1"><a href="#sec-Conformance"><span class="spec-secid">9.1</span>Conformance</a></li>
-<li id="_sidebar_9.2"><a href="#sec-Versioning"><span class="spec-secid">9.2</span>Versioning</a></li>
+<li id="_sidebar_D.1"><a href="#sec-Conformance"><span class="spec-secid">D.1</span>Conformance</a></li>
+<li id="_sidebar_D.2"><a href="#sec-Versioning"><span class="spec-secid">D.2</span>Versioning</a></li>
 </ol>
 </li>
-<li id="_sidebar_10"><a href="#sec-Authors-and-contributors"><span class="spec-secid">10</span>Authors and contributors</a></li>
+<li id="_sidebar_E"><a href="#sec-Authors-and-contributors"><span class="spec-secid">E</span>Authors and contributors</a></li>
 <li id="_sidebar_index"><a href="#index"><span class="spec-secid">§</span>Index</a></li>
 </ol>
 </div>

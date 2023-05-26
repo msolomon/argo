@@ -18,13 +18,15 @@ Argo\:
 - **Works best with code generation**, but also works well with interpretation
 - Does not currently support [GraphQL Input types](#sec-GraphQL-input-types)
 
+Compressed **Argo responses are typically 5%-15% smaller** than corresponding compressed JSON responses.
+
 ** Introduction **
 
 This document defines Argo.
 It is intended to be the authoritative specification.
 Implementations of Argo must adhere to this document.
 
-[Design notes](#sec-Design-notes) and [motivations](#sec-Motivation) are included,
+[Design notes](#sec-Appendix-Design-notes) and [motivations](#sec-Appendix-Motivation-and-background) are included,
 but these sections do not specify necessary technical details.
 
 # Overview
@@ -57,7 +59,7 @@ See [Creating a Wire schema](#sec-Creating-a-Wire-schema).
 
 At Execution Time, Argo relies on the Wire schema (or code previously generated based on it) to read a binary message.
 This only works because information was collected previously during Registration Time.
-See [Binary encoding](#sec-Binary-encoding)
+See [Binary encoding](#sec-Binary-encoding).
 
 Note: Nothing prevents running Registration Time and Execution Time steps at Execution Time.
 However, this is a low-performance pattern, and is most likely only useful during development.
@@ -680,7 +682,7 @@ Instead, an Error or Null _Label_ is written to _Core_ (with no additional error
 and the error is written separately to the errors array.
 The `path` must include the full path from the root.
 
-# Motivation
+# A. Appendix: Motivation and background
 
 GraphQL typically serializes data into JSON, but GraphQL is designed to support other serializations as well.
 Argo is purpose-made to improve on serialization for GraphQL.
@@ -765,7 +767,7 @@ Overall, **JSON is the best choice for most GraphQL deployments.**
 However, Argo is a good choice for systems where performance is paramount.
 Please consider the tradeoffs above.
 
-# Design notes
+# B. Appendix: Design notes
 
 This section is not a part of the technical specification, but instead provides additional background and insight.
 
@@ -826,7 +828,7 @@ This section is not a part of the technical specification, but instead provides 
   in order. This could work around client-side inefficiency in bimodal deduplication patterns.
   However, this seems unlikely to be enough of a problem to justify the complexity.
 
-# Legal
+# C. Legal
 
 ## Copyright notice
 
@@ -838,7 +840,7 @@ THESE MATERIALS ARE PROVIDED “AS IS.” The parties expressly disclaim any war
 
 This specification is licensed under [OWFa 1.0](https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0).
 
-# Formal
+# D. Formal
 
 ## Conformance
 
@@ -853,6 +855,6 @@ A conforming implementation of Argo may provide additional functionality, but mu
 Argo is versioned using [SemVer 2.0.0](https://semver.org/spec/v2.0.0.html).
 Each version of Argo explicitly targets one version of the GraphQL spec, which is usually the latest at time of writing.
 
-# Authors and contributors
+# E. Authors and contributors
 
 Argo was created and authored by [Mike Solomon](https://msol.io).
