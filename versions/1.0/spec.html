@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<!-- Built with spec-md https://spec-md.com -->
+<html>
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Argo</title>
+<style>@media (prefers-color-scheme: light){:root{--color-foreground: #333333;--color-background: #ffffff;--color-light-grey: #ccc;--color-grey: #666666;--color-white: #fff;--color-link: #3b5998;--color-subsection-link: var(--color-foreground);--color-toc-link: var(--color-foreground);--color-toc-id: var(--color-link);--color-toggle-border: #bbc;--color-sidebar-background: #f0f0f0;--color-sidebar-viewing-link: #8b9;--color-sidebar-toggle-button: rgba(0, 0, 0, .7);--color-sidebar-shadow-inset: rgba(0, 0, 0, .05);--color-sidebar-shadow: rgba(0, 0, 0, .04);--color-sidebar-large-shadow: rgba(0, 0, 0, .08);--color-pre-background: #fafafa;--color-pre-border: #e9e9e9;--color-code-background: rgba(0, 0, 0, .03);--color-spec-todo: var(--color-grey);--color-spec-example: #fafaff;--color-spec-example-border: #bbbbff;--color-spec-counter-example: #fffafa;--color-spec-counter-border: #ffbbbb;--color-spec-counter-example-link: #98593b;--color-spec-added-border: #396;--color-spec-removed-border: #933;--color-spec-prose: var(--color-grey);--color-spec-quantifier-list: var(--color-link);--color-spec-quantifier-optional: #83238e;--color-spec-condition: #1c7758;--color-spec-param: var(--color-grey);--color-spec-rx: var(--color-foreground);--color-spec-note-border: #f4e925;--color-spec-note-background: #fefef3;--color-spec-note-first-link: #6c6613;--color-source-link: var(--color-light-grey);--color-table-header: #f9f9f9;--color-table-header-border: #d0d0d0;--color-token-inserted: hsla(241, 71%, 34%, .69);--color-token-deleted: hsla(324, 92%, 33%, .74);--color-inserts-background: rgba(0, 200, 30, .08);--color-deletions-background: rgba(200, 0, 0, .08);--selection-background-color: #cacee0;--selection-background-color-link: #f0babe}.selection-link:hover{--selection-background-color: #3b5998}}@media (prefers-color-scheme: dark){:root{--color-foreground: #b6b6b6;--color-background: #262626;--color-light-grey: #373737;--color-grey: #828282;--color-white: rgb(29, 29, 29);--color-link: #89b7da;--color-subsection-link: var(--color-foreground);--color-toc-link: var(--color-foreground);--color-toc-id: var(--color-link);--color-toggle-border: #bbc;--color-sidebar-background: #323232;--color-sidebar-viewing-link: #8b9;--color-sidebar-toggle-button: rgba(220, 220, 220, .7);--color-sidebar-shadow-inset: rgba(0, 0, 0, .05);--color-sidebar-shadow: rgba(0, 0, 0, .04);--color-sidebar-large-shadow: rgba(0, 0, 0, .08);--color-pre-background: #2e2e2e;--color-pre-border: #3a3a3a;--color-code-background: rgba(41, 41, 41, .03);--color-spec-todo: var(--color-grey);--color-spec-example: #2b2b35;--color-spec-example-border: #4d4d6d;--color-spec-counter-example: #322828;--color-spec-counter-border: #664040;--color-spec-counter-example-link: #ff702d;--color-spec-added-border: #396;--color-spec-removed-border: #933;--color-spec-prose: var(--color-grey);--color-spec-quantifier-list: var(--color-link);--color-spec-quantifier-optional: #c689ce;--color-spec-condition: #6fa889;--color-spec-param: var(--color-grey);--color-spec-rx: var(--color-foreground);--color-spec-note-border: #605e39;--color-spec-note-background: #303028;--color-spec-note-first-link: #f0e330;--color-source-link: var(--color-grey);--color-table-header: #373737;--color-table-header-border: #525252;--color-token-inserted: hsla(241, 63%, 70%, .69);--color-token-deleted: hsla(325, 64%, 67%, .74);--color-inserts-background: rgba(0, 200, 30, .08);--color-deletions-background: rgba(200, 0, 0, .08);--selection-background-color: #656565;--selection-background-color-link: #f0babe}.selection-link:hover{--selection-background-color: #829edb}}:root{color:var(--color-foreground);background-color:var(--color-background);font-family:var(--font-family);font-size:15px;line-height:1.5;--mono-font-size: 13px;--indent: 1rem;--list-indent: 1.5rem;--dfn-indent: 0rem;--font-family: Cambria, "Palatino Linotype", Palatino, "Liberation Serif", serif;--font-family-monospace: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace}@media (min-width: 720px){:root{font-size:17px;--mono-font-size: 15px;--indent: 2rem;--list-indent: 2rem;--dfn-indent: 2rem}}body{margin:3rem 0 3rem}article{margin:0 1rem}@media (min-width: 720px){body{margin:6rem auto 3rem;max-width:800px;padding-left:75px;padding-right:clamp(0px,calc((100vw - 800px) * .25),75px)}}.source-link{display:none}@media screen and (min-width: 720px){.source-link{display:block;position:absolute;width:18px;fill:var(--color-source-link);opacity:.3}.source-link:hover{opacity:1}}.outdated-selection-link,.selection-link{position:absolute;display:block;color:var(--color-white);background:var(--selection-background-color);border-radius:4px;font-size:36px;height:23px;line-height:48px;text-align:center;text-decoration:none;width:25px;user-select:none;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none}.outdated-selection-link:hover,.selection-link:hover{text-decoration:none}.outdated-selection-link:before,.selection-link:before{border:5px solid transparent;content:"";height:0;margin-top:-5px;margin-right:-5px;position:absolute;right:1px;top:50%;width:0}@media (max-width: 719px){.outdated-selection-link:before,.selection-link:before{border-bottom-color:var(--selection-background-color);border-top:0;right:50%;top:1px}}@media (min-width: 720px){.outdated-selection-link:before,.selection-link:before{border-left-color:var(--selection-background-color);border-right:0;right:1px;top:50%}}.outdated-selection-link{background:var(--selection-background-color-link);font-size:21px;font-weight:800;line-height:27px}.outdated-selection-link:hover:after{content:"This selection content has changed since this link was created.";font:9pt/11pt var(--font-family);position:absolute;display:block;white-space:nowrap;padding:2px 5px 1px;top:-20px;background:black;color:var(--color-white)}a{color:var(--color-link);text-decoration:none}a:hover{text-decoration:underline}img{max-width:100%}dl{margin:1rem 0 1rem var(--dfn-indent)}dd{margin:.25em 0 .5em var(--indent)}dd+dd{margin-top:1rem}dfn,.spec-ref{font-style:italic}dfn>a,.spec-ref>a{color:inherit}h1,h2,h3,h4,h5,h6{font-weight:bold;margin:3em 0 1em;position:relative}@media (min-width: 720px){header>h1{margin:6em 0 3em}}h1{font-size:1.5em;margin-top:5em}h2,h3{font-size:1.25em}h4,h5,h6{font-size:1em}section{padding-top:1rem;margin-top:-1rem}section.subsec>h6{margin-top:2em}section.subsec>h6>a{color:var(--color-subsection-link)}section .spec-secid{margin-right:1ex}@media (min-width: 720px){section .spec-secid{position:absolute;right:100%;text-align:right;white-space:nowrap}}footer{font-size:75%;opacity:.5;text-align:center;margin-top:12rem}.spec-toc{margin:1rem 0 3rem}.spec-toc .title{content:"Contents";display:block;font-weight:bold;margin:5em 0 1em}.spec-toc .spec-secid{margin-right:1ex}.spec-toc ol{list-style:none;padding-left:0;margin-top:0;margin-bottom:0}.spec-toc ol ol{list-style:none;padding-left:2ex;margin-bottom:.25em}.spec-toc li{position:relative;padding:5px 0 0 30px;margin:-5px 0 0 -30px}.spec-toc a{color:var(--color-toc-link)}.spec-toc a:hover{text-decoration:none}.spec-toc a .spec-secid{color:var(--color-toc-id)}.spec-toc a:hover .spec-secid{text-decoration:underline}.spec-toc .toggle{display:none}.spec-toc .toggle+label{cursor:pointer;left:6px;opacity:1;padding:5px 6px 5px 7px;position:absolute;top:6px;transform:rotate(0deg);transition:all .18s ease-in-out}.spec-toc .toggle+label:after{border-color:transparent transparent transparent var(--color-toggle-border);border-style:solid;border-width:6px 0 6px 7px;content:" ";display:block;height:0;width:0}@media (pointer: fine){.spec-toc .toggle+label{left:10px;padding:3px 5px 3px 6px;top:8px}}.spec-toc .toggle:checked+label{transform:rotate(90deg)}@media (hover: hover){.spec-toc li:not(:hover)>.toggle:checked+label{opacity:0}}.spec-toc .toggle:not(:checked)~ol{max-height:0;overflow:hidden;margin:0}.spec-sidebar-toggle{display:none}.spec-sidebar-toggle+label>.spec-sidebar-button{position:fixed;right:0;top:0;padding:10px 15px;font-size:30px;color:var(--color-sidebar-toggle-button);z-index:2;cursor:pointer;user-select:none;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none}.spec-sidebar-toggle:checked+label:after{content:"";position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0}.spec-sidebar{display:none;position:fixed;right:0;top:0;width:min(320px,calc(100vw - 48px));font-size:14px;line-height:1.75;overflow-y:scroll;height:100%;padding:0 0 5rem 30px;box-sizing:border-box;background:var(--color-sidebar-background);box-shadow:inset 1px 0 var(--color-sidebar-shadow-inset),-4px 0 8px -2px var(--color-sidebar-shadow);overscroll-behavior:contain}.spec-sidebar{user-select:none;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none}.spec-sidebar-toggle:checked~.spec-sidebar{display:block}.spec-sidebar .viewing>a:after{color:var(--color-sidebar-viewing-link);content:"\2022";margin-left:1ex}@media (min-width: 1220px){.spec-sidebar-toggle+label{display:none}.spec-sidebar{display:block;box-shadow:inset 1px 0 var(--color-sidebar-shadow-inset),inset 4px 0 8px -2px var(--color-sidebar-large-shadow)!important}body{padding-right:345px}}.spec-note{background:var(--color-spec-note-background);border-left:solid 4px var(--color-spec-note-border);margin:1rem -1rem;min-width:70vw;padding:8px 1rem 12px calc(1rem - 4px);width:-moz-fit-content;width:-webkit-fit-content;width:fit-content}@media (min-width: 720px){.spec-note{min-width:416px}}.spec-note>a:first-child{color:var(--color-spec-note-first-link);display:block;font:italic 11pt/18pt var(--font-family);opacity:.6;user-select:none}.spec-todo{color:var(--color-spec-todo);margin:1em 0 1em 5em;min-height:1em}.spec-todo::before{content:"todo";display:block;float:left;margin-left:-5em;text-transform:uppercase}.spec-index ol{list-style-type:none;margin:0 0 0 var(--indent);padding:0;column-width:210px;column-gap:var(--indent)}.spec-index ol li{width:min-content;white-space:nowrap}pre,code{font-family:var(--font-family-monospace);font-size:var(--mono-font-size);font-weight:inherit}code{background:var(--color-code-background);margin:-2px -1px;padding:3px 3px;white-space:pre-wrap}pre>code{background:none;font-weight:inherit;margin:0;padding:0;white-space:pre}pre{background:var(--color-pre-background);border-left:solid 4px var(--color-pre-border);margin:1rem -1rem;min-width:70vw;padding:12px 1rem 12px calc(1rem - 4px);width:-moz-fit-content;width:-webkit-fit-content;width:fit-content;max-width:calc(100vw - 2rem);overflow-y:auto}@media (min-width: 720px){pre{min-width:40ch}}.spec-example{background:var(--color-spec-example);border-left:solid 4px var(--color-spec-example-border);padding-top:8px}.spec-counter-example{background:var(--color-spec-counter-example);border-left:solid 4px var(--color-spec-counter-border);padding-top:8px}.spec-example>a,.spec-counter-example>a{display:block;font:italic 11pt/18pt var(--font-family);opacity:.6;user-select:none}.spec-counter-example>a{color:var(--color-spec-counter-example-link)}table{border-collapse:collapse}th{background-color:var(--color-table-header)}td,th{border:1px solid var(--color-table-header-border);padding:.4em;vertical-align:baseline}ol,ul{padding-left:var(--list-indent)}li>ol,li>ul{margin-top:.25em;margin-bottom:.5em}li+li{margin-top:.25em}li.task{list-style-type:none;position:relative}li.task>input:first-child{margin-left:0;position:absolute;transform:translateX(calc(-100% - 1ch))}ins{background-color:var(--color-inserts-background);text-decoration:none}del{background-color:var(--color-deletions-background)}.spec-added,.spec-removed{border-left:4px solid;margin-left:-18px;padding-left:14px}.spec-added{border-color:var(--color-spec-added-border)}.spec-removed{border-color:var(--color-spec-removed-border);text-decoration:line-through}.spec-keyword{font-weight:bold}.spec-string{font-family:var(--font-family-monospace);font-size:85%;white-space:pre}var{font-style:italic}*[data-name]{transition:.15s background ease-out;border-radius:2px;padding:0 3px;margin:0 -3px}.spec-semantic,.spec-algo{margin:1rem 0 1rem var(--dfn-indent)}.spec-semantic>.spec-nt::after,.spec-algo>.spec-call:first-child::after{content:":";font-style:normal;font-weight:bold;margin-left:1ex}.spec-semantic ol,.spec-semantic ol ol ol ol,.spec-algo ol,.spec-algo ol ol ol ol{list-style-type:decimal}.spec-semantic ol ol,.spec-semantic ol ol ol ol ol,.spec-algo ol ol,.spec-algo ol ol ol ol ol{list-style-type:lower-alpha}.spec-semantic ol ol ol,.spec-semantic ol ol ol ol ol ol,.spec-algo ol ol ol,.spec-algo ol ol ol ol ol ol{list-style-type:lower-roman}.spec-call>a{color:inherit}.spec-production{margin:1rem 0 1rem var(--dfn-indent)}.spec-production>.spec-nt::after{content:":";font-style:normal;font-weight:bold;margin:0 1ex}.spec-semantic.d2>.spec-nt::after,.spec-production.d2>.spec-nt::after{content:"::"}.spec-semantic.d3>.spec-nt::after,.spec-production.d3>.spec-nt::after{content:":::"}.spec-production>.spec-rhs{line-height:1.1;margin:.25em 0 .5em calc(2 * var(--indent));text-indent:calc(-1 * var(--indent))}.spec-semantic>.spec-rhs{display:inline-block;text-indent:calc(-1 * var(--indent));margin-left:calc(1ex + var(--indent))}.spec-rhs>*{text-indent:0}.spec-oneof{display:inline}.spec-oneof::before{content:"one of";font-style:normal;font-weight:bold}.spec-oneof-grid{max-width:calc(100vw - 2rem);overflow:auto;margin:-1ex -1rem;padding:1ex 1rem}.spec-oneof-grid>table{margin-left:var(--indent)}.spec-oneof .spec-rhs{border:none;margin:0;padding:0 0 0 1rem;vertical-align:baseline;white-space:pre}.spec-oneof .spec-rhs:first-child{padding:0}.spec-rhs .spec-constrained:not(:first-child),.spec-rhs .spec-quantified:not(:first-child),.spec-rhs .spec-nt:not(:first-child),.spec-rhs .spec-t:not(:first-child),.spec-rhs .spec-rx:not(:first-child),.spec-rhs .spec-prose:not(:first-child),.spec-rhs .spec-empty:not(:first-child),.spec-rhs .spec-lookahead:not(:first-child){margin-left:1ex;display:inline-block}.spec-condition{font-size:85%}.spec-condition::before{content:"[if "}.spec-condition.not::before{content:"[if not "}.spec-condition::after{content:"]"}.spec-empty,.spec-prose{color:var(--color-spec-prose)}.spec-nt{font-style:italic}.spec-nt>a{color:inherit}.spec-quantifiers,.spec-params{font-size:65%;font-style:normal;vertical-align:sub}.spec-quantifier.list{color:var(--color-spec-quantifier-list)}.spec-quantifier.optional{color:var(--color-spec-quantifier-optional)}.spec-params,.spec-condition{color:var(--color-spec-condition)}.spec-params::before{content:"["}.spec-params::after{content:"]"}.spec-quantifier:not(:last-child)::after,.spec-param:not(:last-child)::after{color:var(--color-spec-param);content:", "}.spec-param.conditional::before{content:"?"}.spec-param.negated::before{content:"!"}.spec-t,.spec-rx{color:var(--color-spec-rx);font-family:var(--font-family-monospace);font-weight:bold}.spec-butnot::before{color:var(--color-grey);content:"but not";font-family:var(--font-family);font-weight:normal;margin-right:1ex}.spec-butnot>*:not(:first-child)::before{color:var(--color-grey);content:"or";font-family:var(--font-family);font-weight:normal;margin-right:1ex}.spec-rhs .spec-oneof::before,.spec-rhs .spec-butnot::before{margin-left:1ex}.spec-lookahead>*{margin:0!important}.spec-lookahead>*:not(:first-child)::before{color:var(--color-grey);content:", ";font-family:var(--font-family);font-style:normal;font-weight:normal}.spec-lookahead::before{color:var(--color-grey);content:"[lookahead = ";font-family:var(--font-family);font-style:normal;font-weight:normal}.spec-lookahead.not::before{content:"[lookahead \2260  "}.spec-lookahead.set::before{content:"[lookahead \2208  {";margin-right:0}.spec-lookahead.set.not::before{content:"[lookahead \2209  {"}.spec-lookahead.ntset::before{content:"[lookahead \2208  ";margin-right:0}.spec-lookahead.ntset.not::before{content:"[lookahead \2209  "}.spec-lookahead::after{color:var(--color-grey);content:"]"}.spec-lookahead.set::after{content:"}]"}code[class*=language-],pre[class*=language-]{color:var(--color-prism-foreground);background:none;text-shadow:0 1px var(--color-prism-text-shadow);font-family:var(--font-family-monospace);font-size:1em;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]::-moz-selection,pre[class*=language-] ::-moz-selection,code[class*=language-]::-moz-selection,code[class*=language-] ::-moz-selection{text-shadow:none;background:var(--color-prism-background)}pre[class*=language-]::selection,pre[class*=language-] ::selection,code[class*=language-]::selection,code[class*=language-] ::selection{text-shadow:none;background:var(--color-prism-background)}@media print{code[class*=language-],pre[class*=language-]{text-shadow:none}}pre[class*=language-]{padding:1em;margin:.5em 0;overflow:auto}:not(pre)>code[class*=language-],pre[class*=language-]{background:var(--color-prism-block-background)}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal}.token.atrule,.token.attr-value,.token.keyword,.token.property,.token.selector,.token.attr-name,.token.builtin,.token.entity,.token.url,.token.inserted{color:var(--color-token-inserted);background:none}.token.tag,.token.boolean,.token.number,.token.string,.token.char,.token.constant,.token.symbol,.token.regex,.token.important,.token.variable,.token.function,.token.class-name,.token.deleted{color:var(--color-token-deleted)}.token.comment,.token.prolog,.token.doctype,.token.cdata,.token.description{color:inherit;opacity:.3}.token.punctuation{color:inherit;opacity:.5}.token.operator,.token.namespace{color:inherit;opacity:.7}</style>
+<script>(function(){var r,a=[];document.addEventListener("readystatechange",function(){document.readyState==="interactive"&&u()});function u(){var n=document.querySelector('label[for="spec-sidebar-toggle"]');n.addEventListener("scroll",o),n.addEventListener("touchmove",o);function o(d){d.preventDefault()}for(var t=document.getElementsByTagName("section"),e=0;e<t.length;e++)t[e].getAttribute("secid")&&a.push(t[e]);var i=window.scrollY,c=!1;window.addEventListener("scroll",function(d){i=window.scrollY,c||(c=!0,window.requestAnimationFrame(function(){s(i),c=!1}))})}function s(n){for(var o=n+document.documentElement.clientHeight/4,t,e=a.length-1;e>=0;e--)if(a[e].offsetTop<o){t=a[e];break}var i=t&&t.getAttribute("secid");i!==r&&(r&&l(r,!1),i&&l(i,!0),r=i)}function l(n,o){document.getElementById("_sidebar_"+n).className=o?"viewing":"";for(var t=n.split(".");t.length;){var e=document.getElementById("_toggle_"+t.join("."));e&&(e.checked=o),t.pop()}}s(window.scrollY);})();</script>
+<script>(function(){var n=document.getElementsByTagName("style")[0].sheet,e;function u(){e&&(n.deleteRule(e),e=void 0)}function d(t){u(),e=n.insertRule('*[data-name="'+t+'"] { background: rgba(230,215,0,0.12); }',n.cssRules.length)}document.documentElement.addEventListener("mouseover",function(t){var a=t.target.attributes["data-name"];a&&d(a.value)});document.documentElement.addEventListener("mouseout",u);})();</script>
+<script>(function(){var R="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",o,p,r,g;document.addEventListener("selectionchange",E);window.addEventListener("resize",C);window.addEventListener("hashchange",x);window.addEventListener("load",x);function S(n){y(new URL(n.target.href))}function x(){y(window.location)}function y(n){var e=n.hash.match(/^#sel-([A-Za-z0-9-_]+)$/);if(!!e){g=e[1],r=k(g);var t=r.getBoundingClientRect(),d=Math.max(20,Math.floor((window.innerHeight-t.height)*.4));window.scrollTo(0,window.scrollY+t.y-d);var c=document.getSelection();c.empty(),c.addRange(r),C()}}function E(n){var e=document.getSelection();if(e.isCollapsed)o&&(o.parentNode.removeChild(o),o=null);else{var t=e.getRangeAt(0);(!r||t.compareBoundaryPoints(Range.START_TO_START,r)!==0||t.compareBoundaryPoints(Range.END_TO_END,r)!==0)&&(r=t,g=B(r),C())}}function C(){if(!!r){p||(p=document.getElementsByTagName("article")[0]),o||(o=document.createElement("a"),document.body.appendChild(o)),o.href="#sel-"+g,o.onclick=S,o.className=r.isOutdated?"outdated-selection-link":"selection-link",o.innerText=r.isOutdated?"!":"\u201F";var n=window.innerWidth<720,e=r.getBoundingClientRect();if(n)o.style.left=Math.floor(e.x+e.width/2+window.scrollX-13)+"px",o.style.top=Math.floor(e.bottom+window.scrollY+10)+"px";else{var t=p.getBoundingClientRect().x;o.style.left=Math.floor(t+window.scrollX-37)+"px",o.style.top=Math.floor(e.y+window.scrollY-3)+"px"}}}function B(n){var e="",t=N(n.startContainer),d=N(n.endContainer),c=M(t,d);return l(c),l(t.slice(c.length).concat(n.startOffset)),l(d.slice(c.length).concat(n.endOffset)),i(L(n.toString())),e;function i(a){do e+=R[a&31|(a>31?32:0)],a>>=5;while(a>0)}function l(a){i(a.length);for(var h=0;h<a.length;h++)i(a[h])}}function k(n){for(var e=new Array(64),t=0;t<64;t++)e[R.charCodeAt(t)]=t;var d=0,c=m(),i=m(),l=m(),a=w(),h=i.pop(),P=O(c.concat(i)),T=l.pop(),A=O(c.concat(l)),u=document.createRange();return u.setStart(P,h),u.setEnd(A,T),u.isOutdated=a!==void 0&&a!==L(u.toString()),u;function w(){for(var s=0,v=0;d<n.length;){var f=e[n.charCodeAt(d++)];if(s|=(f&31)<<v,v+=5,f<32)return s}}function m(){var s=w();if(s!=null){for(var v=new Array(s),f=0;f<s;f++)v[f]=w();return v}}}function N(n){for(var e=[];n!=document.body;){var t=n.parentNode;e.push(Array.prototype.indexOf.call(t.childNodes,n)),n=t}return e.reverse()}function O(n){for(var e=document.body,t=0;t<n.length&&e;t++)e=e.childNodes[n[t]];return e}function M(n,e){for(var t=0;t<n.length&&t<e.length&&n[t]===e[t];)t++;return n.slice(0,t)}function L(n){for(var e=2166136261,t=0;t<n.length;++t)e^=n.charCodeAt(t),e+=(e<<1)+(e<<4)+(e<<7)+(e<<8)+(e<<24);return(e>>15^e)&32767}})();</script>
+</head>
+<body><article>
+<header>
+<h1>Argo</h1>
+<section id="intro">
+<p><em>Version 1.0.0</em>. <em>Compatible with <a href="https://spec.graphql.org/October2021">GraphQL October 2021 Edition</a>.</em></p>
+<p><strong>Argo is a compact and compressible binary serialization format for</strong> <a href="https://graphql.org">GraphQL</a>. It aims to:</p>
+<ul>
+<li><strong>Minimize end-to-end latency</strong> of GraphQL responses<ul>
+<li>Including serialization, transport, and deserialization</li>
+</ul>
+</li>
+<li><strong>Minimize bytes on the wire</strong>, with and without external compression</li>
+<li>Be <strong>easy to implement</strong></li>
+</ul>
+<p>Argo:</p>
+<ul>
+<li><strong>Takes the place of JSON</strong> in GraphQL responses</li>
+<li>Usually <strong>meets the needs of mobile clients</strong> (and server clients) better than web clients</li>
+<li><strong>Works best with code generation</strong>, but also works well with interpretation</li>
+<li>Does not currently support <a href="#sec-GraphQL-input-types">GraphQL Input types</a></li>
+</ul>
+<p>Compressed <strong>Argo responses are typically 5%-15% smaller</strong> than corresponding compressed JSON responses.</p>
+<section id="sec--Introduction-" class="subsec">
+<h6><a href="#sec--Introduction-" title="link to this subsection"> Introduction </a></h6>
+<p>This document defines Argo. It is intended to be the authoritative specification. Implementations of Argo must adhere to this document.</p>
+<p><a href="#sec-Appendix-Design-notes">Design notes</a> and <a href="#sec-Appendix-Motivation-and-background">motivations</a> are included, but these sections do not specify necessary technical details.</p>
+</section>
+</section>
+<nav class="spec-toc">
+<div class="title">Contents</div>
+<ol>
+<li><a href="#sec-Overview"><span class="spec-secid">1</span>Overview</a></li>
+<li><a href="#sec-Types"><span class="spec-secid">2</span>Types</a><ol>
+<li><a href="#sec-GraphQL-types"><span class="spec-secid">2.1</span>GraphQL types</a><ol>
+<li><a href="#sec-GraphQL-input-types"><span class="spec-secid">2.1.1</span>GraphQL input types</a></li>
+</ol>
+</li>
+<li><a href="#sec-Wire-types"><span class="spec-secid">2.2</span>Wire types</a><ol>
+<li><a href="#sec-Self-describing-types"><span class="spec-secid">2.2.1</span>Self-describing types</a></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><a href="#sec-Wire-schema"><span class="spec-secid">3</span>Wire schema</a><ol>
+<li><a href="#sec-Wire-schema-serialization"><span class="spec-secid">3.1</span>Wire schema serialization</a></li>
+</ol>
+</li>
+<li><a href="#sec-Creating-a-Wire-schema"><span class="spec-secid">4</span>Creating a Wire schema</a><ol>
+<li><a href="#sec-Algorithms"><span class="spec-secid">4.1</span>Algorithms</a></li>
+</ol>
+</li>
+<li><a href="#sec-Binary-encoding"><span class="spec-secid">5</span>Binary encoding</a><ol>
+<li><a href="#sec-Message"><span class="spec-secid">5.1</span>Message</a></li>
+<li><a href="#sec-Header"><span class="spec-secid">5.2</span>Header</a></li>
+<li><a href="#sec-Blocks"><span class="spec-secid">5.3</span>Blocks</a></li>
+<li><a href="#sec-Core"><span class="spec-secid">5.4</span>Core</a></li>
+<li><a href="#sec-Label"><span class="spec-secid">5.5</span>Label</a></li>
+<li><a href="#sec-Data-encoding"><span class="spec-secid">5.6</span>Data encoding</a><ol>
+<li><a href="#sec-Self-describing-encoding"><span class="spec-secid">5.6.1</span>Self-describing encoding</a></li>
+</ol>
+</li>
+<li><a href="#sec-Backreferences"><span class="spec-secid">5.7</span>Backreferences</a></li>
+<li><a href="#sec-Errors"><span class="spec-secid">5.8</span>Errors</a><ol>
+<li><a href="#sec-Error-values"><span class="spec-secid">5.8.1</span>Error values</a></li>
+<li><a href="#sec-Request-errors"><span class="spec-secid">5.8.2</span>Request errors</a></li>
+<li><a href="#sec-Field-errors"><span class="spec-secid">5.8.3</span>Field errors</a></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><a href="#sec-Appendix-Motivation-and-background"><span class="spec-secid">A</span>Appendix: Motivation and background</a><ol>
+<li><a href="#sec-JSON"><span class="spec-secid">A.1</span>JSON</a></li>
+<li><a href="#sec-Tradeoffs"><span class="spec-secid">A.2</span>Tradeoffs</a></li>
+<li><a href="#sec-Argo"><span class="spec-secid">A.3</span>Argo</a></li>
+<li><a href="#sec-Recommendation"><span class="spec-secid">A.4</span>Recommendation</a></li>
+</ol>
+</li>
+<li><a href="#sec-Appendix-Design-notes"><span class="spec-secid">B</span>Appendix: Design notes</a><ol>
+<li><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">B.1</span>Ideas which did not pan out</a></li>
+<li><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">B.2</span>Ideas which were not pursued</a></li>
+</ol>
+</li>
+<li><a href="#sec-Legal"><span class="spec-secid">C</span>Legal</a><ol>
+<li><a href="#sec-Copyright-notice"><span class="spec-secid">C.1</span>Copyright notice</a></li>
+<li><a href="#sec-License"><span class="spec-secid">C.2</span>License</a></li>
+</ol>
+</li>
+<li><a href="#sec-Formal"><span class="spec-secid">D</span>Formal</a><ol>
+<li><a href="#sec-Conformance"><span class="spec-secid">D.1</span>Conformance</a></li>
+<li><a href="#sec-Versioning"><span class="spec-secid">D.2</span>Versioning</a></li>
+</ol>
+</li>
+<li><a href="#sec-Authors-and-contributors"><span class="spec-secid">E</span>Authors and contributors</a></li>
+<li><a href="#index"><span class="spec-secid">§</span>Index</a></li>
+</ol>
+</nav>
+</header>
+<section id="sec-Overview" secid="1">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Overview">1</a></span>Overview</h1>
+<p>Argo is designed to work with GraphQL queries and schemas which are known in advance, but executed many times.</p>
+<p>In advance, Argo walks over a given GraphQL query against a particular GraphQL schema and generates a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span> which captures type and serialization information which will be used when [de]serializing a response. Later, when serializing a GraphQL response, Argo relies on this and does not need to send this information over the network&mdash;this reduces the payload size. Similarly when deserializing, each client relies on the Wire schema to read the message.</p>
+<p>The serialization format itself is a compact binary format which uses techniques to minimize the payload size, make it unusually compressible (to further reduce the payload size over the network), permit high-performance implementations, and remain relatively simple. These techniques include:</p>
+<ul>
+<li>Scalar values are written into contiguous blocks to improve their compressibility</li>
+<li>Many scalar values are deduplicated</li>
+<li>Many scalars (particularly strings and byte strings) permit zero-copy implementations</li>
+<li>Integers are written in a compact variable-length format</li>
+</ul>
+<p>Argo separates its work into two phases: <span class="spec-ref"><a href="#registration-time" data-name="registration-time">Registration Time</a></span> and <em>Execution Time.</em></p>
+<p><dfn id="registration-time"><a href="#registration-time" data-name="registration-time">Registration Time</a></dfn> happens once, before a payload is serialized with Argo. On a mobile client, Registration Time is typically compile time. On a server, Registration Time is typically when a query is registered by a client application (perhaps whenever a new client version is compiled).</p>
+<p>At Registration Time, Argo generates a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span> on both the server and the client. Optionally, code may be generated at Registration Time (based on the Wire schema) to decode messages. See <a href="#sec-Creating-a-Wire-schema">Creating a Wire schema</a>.</p>
+<p><dfn id="execution-time"><a href="#execution-time" data-name="execution-time">Execution Time</a></dfn> happens many times, whenever a payload is [de]serialized with Argo.</p>
+<p>At Execution Time, Argo relies on the Wire schema (or code previously generated based on it) to read a binary message. This only works because information was collected previously during Registration Time. See <a href="#sec-Binary-encoding">Binary encoding</a>.</p>
+<div id="note-24ce0" class="spec-note">
+<a href="#note-24ce0">Note</a>
+Nothing prevents running Registration Time and Execution Time steps at Execution Time. However, this is a low-performance pattern, and is most likely only useful during development.</div>
+</section>
+<section id="sec-Types" secid="2">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Types">2</a></span>Types</h1>
+<p>GraphQL uses two type systems:</p>
+<ul>
+<li><span class="spec-ref"><a href="#graphql-types" data-name="graphql-types">GraphQL types</a></span>, which may appear in any given GraphQL Schema</li>
+<li><span class="spec-ref"><a href="#graphql-response-types" data-name="graphql-response-types">GraphQL response types</a></span>, which are used when serializing responses</li>
+</ul>
+<p>Argo uses these and introduces:</p>
+<ul>
+<li><span class="spec-ref"><a href="#wire-types" data-name="wire-types">Wire types</a></span>, used when [de]serializing to or from byte streams</li>
+<li><span class="spec-ref"><a href="#self-describing-types" data-name="self-describing-types">Self-describing types</a></span>, primarily used when [de]serializing errors</li>
+</ul>
+<section id="sec-GraphQL-types" secid="2.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-GraphQL-types">2.1</a></span>GraphQL types</h2>
+<p><dfn id="graphql-types"><a href="#graphql-types" data-name="graphql-types">GraphQL types</a></dfn> refers to the <a href="https://spec.graphql.org/October2021/#sec-Types">types defined in the GraphQL spec</a>. Briefly, these are:</p>
+<ul>
+<li><code>Scalar</code>, <code>Enum</code>, <code>Object</code>, <code>Input Object</code>, <code>Interface</code>, <code>Union</code>, <code>List</code></li>
+<li>Scalar includes, at minimum: <code>Int</code>, <code>Float</code>, <code>String</code>, <code>Boolean</code>, <code>ID</code></li>
+</ul>
+<p>GraphQL also allows for <a href="https://spec.graphql.org/October2021/#sec-Scalars.Custom-Scalars">custom scalars</a>. Argo supports this, though an <code>@ArgoCodec</code> directive is required to tell Argo how to represent it on the wire.</p>
+<p><dfn id="graphql-response-types"><a href="#graphql-response-types" data-name="graphql-response-types">GraphQL response types</a></dfn> refers to the <a href="https://spec.graphql.org/October2021/#sec-Serialization-Format">serialization types sketched in the GraphQL spec</a>. These do not have rigorous definitions in the GraphQL spec. These include (but are not limited to):</p>
+<ul>
+<li><code>Map</code>, <code>List</code>, <code>String</code>, <code>Null</code></li>
+<li>Optionally, <code>Boolean</code>, <code>Int</code>, <code>Float</code>, and <code>Enum Value</code></li>
+</ul>
+<section id="sec-GraphQL-input-types" secid="2.1.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-GraphQL-input-types">2.1.1</a></span>GraphQL input types</h3>
+<p>GraphQL also includes Input types, which encode arguments and requests. Presently, Argo does not specify how to encode GraphQL input types because the expected benefits are small. However, this is a natural, straightforward, and backwards-compatible extension which may be added in a future version.</p>
+</section>
+</section>
+<section id="sec-Wire-types" secid="2.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Wire-types">2.2</a></span>Wire types</h2>
+<p><dfn id="wire-types"><a href="#wire-types" data-name="wire-types">Wire types</a></dfn> are used by Argo to encode GraphQL values as bytes.</p>
+<p>Argo uses the following named Wire types:</p>
+<ul>
+<li><code>STRING</code>: a UTF-8 string</li>
+<li><code>BOOLEAN</code>: true or false</li>
+<li><code>VARINT</code>: a variable-length integer</li>
+<li><code>FLOAT64</code>: an IEEE 754 double-precision binary floating-point (binary64)</li>
+<li><code>BYTES</code>: a variable-length byte string</li>
+<li><code>FIXED</code>: a fixed-length byte string</li>
+<li><code>RECORD</code>: a selection set, made up of potentially-omittable named fields and their values</li>
+<li><code>ARRAY</code>: a variable-length list of a single type</li>
+<li><code>BLOCK</code>: describes how to store the underlying type in a block of value data</li>
+<li><code>NULLABLE</code>: may be null or have a value</li>
+<li><code>DESC</code>: a self-describing type</li>
+</ul>
+<section id="sec-Self-describing-types" secid="2.2.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Self-describing-types">2.2.1</a></span>Self-describing types</h3>
+<p><dfn id="self-describing-types"><a href="#self-describing-types" data-name="self-describing-types">Self-describing types</a></dfn> are used by Argo to encode values with types which are not known in advance (e.g. at Registration Time). Primarily, this is required to comply with the <a href="https://spec.graphql.org/October2021/#sec-Errors">GraphQL specification on Errors</a>.</p>
+<p>Argo uses the following named self-describing types:</p>
+<ul>
+<li><code>Null</code>: marks that a value is not present (like <code>null</code> in JSON)</li>
+<li><code>Object</code>: an object, made up of named fields and their values</li>
+<li><code>List</code>: a variable-length list of (potentially) mixed types</li>
+<li><code>String</code>: a UTF-8 string</li>
+<li><code>Bytes</code>: a variable-length byte string</li>
+<li><code>Boolean</code>: true or false</li>
+<li><code>Int</code>: a variable-length integer</li>
+<li><code>Float</code>: an IEEE 754 double-precision binary floating-point (binary64)</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="sec-Wire-schema" secid="3">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Wire-schema">3</a></span>Wire schema</h1>
+<p>GraphQL uses a Schema to capture the names and types of data. GraphQL queries select a portion of data from that Schema. Given a Schema and a query on it, Argo produces a <dfn id="wire-schema"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></dfn> with all the information needed to [de]serialize data powering that query against a compatible GraphQL Schema.</p>
+<div id="note-df757" class="spec-note">
+<a href="#note-df757">Note</a>
+In a client-server architecture, GraphQL schemas frequently change on the server according to certain compatibility rules. Therefore, while Argo <em>cannot</em> assume the Schema used for serializing data is the Schema used for deserializing, it <em>does</em> assume they are compatible with each other (i.e. no <a href="https://spec.graphql.org/October2021/#sel-EALJDCAgICCAogH">breaking changes</a> have been made).</div>
+<p>The wire schema is a single WireType which describes how to encode an entire payload:</p>
+<div class="spec-production d2" id="WireType">
+<span class="spec-nt"><a href="#WireType" data-name="WireType">WireType</a></span><div class="spec-rhs"><span class="spec-t">STRING()</span><span class="spec-t">|</span><span class="spec-t">BOOLEAN()</span><span class="spec-t">|</span><span class="spec-t">VARINT()</span><span class="spec-t">|</span><span class="spec-t">FLOAT64()</span><span class="spec-t">|</span><span class="spec-t">BYTES()</span><span class="spec-t">|</span><span class="spec-t">DESC()</span></div>
+<div class="spec-rhs"><span class="spec-t">FIXED(lengthInBytes: Int)</span></div>
+<div class="spec-rhs"><span class="spec-t">RECORD(fields: Field[])</span><span class="spec-t">where</span><span class="spec-t">Field(name: String, of: WireType, omittable: Boolean)</span></div>
+<div class="spec-rhs"><span class="spec-t">ARRAY(of: WireType)</span></div>
+<div class="spec-rhs"><span class="spec-t">BLOCK(of: WireType, key: String, dedupe: Boolean)</span></div>
+<div class="spec-rhs"><span class="spec-t">NULLABLE(of: WireType)</span></div>
+</div>
+<section id="sec-Wire-schema-serialization" secid="3.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Wire-schema-serialization">3.1</a></span>Wire schema serialization</h2>
+<p>A Wire schema or WireType may be serialized in JSON. It must be a JSON object of the form: <code>{"type": "typeName" ...attributes...}</code> where <code>typeName</code> is one of the <span class="spec-ref"><a href="#wire-types" data-name="wire-types">Wire types</a></span> as a string, and the attributes are as sketched in <em>WireType</em> above.</p>
+<pre id="example-b1dcc" class="spec-example" data-language="json"><a href="#example-b1dcc">Example № 1</a><code><span class="token punctuation">{</span>
+  <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"RECORD"</span><span class="token punctuation">,</span>
+  <span class="token property">"fields"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"errors"</span><span class="token punctuation">,</span>
+      <span class="token property">"type"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"NULLABLE"</span><span class="token punctuation">,</span>
+        <span class="token property">"of"</span><span class="token operator">:</span> <span class="token punctuation">{</span> <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"ARRAY"</span><span class="token punctuation">,</span> <span class="token property">"of"</span><span class="token operator">:</span> <span class="token punctuation">{</span> <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"DESC"</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token property">"omittable"</span><span class="token operator">:</span> <span class="token boolean">true</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>This serialization may be helpful to avoid recomputing Wire schemas on the server. Other serializations may be more efficient but are out of scope here.</p>
+</section>
+</section>
+<section id="sec-Creating-a-Wire-schema" secid="4">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Creating-a-Wire-schema">4</a></span>Creating a Wire schema</h1>
+<p>Argo is designed to work with GraphQL queries and schemas which are known in advance. It generates a description of the types which may be returned by a query (one time), and uses this to serialize or deserialize (many times). This description is called a <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>.</p>
+<p>It is helpful to first describe this process informally. Each selection set is walked over with the corresponding GraphQL schema easily available. Selection sets and selections are handled differently.</p>
+<ul>
+<li>Each selection set collapses direct selections with any fragments, union, or interface selections down into a single Wire <code>RECORD</code><ul>
+<li>This <code>RECORD</code> retains the order of the selections, marks any fields which may be omitted in the response as omittable, and de-duplicates repeated selections recursively</li>
+</ul>
+</li>
+<li>Other selections are transformed into analogous wire types<ul>
+<li>String, ID, and any Enum types become <code>STRING</code></li>
+<li>Int becomes <code>VARINT</code></li>
+<li>Float becomes <code>FLOAT64</code></li>
+<li>Boolean becomes <code>BOOLEAN</code></li>
+<li>List becomes <code>ARRAY</code></li>
+<li>All types are non-null by default, and nullable types are wrapped in <code>NULLABLE</code></li>
+<li>Custom scalars (and any built-ins which set it) use the <code>@ArgoCodec</code> directive to choose a wire type</li>
+<li>Scalars (except Boolean) may use the <code>@ArgoDeduplicate</code> directive to opt in or out of deduplication</li>
+</ul>
+</li>
+</ul>
+<div id="note-1ae20" class="spec-note">
+<a href="#note-1ae20">Note</a>
+Though it seems more efficient to represent Enums as <code>VARINT</code>, there is no guarantee that the writer&rsquo;s view of the Enum type exactly matches the reader&rsquo;s. The schema may have changed: in the writer&rsquo;s schema, if an Enum&rsquo;s values have been reordered, or if an Enum value has been added before the end (but will otherwise never be sent to this particular reader), the reader and writer do not have enough information to agree on the correct numbering.</div>
+<p>The following types will always be marked with <code>BLOCK</code>, with a key set to the GraphQL type was generated from:</p>
+<p><code>STRING, VARINT, FLOAT64, BYTES, FIXED</code></p>
+<p>These types will be marked to deduplicate within their Block by default (but it may be overridden by <code>@ArgoDeduplicate</code>):</p>
+<p><code>STRING, BYTES</code></p>
+<section id="sec-Algorithms" secid="4.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Algorithms">4.1</a></span>Algorithms</h2>
+<p>A wire schema is generated by the following algorithms. Typically, <em>CollectFieldWireTypes()</em> should be called with the root type of the GraphQL Schema&rsquo;s operation (typically, <code>Query</code>) along with the selection set&mdash;usually from a Query, but potentially for that returned by a Mutation or Subscription.</p>
+<div id="note-5044d" class="spec-note">
+<a href="#note-5044d">Note</a>
+Much of this code may be easier to follow in the <a href="https://github.com/msolomon/argo/blob/main/argo-js/src/typer.ts">reference implementation&rsquo;s <code>Typer</code> class</a>.</div>
+<div id="note-e369d" class="spec-note">
+<a href="#note-e369d">Note</a>
+<em>CollectFieldsStatic()</em> is based on GraphQLs <a href="https://spec.graphql.org/October2021/#CollectFields()">CollectFields() algorithm</a>.</div>
+<div class="spec-algo" id="GraphQLTypeToWireType()">
+<span class="spec-call"><a href="#GraphQLTypeToWireType()" data-name="GraphQLTypeToWireType">GraphQLTypeToWireType</a>(<var data-name="graphQLType">graphQLType</var>)</span><ol>
+<li>If <var data-name="graphQLType">graphQLType</var> is a Scalar or Enum:<ol>
+<li>If <var data-name="graphQLType">graphQLType</var> has an <span class="spec-t">@ArgoCodecDirective</span>, set <var data-name="codec">codec</var> to its argument</li>
+<li>If <var data-name="graphQLType">graphQLType</var> has an <span class="spec-t">@ArgoDeduplicateDirective</span>, set <var data-name="deduplicate">deduplicate</var> to its argument</li>
+<li>Otherwise, let <var data-name="deduplicate">deduplicate</var> be false</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is an Enum:</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a String or ID:<ol>
+<li>If <var data-name="codec">codec</var> is not set, set it to use the <span class="spec-nt"><span data-name="STRING">STRING</span></span> codec</li>
+<li>Set <var data-name="deduplicate">deduplicate</var> to true</li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is an Int:<ol>
+<li>If <var data-name="codec">codec</var> is not set, set it to use the <span class="spec-nt"><span data-name="VARINT">VARINT</span></span> codec</li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a Float:<ol>
+<li>If <var data-name="codec">codec</var> is not set, set it to use the <span class="spec-nt"><span data-name="FLOAT64">FLOAT64</span></span> codec</li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a Boolean:<ol>
+<li>If <var data-name="deduplicate">deduplicate</var> is set, fail with an error because <span class="spec-nt"><span data-name="BOOLEAN">BOOLEAN</span></span> cannot be deduplicated</li>
+<li>return <code>Nullable(BOOLEAN)</code></li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a custom scalar:<ol>
+<li>If <var data-name="codec">codec</var> is not set, fail with an error because <var data-name="codec">codec</var> is required for custom scalars</li>
+<li>If <var data-name="deduplicate">deduplicate</var> is not set, set it to the corresponding value above for the type of <var data-name="codec">codec</var></li>
+</ol>
+</li>
+<li>Set <var data-name="blockID">blockID</var> to the name of the <var data-name="graphQLType">graphQLType</var>&lsquo;s type</li>
+<li>Return <code>Nullable(Block(codec, blockId, deduplicate))</code></li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is a List:<ol>
+<li>Set <var data-name="underlyingType">underlyingType</var> to the result of calling <span class="spec-call"><a href="#GraphQLTypeToWireType()" data-name="GraphQLTypeToWireType">GraphQLTypeToWireType</a>()</span> with the underlying type of the List</li>
+<li>Return <code>Nullable(Array(underlyingType))</code></li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is an Object, Interface, or Union:<ol>
+<li>Set <var data-name="fields">fields</var> to the empty list</li>
+<li>Return <code>Nullable(Record(fields))</code></li>
+</ol>
+</li>
+<li>If <var data-name="graphQLType">graphQLType</var> is NonNull:<ol>
+<li>Set <var data-name="type">type</var> to the result of calling <span class="spec-call"><a href="#GraphQLTypeToWireType()" data-name="GraphQLTypeToWireType">GraphQLTypeToWireType</a>()</span> with the underlying type of the NonNull, then removing its Nullable wrapper</li>
+<li>Return <var data-name="type">type</var></li>
+</ol>
+</li>
+</ol>
+</div>
+<div class="spec-algo" id="CollectFieldWireTypes()">
+<span class="spec-call"><a href="#CollectFieldWireTypes()" data-name="CollectFieldWireTypes">CollectFieldWireTypes</a>(<var data-name="selectionType">selectionType</var>, <var data-name="selectionSet">selectionSet</var>)</span><ol>
+<li>Initialize <var data-name="recordFields">recordFields</var> to an empty list.</li>
+<li>For each <var data-name="alias">alias</var> and ordered set of <var data-name="fields">fields</var> in <span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="selectionSet">selectionSet</var>)</span>:<ol>
+<li>For each <var data-name="field">field</var> in <var data-name="fields">fields</var>:<ol>
+<li>Initialize <var data-name="omittable">omittable</var> to <span class="spec-keyword">false</span></li>
+<li>If <var data-name="field">field</var> was selected by a fragment spread, set <var data-name="typeCondition">typeCondition</var> to the name of the fragment</li>
+<li>If <var data-name="field">field</var> was selected by an inline fragment, set <var data-name="typeCondition">typeCondition</var> to the name of the type condition specified in the inline fragment</li>
+<li>If <var data-name="typeCondition">typeCondition</var> is set, but not set to the name of <var data-name="selectionType">selectionType</var>, set omittable to <span class="spec-keyword">true</span></li>
+<li>If <var data-name="field">field</var> is a selection set:<ol>
+<li>Set <var data-name="wrapped">wrapped</var> to the result of calling <span class="spec-call"><span data-name="TypeToWireType">TypeToWireType</span>()</span> with the <var data-name="field">field</var>&lsquo;s GraphQL type &ndash;</li>
+<li>Let <span class="spec-call"><span data-name="wrap">wrap</span>(<var data-name="wireType">wireType</var>)</span> be a function which recursively applies <code>NULLABLE</code>, <code>BLOCK</code>, and <code>ARRAY</code> wrappers around <var data-name="wireType">wireType</var> in the same order they appear in <var data-name="wrapped">wrapped</var></li>
+<li>Set <var data-name="type">type</var> to the result of calling <code>CollectFieldWireTypes(field.type, field.selectionSet)</code></li>
+<li>Set <var data-name="type">type</var> to the result of calling <span class="spec-call"><span data-name="wrap">wrap</span>(<var data-name="type">type</var>)</span></li>
+<li>Append <span class="spec-call"><span data-name="Field">Field</span>(<var data-name="alias">alias</var>, <var data-name="type">type</var>, <var data-name="omittable">omittable</var>)</span> to <var data-name="recordFields">recordFields</var></li>
+</ol>
+</li>
+<li>Otherwise:<ol>
+<li>Set <var data-name="type">type</var> to the result of calling <code>TypeToWireType(field.type)</code></li>
+<li>Append <span class="spec-call"><span data-name="Field">Field</span>(<var data-name="alias">alias</var>, <var data-name="type">type</var>, <var data-name="omittable">omittable</var>)</span> to <var data-name="recordFields">recordFields</var></li>
+</ol>
+</li>
+<li>For any <var data-name="field">field</var> in <var data-name="recordFields">recordFields</var> which share a name, recursively combine fields into a single selection set <var data-name="field">field</var> which orders selections in the same order as in <var data-name="recordFields">recordFields</var></li>
+<li>Return <var data-name="recordFields">recordFields</var></li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</div>
+<div class="spec-algo" id="CollectFieldsStatic()">
+<span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="selectionSet">selectionSet</var>, <var data-name="visitedFragments">visitedFragments</var>)</span><ol>
+<li>If <var data-name="visitedFragments">visitedFragments</var> is not provided, initialize it to the empty set.</li>
+<li>Initialize <var data-name="groupedFields">groupedFields</var> to an empty ordered map of lists.</li>
+<li>For each <var data-name="selection">selection</var> in <var data-name="selectionSet">selectionSet</var>:<ol>
+<li>If <var data-name="selection">selection</var> provides the directive <code>@skip</code>, let <var data-name="skipDirective">skipDirective</var> be that directive.<ol>
+<li>If <var data-name="skipDirective">skipDirective</var>&lsquo;s <var data-name="if">if</var> argument is always <span class="spec-keyword">true</span>, continue with the next <var data-name="selection">selection</var> in <var data-name="selectionSet">selectionSet</var>.</li>
+</ol>
+</li>
+<li>If <var data-name="selection">selection</var> provides the directive <code>@include</code>, let <var data-name="includeDirective">includeDirective</var> be that directive.<ol>
+<li>If <var data-name="includeDirective">includeDirective</var>&lsquo;s <var data-name="if">if</var> argument is never <span class="spec-keyword">true</span>, continue with the next <var data-name="selection">selection</var> in <var data-name="selectionSet">selectionSet</var>.</li>
+</ol>
+</li>
+<li>If <var data-name="selection">selection</var> is a <span class="spec-nt"><span data-name="Field">Field</span></span>:<ol>
+<li>Let <var data-name="responseKey">responseKey</var> be the response key of <var data-name="selection">selection</var> (the alias if defined, otherwise the field name).</li>
+<li>Let <var data-name="groupForResponseKey">groupForResponseKey</var> be the list in <var data-name="groupedFields">groupedFields</var> for <var data-name="responseKey">responseKey</var>; if no such list exists, create it as an empty list.</li>
+<li>Append <var data-name="selection">selection</var> to the <var data-name="groupForResponseKey">groupForResponseKey</var>.</li>
+</ol>
+</li>
+<li>If <var data-name="selection">selection</var> is a <span class="spec-nt"><span data-name="FragmentSpread">FragmentSpread</span></span>:<ol>
+<li>Let <var data-name="fragmentSpreadName">fragmentSpreadName</var> be the name of <var data-name="selection">selection</var>.</li>
+<li>If <var data-name="fragmentSpreadName">fragmentSpreadName</var> is in <var data-name="visitedFragments">visitedFragments</var>, continue with the next <var data-name="selection">selection</var> in <var data-name="selectionSet">selectionSet</var>.</li>
+<li>Add <var data-name="fragmentSpreadName">fragmentSpreadName</var> to <var data-name="visitedFragments">visitedFragments</var>.</li>
+<li>Let <var data-name="fragment">fragment</var> be the Fragment in the current Document whose name is <var data-name="fragmentSpreadName">fragmentSpreadName</var>.</li>
+<li>If no such <var data-name="fragment">fragment</var> exists, fail with an error because the referenced <var data-name="fragment">fragment</var> must exist.</li>
+<li>Let <var data-name="fragmentSelectionSet">fragmentSelectionSet</var> be the top-level selection set of <var data-name="fragment">fragment</var>.</li>
+<li>Let <var data-name="fragmentGroupedFieldSet">fragmentGroupedFieldSet</var> be the result of calling <span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="fragmentSelectionSet">fragmentSelectionSet</var>, <var data-name="visitedFragments">visitedFragments</var>)</span>.</li>
+<li>For each <var data-name="fragmentGroup">fragmentGroup</var> in <var data-name="fragmentGroupedFieldSet">fragmentGroupedFieldSet</var>:<ol>
+<li>Let <var data-name="responseKey">responseKey</var> be the response key shared by all fields in <var data-name="fragmentGroup">fragmentGroup</var>.</li>
+<li>Let <var data-name="groupForResponseKey">groupForResponseKey</var> be the list in <var data-name="groupedFields">groupedFields</var> for <var data-name="responseKey">responseKey</var>; if no such list exists, create it as an empty list.</li>
+<li>Append all items in <var data-name="fragmentGroup">fragmentGroup</var> to <var data-name="groupForResponseKey">groupForResponseKey</var>.</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>If <var data-name="selection">selection</var> is an <span class="spec-nt"><span data-name="InlineFragment">InlineFragment</span></span>:<ol>
+<li>Let <var data-name="fragmentSelectionSet">fragmentSelectionSet</var> be the top-level selection set of <var data-name="selection">selection</var>.</li>
+<li>Let <var data-name="fragmentGroupedFieldSet">fragmentGroupedFieldSet</var> be the result of calling <span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="fragmentSelectionSet">fragmentSelectionSet</var>, <var data-name="visitedFragments">visitedFragments</var>)</span>.</li>
+<li>For each <var data-name="fragmentGroup">fragmentGroup</var> in <var data-name="fragmentGroupedFieldSet">fragmentGroupedFieldSet</var>:<ol>
+<li>Let <var data-name="responseKey">responseKey</var> be the response key shared by all fields in <var data-name="fragmentGroup">fragmentGroup</var>.</li>
+<li>Let <var data-name="groupForResponseKey">groupForResponseKey</var> be the list in <var data-name="groupedFields">groupedFields</var> for <var data-name="responseKey">responseKey</var>; if no such list exists, create it as an empty list.</li>
+<li>Append all items in <var data-name="fragmentGroup">fragmentGroup</var> to <var data-name="groupForResponseKey">groupForResponseKey</var>.</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>Return <var data-name="groupedFields">groupedFields</var>.</li>
+</ol>
+</div>
+</section>
+</section>
+<section id="sec-Binary-encoding" secid="5">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Binary-encoding">5</a></span>Binary encoding</h1>
+<p>Argo&rsquo;s binary encoding does not include field names, self-contained information about the types of individual bytes, nor field or record separators. Therefore readers are wholly reliant on the Wire schema used when the data was encoded (or any compatible Wire schema), along with any information about custom scalar encodings.</p>
+<p>Argo always uses a little-endian byte order.</p>
+<div id="note-86a67" class="spec-note">
+<a href="#note-86a67">Note</a>
+Reading Argo messages often involves reading length prefixes followed by that many bytes. As always in situations like this, use bounds checking to avoid buffer over-read.</div>
+<section id="sec-Message" secid="5.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Message">5.1</a></span>Message</h2>
+<p>An Argo <dfn id="message"><a href="#message" data-name="message">Message</a></dfn> consists of these concatenated parts:</p>
+<ul>
+<li>A variable-length <span class="spec-ref"><a href="#header" data-name="header">Header</a></span></li>
+<li>0 or more concatenated <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> containing scalar values, each prefixed by their length</li>
+<li>1 <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, which contains the Message&rsquo;s structure, prefixed by its length</li>
+</ul>
+</section>
+<section id="sec-Header" secid="5.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Header">5.2</a></span>Header</h2>
+<p>The <dfn id="header"><a href="#header" data-name="header">Header</a></dfn> is encoded as a variable-length <em>BitSet</em>. After into a fixed bit array, each bit in the BitSet has a defined meaning described below.</p>
+<p>Numbered least to most significant bits:</p>
+<pre><code>0: InlineEverything
+1: SelfDescribing
+2: OutOfBandFieldErrors
+3: SelfDescribingErrors
+4: NullTerminatedStrings
+5: NoDeduplication
+6: HasUserFlags
+</code></pre>
+<p>When a given flag is set, Argo&rsquo;s behavior is modified as described below. Each may also be referred to as a <dfn id="mode"><a href="#mode" data-name="mode">Mode</a></dfn> of operation, and the corresponding bit must be set if and only if the messages uses the corresponding Mode.</p>
+<dl>
+<dt><dfn id="inlineeverything"><a href="#inlineeverything" data-name="inlineeverything">InlineEverything</a></dfn></dt>
+<dd>In this Mode, <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> are omitted, along with their length prefixes. <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>&lsquo;s length prefix is also omitted. Instead, scalar values are written inline in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> (i.e. at the current position when they are encountered).</dd>
+<dd>This generally results in smaller messages which do not compress as well. Useful when the Message will not be compressed. For tiny messages (say, dozens of bytes) this usually results in the smallest possible payloads.</dd>
+</dl>
+<dl>
+<dt><dfn id="selfdescribing"><a href="#selfdescribing" data-name="selfdescribing">SelfDescribing</a></dfn></dt>
+<dd>In this Mode, <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> is written exactly as if its type were <code>DESC</code>. This makes the message value self-describing.</dd>
+<dd>This generally makes the payload much larger, and is primarily useful when debugging.</dd>
+</dl>
+<dl>
+<dt><dfn id="outofbandfielderrors"><a href="#outofbandfielderrors" data-name="outofbandfielderrors">OutOfBandFieldErrors</a></dfn></dt>
+<dd>In this Mode, GraphQL <a href="https://spec.graphql.org/October2021/#sec-Errors.Field-errors">Field errors</a> are guaranteed not to be written inline, and instead appear in the <code>errors</code> array, if any.</dd>
+<dd>This makes it easier to convert JSON payloads to Argo after the fact, but eliminates the benefits of inline errors.</dd>
+</dl>
+<dl>
+<dt><dfn id="selfdescribingerrors"><a href="#selfdescribingerrors" data-name="selfdescribingerrors">SelfDescribingErrors</a></dfn></dt>
+<dd>In this Mode, errors are not encoded as usual. Instead, each is encoded as a self-describing value (which must adhere to the GraphQL spec). This applies to both Field errors and Request errors.</dd>
+<dd>This makes it easier to convert JSON payloads to Argo after the fact, but gives less type safety and generally results in larger error payloads.</dd>
+</dl>
+<dl>
+<dt><dfn id="nullterminatedstrings"><a href="#nullterminatedstrings" data-name="nullterminatedstrings">NullTerminatedStrings</a></dfn></dt>
+<dd>In this Mode, all messages of type <code>String</code> are suffixed with a UTF-8 NUL (i.e. a 0x00 byte). This byte is not included in the String&rsquo;s length, and is not considered part of the String. Other NUL bytes may still appear within each String.</dd>
+<dd>This makes it possible to implement zero-copy in language environments relying on NUL-terminated strings, but generally makes the payload larger.</dd>
+</dl>
+<dl>
+<dt><dfn id="nodeduplication"><a href="#nodeduplication" data-name="nodeduplication">NoDeduplication</a></dfn></dt>
+<dd>In this Mode, the message is guaranteed to never use backreferences. This may be because the encoder chose to duplicate values, or because duplicates were never encountered. The decoder MAY safely skip calculating backreference IDs, which carries a small cost.</dd>
+</dl>
+<dl>
+<dt><dfn id="hasuserflags"><a href="#hasuserflags" data-name="hasuserflags">HasUserFlags</a></dfn></dt>
+<dd>In this Mode, the Header BitSet is followed by another variable-length BitSet called <em>UserFlags</em>. The meaning of entries in UserFlags is up to the implementation, and remain outside the scope of this specification.</dd>
+<dd>This is useful to prototype custom implementations and extensions of Argo.</dd>
+</dl>
+</section>
+<section id="sec-Blocks" secid="5.3">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Blocks">5.3</a></span>Blocks</h2>
+<p>Argo <dfn id="blocks"><a href="#blocks" data-name="blocks">Blocks</a></dfn> are named contiguous blocks of encoded scalar values of the same type.</p>
+<p>Each begins with a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> encoding the length of the block in bytes (not counting the length prefix).</p>
+<p>Concatenated to this is every value in the block. The encoding of each value is defined below. Generally, this will not include any metadata, only values.</p>
+<p>The name (or key) of each Block is not encoded in the message.</p>
+</section>
+<section id="sec-Core" secid="5.4">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Core">5.4</a></span>Core</h2>
+<p>The <dfn id="core"><a href="#core" data-name="core">Core</a></dfn> of a Message contains the primary structure of the payload.</p>
+<p>The Core is prefixed with a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> encoding the its length in bytes (not counting the length prefix). This is omitted when operating in <span class="spec-ref"><a href="#inlineeverything" data-name="inlineeverything">InlineEverything</a></span> mode.</p>
+<p>The rest of the Core consists of a single value which encodes the payload. This is almost always a <code>RECORD</code> corresponding to GraphQL&rsquo;s <code>ExecutionResult</code>.</p>
+</section>
+<section id="sec-Label" secid="5.5">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Label">5.5</a></span>Label</h2>
+<p>Argo uses a multipurpose binary marker called a <dfn id="label"><a href="#label" data-name="label">Label</a></dfn> which combines several use cases into one compact representation. A Label is written using the <em>variable-length zig-zag coding</em>. A Label is essentially a number which should be interpreted differently according to its value and the context in which it is used.</p>
+<ul>
+<li>For variable-length data, such as a <code>STRING</code> or <code>ARRAY</code>, non-negative values represent the length of the data that is to follow<ul>
+<li>The units depend on the data: <code>STRING</code> lengths are in bytes, while <code>ARRAY</code> lengths are in entries</li>
+</ul>
+</li>
+<li>For <code>BOOLEAN</code>s, 0 means <code>false</code> and 1 means <code>true</code></li>
+<li>For <code>NULLABLE</code> values, -1 means <code>null</code></li>
+<li>For <code>NULLABLE</code> values which are not <code>null</code> and are not normally prefixed by a Label, 0 means not-null<ul>
+<li>Values which are prefixed by a Label even when non-nullable omit this non-null marker entirely, since we can rely on the Label&rsquo;s value to tell us it is not null</li>
+</ul>
+</li>
+<li>For <code>NULLABLE</code> values, -3 means there was a Field Error which terminated its propagation (if any) here</li>
+<li>For fields which may be omitted&mdash;such as fields that come from a selection set over a Union, and therefore may not appear at all&mdash;the value -2 is used to represent absence, called the <em>Absent Label</em></li>
+<li>All other negative numbers are used for <span class="spec-ref"><a href="#backreferences" data-name="backreferences">Backreferences</a></span>: identification numbers which refer to values which appeared previously in the Message</li>
+</ul>
+<p>Types whose values are prefixed with a Label or are themselves a Label are called <dfn id="labeled"><a href="#labeled" data-name="labeled">Labeled</a></dfn>. For example, <code>STRING</code>, <code>ARRAY</code>, <code>BOOLEAN</code>, and all <code>NULLABLE</code> types are <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span>.</p>
+<p>Types whose values are not prefixed with a Label and are not themselves a Label are called <dfn id="unlabeled"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></dfn>. For example, non-nullable <code>RECORD</code> and non-nullable <code>FLOAT64</code> are <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>.</p>
+</section>
+<section id="sec-Data-encoding" secid="5.6">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Data-encoding">5.6</a></span>Data encoding</h2>
+<p>Data are encoded in binary as described here.</p>
+<dl>
+<dt><dfn id="string"><a href="#string" data-name="string">STRING</a></dfn></dt>
+<dd><code>STRING</code> values are encoded as UTF-8 and written to their <span class="spec-ref"><a href="#block" data-name="block">Block</a></span>. In <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> is written which is the length of the encoded value in bytes. Typically, repeated <code>STRING</code> values may be deduplicated by instead writing a <em>backreference</em> to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+<dd>In <span class="spec-ref"><a href="#nullterminatedstrings" data-name="nullterminatedstrings">NullTerminatedStrings</a></span> mode, an additional UTF-8 NUL (0x00) is written to the block following the UTF-8 value (this is not counted in the length written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>).</dd>
+</dl>
+<dl>
+<dt><dfn id="boolean"><a href="#boolean" data-name="boolean">BOOLEAN</a></dfn></dt>
+<dd><code>BOOLEAN</code> values use the value 0 for <code>false</code> and 1 for <code>true</code>, and are written as a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="varint"><a href="#varint" data-name="varint">VARINT</a></dfn></dt>
+<dd><code>VARINT</code> (variable-length integer) values are written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> and use the <em>variable-length zig-zag coding</em>.</dd>
+</dl>
+<dl>
+<dt><dfn id="float64"><a href="#float64" data-name="float64">FLOAT64</a></dfn></dt>
+<dd><code>FLOAT64</code> values are written to their <span class="spec-ref"><a href="#block" data-name="block">Block</a></span> as 8 bytes in little endian order according to IEEE 754. Nothing is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="bytes"><a href="#bytes" data-name="bytes">BYTES</a></dfn></dt>
+<dd>A <code>BYTES</code> is encoded as unaltered contiguous bytes and written to its <span class="spec-ref"><a href="#block" data-name="block">Block</a></span>. In <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> is written which is the length of the encoded value in bytes. Typically, repeated <code>BYTES</code> values may be deduplicated by instead writing a <em>backreference</em> to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="fixed"><a href="#fixed" data-name="fixed">FIXED</a></dfn></dt>
+<dd><code>FIXED</code> values are written to their <span class="spec-ref"><a href="#block" data-name="block">Block</a></span> as bytes in little endian order. Nothing is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>. The number of bytes is not included in the message in any way, since it is in the <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="record"><a href="#record" data-name="record">RECORD</a></dfn></dt>
+<dd><code>RECORD</code> values are written as a concatenation of their <em>Fields</em> to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>. Each <em>Field</em> is written recursively in the order it appears in the <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>. If a Field is <em>omittable</em> and absent, it is written as the <em>Absent Label</em>. If a Field is <em>omittable</em> and present, but its underlying type is <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>, a non-null Label is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> before writing the field&rsquo;s value. The number of fields and their types are not included in the message in any way, since that is in the <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="array"><a href="#array" data-name="array">ARRAY</a></dfn></dt>
+<dd><code>ARRAY</code> values are written as a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> which contains the <code>ARRAY</code>&lsquo;s length (in entries), followed by a concatenation of its entries recursively.</dd>
+</dl>
+<dl>
+<dt><dfn id="block"><a href="#block" data-name="block">BLOCK</a></dfn></dt>
+<dd><code>BLOCK</code> is not written to the <span class="spec-ref"><a href="#message" data-name="message">Message</a></span> directly. Instead, it modifies its underlying type, naming which block it should be written to and whether values should be deduplicated. Block keys match the name of the type in the GraphQL schema it is generated from. For example, &lsquo;String&rsquo; for the built-in type, or a custom scalar&rsquo;s name. Deduplication is configurable with the ArgoDeduplicate directive, with defaults specified under <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="nullable"><a href="#nullable" data-name="nullable">NULLABLE</a></dfn></dt>
+<dd><code>NULLABLE</code> values are written differently depending on whether the underlying value is <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span> or <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>. The value <code>null</code> is always written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> as the <em>Null Label</em> with the value 0. If the underlying value is present and <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span>, non-null values are simply written recursively and unmodified using the underlying value&rsquo;s encoding. If the underlying value is present and <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>, first the <em>Non-null Label</em> is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, then the underlying value is written recursively.</dd>
+</dl>
+<dl>
+<dt><dfn id="desc"><a href="#desc" data-name="desc">DESC</a></dfn></dt>
+<dd><code>DESC</code> values are self-describing, and primarily used to encode errors. This scheme is described in <em>Self-describing encoding</em>.</dd>
+</dl>
+<section id="sec-Self-describing-encoding" secid="5.6.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Self-describing-encoding">5.6.1</a></span>Self-describing encoding</h3>
+<p>Argo is intended to rely on known types taken from GraphQL queries and schemas. However, the <code>errors</code> array in GraphQL is very free-form <a href="https://spec.graphql.org/October2021/#sec-Errors">as specified in the GraphQL Spec</a>. To support this, as well as to ease debugging in certain circumstances, a self-describing format is included.</p>
+<p>Self-describing values use a <dfn id="type-marker"><a href="#type-marker" data-name="type-marker">Type marker</a></dfn>, a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> with a predetermined value representing the type of the value to follow.</p>
+<p>In the self-describing format, most values are encoded as usual, including using <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>. However, values in this format only use the following Blocks:</p>
+<ul>
+<li>A block with key &ldquo;String&rdquo;, used for all values marked <code>String</code></li>
+<li>A block with key &ldquo;Bytes&rdquo;, used for all values marked <code>Bytes</code></li>
+<li>A block with key &ldquo;Int&rdquo;, used for all values marked <code>Int</code></li>
+<li>A block with key &ldquo;Float&rdquo;, used for all values marked <code>Float</code></li>
+</ul>
+<div id="note-2e1b2" class="spec-note">
+<a href="#note-2e1b2">Note</a>
+These Blocks may also be used for non-self-describing values. This is intentional.</div>
+<p>To write a <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span>, encode the given value as a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> and write it to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</p>
+<p>To write a self-describing value, first map the desired value to the closest type described in <span class="spec-ref"><a href="#self-describing-types" data-name="self-describing-types">Self-describing types</a></span>. Then, write each type as below (reading follows the same pattern):</p>
+<dl>
+<dt><dfn id="null--1-"><a href="#null--1-" data-name="null--1-">Null (-1)</a></dfn></dt>
+<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> -1 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="boolean-false-0-"><a href="#boolean-false-0-" data-name="boolean-false-0-">Boolean false (0)</a></dfn></dt>
+<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 0 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="boolean-true-1-"><a href="#boolean-true-1-" data-name="boolean-true-1-">Boolean true (1)</a></dfn></dt>
+<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 1 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+</dl>
+<dl>
+<dt><dfn id="object-2-"><a href="#object-2-" data-name="object-2-">Object (2)</a></dfn></dt>
+<dd>Begins with <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 2 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a second <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> encoding the number of fields which follow. All fields follow in order, each written as a <code>STRING</code> capturing the field name (with no preceding <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span>), then recursively written the field&rsquo;s value using the self-describing encoding. These alternate until completion, concatenated together.</dd>
+</dl>
+<dl>
+<dt><dfn id="list-3-"><a href="#list-3-" data-name="list-3-">List (3)</a></dfn></dt>
+<dd>Begins with <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 3 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a second <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> encoding the length of the list. Each entry is then written recursively in the self-describing format, concatenated together. Note that heterogeneous types are allowed: this is important for GraphQL&rsquo;s error representation.</dd>
+</dl>
+<dl>
+<dt><dfn id="string-4-"><a href="#string-4-" data-name="string-4-">String (4)</a></dfn></dt>
+<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 4 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a non-self-describing <code>STRING</code> with Block key &ldquo;String&rdquo;.</dd>
+</dl>
+<dl>
+<dt><dfn id="bytes-5-"><a href="#bytes-5-" data-name="bytes-5-">Bytes (5)</a></dfn></dt>
+<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 5 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a non-self-describing <code>BYTES</code> with Block key &ldquo;Bytes&rdquo;.</dd>
+</dl>
+<dl>
+<dt><dfn id="int-6-"><a href="#int-6-" data-name="int-6-">Int (6)</a></dfn></dt>
+<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 5 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a non-self-describing <code>VARINT</code> with Block key &ldquo;Int&rdquo;.</dd>
+</dl>
+<dl>
+<dt><dfn id="float-7-"><a href="#float-7-" data-name="float-7-">Float (7)</a></dfn></dt>
+<dd>Written as <span class="spec-ref"><a href="#type-marker" data-name="type-marker">Type marker</a></span> 6 in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, followed by a non-self-describing <code>FLOAT64</code> with Block key &ldquo;Float&rdquo;.</dd>
+</dl>
+</section>
+</section>
+<section id="sec-Backreferences" secid="5.7">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Backreferences">5.7</a></span>Backreferences</h2>
+<p>Argo <dfn id="backreferences"><a href="#backreferences" data-name="backreferences">Backreferences</a></dfn> are numeric references to values which appeared previously in the Message. Backreferences are encoded as <em>Labels</em> with negative values.</p>
+<p>Argo reduces data size on the wire by avoiding repeated values. Whenever a potentially-large value is read or written for the first time in a given <span class="spec-ref"><a href="#block" data-name="block">Block</a></span>, it is remembered and given the next available backreference ID number (which is always negative). When it is next used, it can be identified by the backreference ID, eliminating the need to encode (and later decode) the entire value again.</p>
+<p>Each <span class="spec-ref"><a href="#block" data-name="block">Block</a></span> has a separate backreference ID space. This means backreference IDs are not unique across types: a backreference ID -5 refers to a different value for <code>String</code> than it does for a hypothetical <code>MyEnum</code>. Backreference IDs count down, beginning at the largest non-reserved negative label value: this is -3, since the <em>Absent label</em> (-2) is the smallest reserved value.</p>
+<div id="note-16b58" class="spec-note">
+<a href="#note-16b58">Note</a>
+For certain messages, this allows Argo representations to remain small in memory by avoiding duplication even after decompression (and further, after parsing). It also helps keep Argo messages small without compression.</div>
+<p>When encoding, the encoder SHOULD deduplicate by returning backreference IDs instead of re-encoding duplicated values. This is typically implemented with a Map data structure.</p>
+<div id="note-6de3c" class="spec-note">
+<a href="#note-6de3c">Note</a>
+The encoder MAY choose to duplicate values instead of returning backreferences whenever it chooses. For example, an easy optimization is to simply duplicate values which are smaller than the backreference ID itself.</div>
+<p>When decoding, the decoder MUST track backreference IDs for <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> with deduplication enabled, usually by storing an array of previously-encountered values. However, this MAY be skipped for messages in <code>NoDeduplication</code> mode.</p>
+<p>In order to maintain a compact data representation, backreferences (and therefore deduplication) are only supported for <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span> types.</p>
+</section>
+<section id="sec-Errors" secid="5.8">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Errors">5.8</a></span>Errors</h2>
+<p>Errors require special treatment for three reasons:</p>
+<ol>
+<li><a href="#sec-Field-errors">Field errors</a> are inlined with data. This makes it easy to distinguish between null and an error as soon as a value is read, and also makes their representation more compact.</li>
+<li>The &ldquo;extensions&rdquo; portion of each errors object must be self-describing. This is in contrast to all other data: we don&rsquo;t know the schema/types of &ldquo;extensions&rdquo; data, and it may vary between objects.</li>
+<li>The &ldquo;path&rdquo; portion of each error object is not representable directly in GraphQL (or Argo) types. This is because it mixes String and Int primitive values, which GraphQL forbids for data.</li>
+</ol>
+<div id="note-53715" class="spec-note">
+<a href="#note-53715">Note</a>
+Normally, Argo does not allow for direction extension to field error objects outside of the extensions field, even though the GraphQL spec allows for (but discourages) it. This is on the grounds that it is very easy to recover this information by simply moving it to the extensions field when migrating to this data format, and it simplifies Argo. If required, <span class="spec-ref"><a href="#selfdescribingerrors" data-name="selfdescribingerrors">SelfDescribingErrors</a></span> can be used to allow for this.</div>
+<section id="sec-Error-values" secid="5.8.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Error-values">5.8.1</a></span>Error values</h3>
+<p>Errors are written in a specific format, which has the following schema in GraphQL (and a corresponding schema in Argo):</p>
+<pre data-language="graphql"><code><span class="token keyword">type</span> <span class="token class-name">Location</span> <span class="token punctuation">{</span>
+  <span class="token attr-name">line</span><span class="token punctuation">:</span> <span class="token scalar">Int</span><span class="token operator">!</span>
+  <span class="token attr-name">column</span><span class="token punctuation">:</span> <span class="token scalar">Int</span><span class="token operator">!</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">type</span> <span class="token class-name">Error</span> <span class="token punctuation">{</span>
+  <span class="token attr-name">message</span><span class="token punctuation">:</span> <span class="token scalar">String</span><span class="token operator">!</span>
+  <span class="token attr-name">location</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token class-name">Location</span><span class="token operator">!</span><span class="token punctuation">]</span>
+  <span class="token attr-name">path</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token scalar">String</span><span class="token operator">!</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>These all take the values described in the GraphQL spec with these exceptions:</p>
+<ol>
+<li>The <code>path</code> field uses String even for numeric path segments. Numeric path segments should be converted back to integers in the reader&rsquo;s code generator.</li>
+<li>The <code>extensions</code> field is encoded separately as described next</li>
+</ol>
+<p>After this, the value of the <code>extensions</code> field follows in <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>. This is written as an <code>Object</code> in the <em>Self-describing object</em> format with any values the writer chooses, or as <code>Null</code> if there are no extensions.</p>
+<div id="note-5a5e0" class="spec-note">
+<a href="#note-5a5e0">Note</a>
+<code>path</code> and <code>extensions</code> are not representable as normal GraphQL responses: <code>path</code> mixes String and Int primitive values, which GraphQL forbids for data; <code>extensions</code> must be a map, and has no other restrictions. Based on <code>path</code>&lsquo;s behavior (which violates GraphQL&rsquo;s typing rules), this seems to include values only representable in the transport layer (like JSON, or this spec). There is no information about the extensions map in the schema or any query.</div>
+<p>When operating in <span class="spec-ref"><a href="#selfdescribingerrors" data-name="selfdescribingerrors">SelfDescribingErrors</a></span> mode, errors are not encoded as described here. Instead, each is encoded as a self-describing value (which must adhere to the GraphQL spec). This applies to Field errors and Request errors.</p>
+</section>
+<section id="sec-Request-errors" secid="5.8.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Request-errors">5.8.2</a></span>Request errors</h3>
+<p>Request errors are stored in an <code>errors</code> array in the usual response location, encoded as <a href="#sec-Error-values">Error values</a>.</p>
+</section>
+<section id="sec-Field-errors" secid="5.8.3">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Field-errors">5.8.3</a></span>Field errors</h3>
+<p>Nullable fields are the only valid location for <a href="https://spec.graphql.org/October2021/#sec-Errors.Field-errors">Field errors</a>. When a Field error is encountered, the error propagates to the nearest nullable encompassing field, and then an <code>Error</code> <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</p>
+<p>The <a href="#sec-Error-value">Error value</a> should be then written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>, using the format above. However, the <code>path</code> field should only encode the path from the field which the error propagated to to the field which the error occurred in. This is because the path from the root of the query is knowable due to where the <code>Error</code> Label is encountered. This makes the representation more compact.</p>
+<p>When operating in <span class="spec-ref"><a href="#outofbandfielderrors" data-name="outofbandfielderrors">OutOfBandFieldErrors</a></span> mode, errors are not written as described here. Instead, an Error or Null <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> (with no additional error data following), and the error is written separately to the errors array. The <code>path</code> must include the full path from the root.</p>
+</section>
+</section>
+</section>
+<section id="sec-Appendix-Motivation-and-background" secid="A">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Appendix-Motivation-and-background">A</a></span>Appendix: Motivation and background</h1>
+<p>GraphQL typically serializes data into JSON, but GraphQL is designed to support other serializations as well. Argo is purpose-made to improve on serialization for GraphQL.</p>
+<section id="sec-JSON" secid="A.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-JSON">A.1</a></span>JSON</h2>
+<p>JSON is the standard serialization for GraphQL data. In the context of GraphQL responses, it has many strengths as well as a few weaknesses.</p>
+<section id="sec-JSON.Strengths-of-JSON-" class="subsec">
+<h6><a href="#sec-JSON.Strengths-of-JSON-" title="link to this subsection">Strengths of JSON:</a></h6>
+<ul>
+<li>Ubiquitous<ul>
+<li>Many stable, high-performance implementations</li>
+<li>High quality tools for working with JSON</li>
+</ul>
+</li>
+<li>Self-describing (simple and usable even without tools)<ul>
+<li>Independent of GraphQL schemas, documents, queries, and types</li>
+</ul>
+</li>
+<li>Human-readable and machine-readable</li>
+</ul>
+</section>
+<section id="sec-JSON.Weaknesses-of-JSON-" class="subsec">
+<h6><a href="#sec-JSON.Weaknesses-of-JSON-" title="link to this subsection">Weaknesses of JSON:</a></h6>
+<ul>
+<li>Large data representation (relative to binary formats)<ul>
+<li>Repetitive data format (e.g. field names) leads to large uncompressed sizes</li>
+<li>Self-delimited self-describing data uses additional space</li>
+</ul>
+</li>
+<li>Limited data type availability<ul>
+<li>Byte string data must be &ldquo;stuffed&rdquo; into Unicode strings</li>
+<li>64-bit integers don&rsquo;t work reliably across all platforms</li>
+<li>&ldquo;Stuffing&rdquo; other types into e.g. String can introduce inefficiencies</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="sec-Tradeoffs" secid="A.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Tradeoffs">A.2</a></span>Tradeoffs</h2>
+<p><strong>In most cases JSON is a great choice for GraphQL.</strong> However, it can be difficult to address the weaknesses. Primarily, these are related to performance: reducing the size of payloads, and reading and writing them quickly.</p>
+<p>The value of reading and writing data quickly is self-evident. The benefits of reduced payload sizes can be somewhat more subtle:</p>
+<ul>
+<li>Decreased latency across the stack<ul>
+<li>Most importantly, over the network<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Glossary/TCP_slow_start">TCP Slow Start</a>, <a href="https://www.rfc-editor.org/rfc/rfc9002.html#name-slow-start">QUIC Slow Start</a>, and other congestion control mechanisms mean larger first response payloads can significantly increase user-observed latency (especially on app open)</li>
+<li>Dropped and retried packets are more likely with larger responses, especially over unreliable mobile connections</li>
+<li>Smaller payloads transfer more quickly</li>
+</ul>
+</li>
+<li>Time spent serializing, deserializing, and copying around data</li>
+<li>Time spent cleaning up data, such as garbage collection</li>
+</ul>
+</li>
+<li>Increased I/O throughput across the stack</li>
+</ul>
+</section>
+<section id="sec-Argo" secid="A.3">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Argo">A.3</a></span>Argo</h2>
+<p>To address the aforementioned weaknesses, Argo makes a different set of tradeoffs than JSON.</p>
+<section id="sec-Argo.Strengths-of-Argo-" class="subsec">
+<h6><a href="#sec-Argo.Strengths-of-Argo-" title="link to this subsection">Strengths of Argo:</a></h6>
+<ul>
+<li>Compact binary format<ul>
+<li>Not self-describing: relies on GraphQL types instead</li>
+</ul>
+</li>
+<li>Unusually compressible<ul>
+<li>Stores data of the same type in blocks to assist compression algorithms, e.g. all Strings are stored together</li>
+</ul>
+</li>
+<li>Maximizes re-use<ul>
+<li>Deduplicates repeated values, so deserializing and converting to required types happens once</li>
+</ul>
+</li>
+<li>Flexible type availability<ul>
+<li>GraphQL scalars specify their encoding/decoding with a directive</li>
+<li>Supports all GraphQL types</li>
+<li>Also natively supports:<ul>
+<li>Variable-length byte strings</li>
+<li>Fixed-length byte strings</li>
+<li>Variable-length integers</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Simple to implement relative to other binary formats (e.g. protobuf, Thrift, Avro)</li>
+</ul>
+</section>
+<section id="sec-Argo.Weaknesses-of-Argo-" class="subsec">
+<h6><a href="#sec-Argo.Weaknesses-of-Argo-" title="link to this subsection">Weaknesses of Argo:</a></h6>
+<ul>
+<li>As of toady, reference implementation only<ul>
+<li>No stable, high-performance implementations</li>
+</ul>
+</li>
+<li>Almost no tools for debugging or analysis</li>
+<li>Binary format which is not self-describing in its intended mode of operation<ul>
+<li>Relatively difficult to debug or analyze without tools</li>
+<li>Requires GraphQL schema and query be known</li>
+</ul>
+</li>
+<li>Input types not supported<ul>
+<li>Simpler implementation, but JSON still needed</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="sec-Recommendation" secid="A.4">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Recommendation">A.4</a></span>Recommendation</h2>
+<p>Overall, <strong>JSON is the best choice for most GraphQL deployments.</strong> However, Argo is a good choice for systems where performance is paramount. Please consider the tradeoffs above.</p>
+</section>
+</section>
+<section id="sec-Appendix-Design-notes" secid="B">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Appendix-Design-notes">B</a></span>Appendix: Design notes</h1>
+<p>This section is not a part of the technical specification, but instead provides additional background and insight.</p>
+<ul>
+<li>Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as <code>JSON.parse</code>. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. A Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.</li>
+<li>Byte alignment (instead of bit or word alignment) was chosen primarily for ease of implementation (e.g. no need to pack together consecutive booleans) balanced against the resulting size. Most GraphQL responses are unlikely to majorly benefit from bit packing anyway, and the use cases which would are probably better off using a custom scalar binary representation.</li>
+<li>Null vs. present fields are marked with <code>LABEL</code> per-field instead of using a bitmask for an entire object. This is a tad easier to implement on both sides. Bitmasks for null and non-null values made payloads larger during development, and were backed out.</li>
+<li>Field Errors can be represented inline for a few reasons:<ul>
+<li>In a reader, after reading a field you are guaranteed to know whether there was an error or just a null (unless operating in <span class="spec-ref"><a href="#outofbandfielderrors" data-name="outofbandfielderrors">OutOfBandFieldErrors</a></span> mode)</li>
+<li>We know most of the <code>path</code> in the current response from our location, and do not need to write most of it explicitly, saving space.</li>
+</ul>
+</li>
+<li>Perhaps surprisingly, <code>Enum</code>s can&rsquo;t be safely represented as small numbers, since schema evolution rules allow for changes (e.g. reordering) which would alter the number on one side but not the other.</li>
+<li>Argo permits zero-copy for types which tend to be larger (<code>String</code> and <code>Bytes</code>). Low-level languages can refer to these values directly in the source buffer. The <code>NullTerminatedStrings</code> flag assists can assist here for C-style strings.</li>
+<li>De-duplication is never required on the writer. This permits optimizations like repeating label/value pairs which are shorter than a backreference to a previously-seen value.</li>
+<li>High-performance decoding of <code>VARINT</code> is possible with <a href="https://arxiv.org/abs/1503.07387">a vectorized implementation</a></li>
+<li>For large payloads with lots of duplication, the de-duplication is valuable even when the entire payload is compressed: values need not be encoded or decoded multiple times, and it can be used to avoid duplicated objects on the client side.</li>
+<li>There are some options to improve on the non-null <span class="spec-ref"><a href="#label" data-name="label">Label</a></span>:<ul>
+<li><span class="spec-ref"><a href="#nullable" data-name="nullable">Nullable</a></span> but otherwise <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span> values could have their own <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>, and therefore be eligible for deduplication. This would help for large and highly duplicated Float and Int values, which seems like a pretty small win.</li>
+<li>Another alternative is to use &ldquo;Blocks and Labels for everything,&rdquo; a scheme where all values (even those presently <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span>) use Labels and have corresponding Blocks. This would mean separate Blocks for each <code>RECORD</code> type (requires a naming/numbering scheme), and would probably be more efficient for many workloads (due to more contiguous data), but less efficient for others (perhaps arrays of data with only slight duplication). This was rejected due to its higher complexity and somewhat low expected payoff. It would make an interesting prototype, one requiring interesting real-world payloads to test.</li>
+</ul>
+</li>
+<li>Compression of Argo messages is generally recommended. The <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> are designed to be highly compressible.<ul>
+<li>The reference implementation compares different compression schemes. Based on this, <a href="https://github.com/google/brotli">Brotli</a> (at quality level 4) is recommended for most workloads. This is a nice balance of small payloads, fast compression and decompression, and wide support.</li>
+<li>Without compression, Argo results in much smaller payloads than uncompressed JSON. If CPU usage is a concern, consider using a very fast compression algorithm (e.g. LZ4).</li>
+</ul>
+</li>
+<li>The name &ldquo;Argo&rdquo; riffs on the pronunciation of &ldquo;JSON&rdquo; as &ldquo;Jason,&rdquo; who in Greek mythology quested on a ship called the <em>Argo</em>.</li>
+</ul>
+<section id="sec-Ideas-which-did-not-pan-out" secid="B.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-did-not-pan-out">B.1</a></span>Ideas which did not pan out</h2>
+<ul>
+<li>Use bitmasks on each selection set to mark null (or absent) fields. See Design Notes for more.</li>
+<li>Require all Field Errors be represented inline. This would be nice, but it makes it more difficult to convert JSON responses to Argo. Therefore, this is left as an optional feature (see the <code>OutOfBandFieldErrors</code> flag).</li>
+<li>Specify a Wire type definition for ExecutionResult, particularly <code>errors</code>. Unfortunately, error paths mix string and int, which has no corresponding GraphQL type. We could serialize this all as string and convert back later.</li>
+<li>Make the self-describing format able to describe the Wire format. This made things more complex.</li>
+<li>Avro uses an array format where an arbitrary number of &ldquo;segments&rdquo; can be added independently without knowing the final array length, which makes streaming encoding easier. During development Argo was focused on stream support and followed suit, but this was dropped due to lack of compelling GraphQL use cases, and because it conflicted with other techniques (namely <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>).</li>
+</ul>
+</section>
+<section id="sec-Ideas-which-were-not-pursued" secid="B.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Ideas-which-were-not-pursued">B.2</a></span>Ideas which were not pursued</h2>
+<ul>
+<li>Use Label before Floats to represent the number 0s to pad it with. Due to JSON/JS, many doubles are actually smallish Ints, which in IEEE 754 means leading with 0-bytes. This might work out on average, especially since 0 takes only 1 byte.</li>
+<li>Specify how to write compact Paths to values to represent errors. A series of tags.<ul>
+<li>If errors inlined, path up to propagation stop is implicit. The path from there down into any initiating non-nullable field would need to be explicit though, need to account for</li>
+</ul>
+</li>
+<li>Whenever a default value in encountered for a scalar type which is deduplicatable, implicitly store it with a backreference ID and use it later. This may break if the schema evolves.</li>
+<li>Bake in default backreferences for common strings: &lsquo;line&rsquo;, &lsquo;column&rsquo;, &lsquo;path&rsquo;. For certain small messages, this could make a difference. The extra complexity doesn&rsquo;t seem worth it though.</li>
+<li>Instead of a self-describing format, simply embed JSON. This is not a knock-out win, especially for the resulting API.</li>
+<li>Use a variable-length compact float format, such as <a href="https://github.com/michaeljclark/vf128">vf128</a>, <a href="https://github.com/kstenerud/compact-float">compact float</a>, or even ASN.1&rsquo;s REAL BER/DER. This would be most helpful for GraphQL APIs which return many Floats with values near zero.</li>
+<li>Encode the entire <code>ExecutionResult</code>&lsquo;s type in each <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>, including the errors array. In particular, the user would need to provide their intended <code>extensions</code> format and stick to it, and we&rsquo;d need to fudge the type of <code>path</code> (which mixes numbers and strings in the GraphQL spec). The upshot would be total elimination of the self-describing format and the inconvenience, inefficiency, and complexity that causes.</li>
+<li>Specifying which types actually use backreferences in a given message could be made more granular. For example, the header could be extended with scheme similar to <em>UserFlags</em>, where a flag is set in the main header and an extra BitSet follows the Flags BitSet. This extra BitSet would set one bit in order for each potentially-deduplicatable type encountered in the message, in order. This could work around client-side inefficiency in bimodal deduplication patterns. However, this seems unlikely to be enough of a problem to justify the complexity.</li>
+</ul>
+</section>
+</section>
+<section id="sec-Legal" secid="C">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Legal">C</a></span>Legal</h1>
+<section id="sec-Copyright-notice" secid="C.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Copyright-notice">C.1</a></span>Copyright notice</h2>
+<p>Copyright © 2022, Michael Solomon</p>
+<p>THESE MATERIALS ARE PROVIDED &ldquo;AS IS.&rdquo; The parties expressly disclaim any warranties (express, implied, or otherwise), including implied warranties of merchantability, non-infringement, fitness for a particular purpose, or title, related to the materials. The entire risk as to implementing or otherwise using the materials is assumed by the implementer and user. IN NO EVENT WILL THE PARTIES BE LIABLE TO ANY OTHER PARTY FOR LOST PROFITS OR ANY FORM OF INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER FROM ANY CAUSES OF ACTION OF ANY KIND WITH RESPECT TO THIS DELIVERABLE OR ITS GOVERNING AGREEMENT, WHETHER BASED ON BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), OR OTHERWISE, AND WHETHER OR NOT THE OTHER MEMBER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+</section>
+<section id="sec-License" secid="C.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-License">C.2</a></span>License</h2>
+<p>This specification is licensed under <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0">OWFa 1.0</a>.</p>
+</section>
+</section>
+<section id="sec-Formal" secid="D">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Formal">D</a></span>Formal</h1>
+<section id="sec-Conformance" secid="D.1">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Conformance">D.1</a></span>Conformance</h2>
+<p>A conforming implementation of Argo must fulfill all normative requirements. Conformance requirements are described in this document via both descriptive assertions and key words with clearly defined meanings.</p>
+<p>The key words &ldquo;MUST&rdquo;, &ldquo;MUST NOT&rdquo;, &ldquo;REQUIRED&rdquo;, &ldquo;SHALL&rdquo;, &ldquo;SHALL NOT&rdquo;, &ldquo;SHOULD&rdquo;, &ldquo;SHOULD NOT&rdquo;, &ldquo;RECOMMENDED&rdquo;, &ldquo;MAY&rdquo;, and &ldquo;OPTIONAL&rdquo; in the normative portions of this document are to be interpreted as described in <a href="https://www.rfc-editor.org/rfc/rfc2119">IETF RFC 2119</a>. These key words may appear in lowercase and still retain their meaning unless explicitly declared as non-normative.</p>
+<p>A conforming implementation of Argo may provide additional functionality, but must not where explicitly disallowed or would otherwise result in non-conformance.</p>
+</section>
+<section id="sec-Versioning" secid="D.2">
+<h2><span class="spec-secid" title="link to this section"><a href="#sec-Versioning">D.2</a></span>Versioning</h2>
+<p>Argo is versioned using <a href="https://semver.org/spec/v2.0.0.html">SemVer 2.0.0</a>. Each version of Argo explicitly targets one version of the GraphQL spec, which is usually the latest at time of writing.</p>
+</section>
+</section>
+<section id="sec-Authors-and-contributors" secid="E">
+<h1><span class="spec-secid" title="link to this section"><a href="#sec-Authors-and-contributors">E</a></span>Authors and contributors</h1>
+<p>Argo was created and authored by <a href="https://msol.io">Mike Solomon</a>. </p>
+</section>
+<section id="index" secid="index" class="spec-index">
+<h1>
+<span class="spec-secid" title="link to the index"><a href="#index">§</a></span>Index</h1>
+<ol>
+<li><a href="#array">ARRAY</a></li>
+<li><a href="#backreferences">Backreferences</a></li>
+<li><a href="#block">BLOCK</a></li>
+<li><a href="#blocks">Blocks</a></li>
+<li><a href="#boolean">BOOLEAN</a></li>
+<li><a href="#boolean-false-0-">Boolean false (0)</a></li>
+<li><a href="#boolean-true-1-">Boolean true (1)</a></li>
+<li><a href="#bytes">BYTES</a></li>
+<li><a href="#bytes-5-">Bytes (5)</a></li>
+<li><a href="#CollectFieldsStatic()">CollectFieldsStatic</a></li>
+<li><a href="#CollectFieldWireTypes()">CollectFieldWireTypes</a></li>
+<li><a href="#core">Core</a></li>
+<li><a href="#desc">DESC</a></li>
+<li><a href="#execution-time">Execution Time</a></li>
+<li><a href="#fixed">FIXED</a></li>
+<li><a href="#float-7-">Float (7)</a></li>
+<li><a href="#float64">FLOAT64</a></li>
+<li><a href="#graphql-response-types">GraphQL response types</a></li>
+<li><a href="#graphql-types">GraphQL types</a></li>
+<li><a href="#GraphQLTypeToWireType()">GraphQLTypeToWireType</a></li>
+<li><a href="#hasuserflags">HasUserFlags</a></li>
+<li><a href="#header">Header</a></li>
+<li><a href="#inlineeverything">InlineEverything</a></li>
+<li><a href="#int-6-">Int (6)</a></li>
+<li><a href="#label">Label</a></li>
+<li><a href="#labeled">Labeled</a></li>
+<li><a href="#list-3-">List (3)</a></li>
+<li><a href="#message">Message</a></li>
+<li><a href="#mode">Mode</a></li>
+<li><a href="#nodeduplication">NoDeduplication</a></li>
+<li><a href="#null--1-">Null (-1)</a></li>
+<li><a href="#nullable">NULLABLE</a></li>
+<li><a href="#nullterminatedstrings">NullTerminatedStrings</a></li>
+<li><a href="#object-2-">Object (2)</a></li>
+<li><a href="#outofbandfielderrors">OutOfBandFieldErrors</a></li>
+<li><a href="#record">RECORD</a></li>
+<li><a href="#registration-time">Registration Time</a></li>
+<li><a href="#self-describing-types">Self-describing types</a></li>
+<li><a href="#selfdescribing">SelfDescribing</a></li>
+<li><a href="#selfdescribingerrors">SelfDescribingErrors</a></li>
+<li><a href="#string">STRING</a></li>
+<li><a href="#string-4-">String (4)</a></li>
+<li><a href="#type-marker">Type marker</a></li>
+<li><a href="#unlabeled">Unlabeled</a></li>
+<li><a href="#varint">VARINT</a></li>
+<li><a href="#wire-schema">Wire schema</a></li>
+<li><a href="#wire-types">Wire types</a></li>
+<li><a href="#WireType">WireType</a></li>
+</ol>
+</section>
+</article>
+<footer>
+Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</footer>
+<input hidden class="spec-sidebar-toggle" type="checkbox" id="spec-sidebar-toggle" aria-hidden /><label for="spec-sidebar-toggle" aria-hidden><div class="spec-sidebar-button">&#x2630;</div></label>
+<div class="spec-sidebar" aria-hidden>
+<div class="spec-toc">
+<div class="title"><a href="#">Argo</a></div>
+<ol><li id="_sidebar_1"><a href="#sec-Overview"><span class="spec-secid">1</span>Overview</a></li>
+<li id="_sidebar_2"><a href="#sec-Types"><span class="spec-secid">2</span>Types</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_2" /><label for="_toggle_2"></label>
+<ol>
+<li id="_sidebar_2.1"><a href="#sec-GraphQL-types"><span class="spec-secid">2.1</span>GraphQL types</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_2.1" /><label for="_toggle_2.1"></label>
+<ol>
+<li id="_sidebar_2.1.1"><a href="#sec-GraphQL-input-types"><span class="spec-secid">2.1.1</span>GraphQL input types</a></li>
+</ol>
+</li>
+<li id="_sidebar_2.2"><a href="#sec-Wire-types"><span class="spec-secid">2.2</span>Wire types</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_2.2" /><label for="_toggle_2.2"></label>
+<ol>
+<li id="_sidebar_2.2.1"><a href="#sec-Self-describing-types"><span class="spec-secid">2.2.1</span>Self-describing types</a></li>
+</ol>
+</li>
+</ol>
+</li>
+<li id="_sidebar_3"><a href="#sec-Wire-schema"><span class="spec-secid">3</span>Wire schema</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_3" /><label for="_toggle_3"></label>
+<ol>
+<li id="_sidebar_3.1"><a href="#sec-Wire-schema-serialization"><span class="spec-secid">3.1</span>Wire schema serialization</a></li>
+</ol>
+</li>
+<li id="_sidebar_4"><a href="#sec-Creating-a-Wire-schema"><span class="spec-secid">4</span>Creating a Wire schema</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_4" /><label for="_toggle_4"></label>
+<ol>
+<li id="_sidebar_4.1"><a href="#sec-Algorithms"><span class="spec-secid">4.1</span>Algorithms</a></li>
+</ol>
+</li>
+<li id="_sidebar_5"><a href="#sec-Binary-encoding"><span class="spec-secid">5</span>Binary encoding</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_5" /><label for="_toggle_5"></label>
+<ol>
+<li id="_sidebar_5.1"><a href="#sec-Message"><span class="spec-secid">5.1</span>Message</a></li>
+<li id="_sidebar_5.2"><a href="#sec-Header"><span class="spec-secid">5.2</span>Header</a></li>
+<li id="_sidebar_5.3"><a href="#sec-Blocks"><span class="spec-secid">5.3</span>Blocks</a></li>
+<li id="_sidebar_5.4"><a href="#sec-Core"><span class="spec-secid">5.4</span>Core</a></li>
+<li id="_sidebar_5.5"><a href="#sec-Label"><span class="spec-secid">5.5</span>Label</a></li>
+<li id="_sidebar_5.6"><a href="#sec-Data-encoding"><span class="spec-secid">5.6</span>Data encoding</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_5.6" /><label for="_toggle_5.6"></label>
+<ol>
+<li id="_sidebar_5.6.1"><a href="#sec-Self-describing-encoding"><span class="spec-secid">5.6.1</span>Self-describing encoding</a></li>
+</ol>
+</li>
+<li id="_sidebar_5.7"><a href="#sec-Backreferences"><span class="spec-secid">5.7</span>Backreferences</a></li>
+<li id="_sidebar_5.8"><a href="#sec-Errors"><span class="spec-secid">5.8</span>Errors</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_5.8" /><label for="_toggle_5.8"></label>
+<ol>
+<li id="_sidebar_5.8.1"><a href="#sec-Error-values"><span class="spec-secid">5.8.1</span>Error values</a></li>
+<li id="_sidebar_5.8.2"><a href="#sec-Request-errors"><span class="spec-secid">5.8.2</span>Request errors</a></li>
+<li id="_sidebar_5.8.3"><a href="#sec-Field-errors"><span class="spec-secid">5.8.3</span>Field errors</a></li>
+</ol>
+</li>
+</ol>
+</li>
+<li id="_sidebar_A"><a href="#sec-Appendix-Motivation-and-background"><span class="spec-secid">A</span>Appendix: Motivation and background</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_A" /><label for="_toggle_A"></label>
+<ol>
+<li id="_sidebar_A.1"><a href="#sec-JSON"><span class="spec-secid">A.1</span>JSON</a></li>
+<li id="_sidebar_A.2"><a href="#sec-Tradeoffs"><span class="spec-secid">A.2</span>Tradeoffs</a></li>
+<li id="_sidebar_A.3"><a href="#sec-Argo"><span class="spec-secid">A.3</span>Argo</a></li>
+<li id="_sidebar_A.4"><a href="#sec-Recommendation"><span class="spec-secid">A.4</span>Recommendation</a></li>
+</ol>
+</li>
+<li id="_sidebar_B"><a href="#sec-Appendix-Design-notes"><span class="spec-secid">B</span>Appendix: Design notes</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_B" /><label for="_toggle_B"></label>
+<ol>
+<li id="_sidebar_B.1"><a href="#sec-Ideas-which-did-not-pan-out"><span class="spec-secid">B.1</span>Ideas which did not pan out</a></li>
+<li id="_sidebar_B.2"><a href="#sec-Ideas-which-were-not-pursued"><span class="spec-secid">B.2</span>Ideas which were not pursued</a></li>
+</ol>
+</li>
+<li id="_sidebar_C"><a href="#sec-Legal"><span class="spec-secid">C</span>Legal</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_C" /><label for="_toggle_C"></label>
+<ol>
+<li id="_sidebar_C.1"><a href="#sec-Copyright-notice"><span class="spec-secid">C.1</span>Copyright notice</a></li>
+<li id="_sidebar_C.2"><a href="#sec-License"><span class="spec-secid">C.2</span>License</a></li>
+</ol>
+</li>
+<li id="_sidebar_D"><a href="#sec-Formal"><span class="spec-secid">D</span>Formal</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_D" /><label for="_toggle_D"></label>
+<ol>
+<li id="_sidebar_D.1"><a href="#sec-Conformance"><span class="spec-secid">D.1</span>Conformance</a></li>
+<li id="_sidebar_D.2"><a href="#sec-Versioning"><span class="spec-secid">D.2</span>Versioning</a></li>
+</ol>
+</li>
+<li id="_sidebar_E"><a href="#sec-Authors-and-contributors"><span class="spec-secid">E</span>Authors and contributors</a></li>
+<li id="_sidebar_index"><a href="#index"><span class="spec-secid">§</span>Index</a></li>
+</ol>
+</div>
+</div>
+</body>
+</html>
