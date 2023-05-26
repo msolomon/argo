@@ -1,0 +1,32 @@
+# Argo
+
+_Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
+
+**Argo is a compact and compressible binary serialization format for** [GraphQL](https://graphql.org).
+It aims to:
+
+- **Minimize end-to-end latency** of GraphQL responses
+  - Including serialization, transport, and deserialization
+- **Minimize bytes on the wire**, with and without external compression
+- Be **easy to implement**
+
+Argo\:
+
+- **Takes the place of JSON** in GraphQL responses
+- Usually **meets the needs of mobile clients** (and server clients) better than web clients
+- **Works best with code generation**, but also works well with interpretation
+- Does not currently support [GraphQL Input types](#sec-GraphQL-input-types)
+
+Compressed **Argo responses are typically 5%-15% smaller** than corresponding compressed JSON responses.
+
+## Specification
+
+Argo has a formal specification:
+
+- [Version 1.0.x](versions/1.0/spec.html) is the latest version
+
+## Reference implementation
+
+`argo-js` is a reference implementation of Argo in TypeScript,
+and can be found in this repository.
+It can also be found on NPM under the name `argo-graphql`.
