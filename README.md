@@ -1,4 +1,4 @@
-# Argo
+# ⛵ Argo
 
 _Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
 
@@ -28,5 +28,9 @@ Argo has a formal specification:
 ## Reference implementation
 
 `argo-js` is a reference implementation of Argo in TypeScript,
-and can be found in this repository.
-It can also be found on NPM under the name `argo-graphql`.
+and can be found in [this repository](https://github.com/msolomon/argo).
+It is distributed on NPM under the name `argo-graphql`.
+
+## Authors and contributors
+
+Argo was created and authored by [Mike Solomon](https://msol.io).

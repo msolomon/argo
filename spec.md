@@ -1,4 +1,4 @@
-# Argo
+# ⛵ Argo
 
 _Version 1.0.0_.
 _Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
