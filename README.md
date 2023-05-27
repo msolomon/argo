@@ -23,7 +23,7 @@ Compressed **Argo responses are typically 5%-15% smaller** than corresponding co
 
 Argo has a formal specification:
 
-- [Version 1.0.x](versions/1.0/spec.html) is the latest version
+- [Version 1.0.x](https://msolomon.github.io/argo/versions/1.0/spec) is the latest version
 
 ## Reference implementation
 
