@@ -827,7 +827,7 @@ To address the aforementioned weaknesses, Argo makes a different set of tradeoff
 
 **Weaknesses of Argo:**
 
-- As of toady, reference implementation only
+- As of today, reference implementation only
   - No stable, high-performance implementations
 - Almost no tools for debugging or analysis
 - Binary format which is not self-describing in its intended mode of operation
