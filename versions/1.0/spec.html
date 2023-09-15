@@ -67,7 +67,8 @@
 <li><a href="#sec-Core"><span class="spec-secid">5.4</span>Core</a></li>
 <li><a href="#sec-Label"><span class="spec-secid">5.5</span>Label</a></li>
 <li><a href="#sec-Data-encoding"><span class="spec-secid">5.6</span>Data encoding</a><ol>
-<li><a href="#sec-Self-describing-encoding"><span class="spec-secid">5.6.1</span>Self-describing encoding</a></li>
+<li><a href="#sec-Variable-length-zig-zag-coding"><span class="spec-secid">5.6.1</span>Variable-length zig-zag coding</a></li>
+<li><a href="#sec-Self-describing-encoding"><span class="spec-secid">5.6.2</span>Self-describing encoding</a></li>
 </ol>
 </li>
 <li><a href="#sec-Backreferences"><span class="spec-secid">5.7</span>Backreferences</a></li>
@@ -511,7 +512,7 @@ Reading Argo messages often involves reading length prefixes followed by that ma
 </section>
 <section id="sec-Label" secid="5.5">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Label">5.5</a></span>Label</h2>
-<p>Argo uses a multipurpose binary marker called a <dfn id="label"><a href="#label" data-name="label">Label</a></dfn> which combines several use cases into one compact representation. A Label is written using the <em>variable-length zig-zag coding</em>. A Label is essentially a number which should be interpreted differently according to its value and the context in which it is used.</p>
+<p>Argo uses a multipurpose binary marker called a <dfn id="label"><a href="#label" data-name="label">Label</a></dfn> which combines several use cases into one compact representation. A Label is written using the <span class="spec-ref"><a href="#variable-length-zig-zag-coding" data-name="variable-length-zig-zag-coding">variable-length zig-zag coding</a></span>. A Label is essentially a number which should be interpreted differently according to its value and the context in which it is used.</p>
 <ul>
 <li>For variable-length data, such as a <code>STRING</code> or <code>ARRAY</code>, non-negative values represent the length of the data that is to follow<ul>
 <li>The units depend on the data: <code>STRING</code> lengths are in bytes, while <code>ARRAY</code> lengths are in entries</li>
@@ -544,11 +545,11 @@ Reading Argo messages often involves reading length prefixes followed by that ma
 </dl>
 <dl>
 <dt><dfn id="varint"><a href="#varint" data-name="varint">VARINT</a></dfn></dt>
-<dd><code>VARINT</code> (variable-length integer) values are written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> and use the <em>variable-length zig-zag coding</em>.</dd>
+<dd><code>VARINT</code> (variable-length integer) values are written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> and use the <span class="spec-ref"><a href="#variable-length-zig-zag-coding" data-name="variable-length-zig-zag-coding">variable-length zig-zag coding</a></span>.</dd>
 </dl>
 <dl>
 <dt><dfn id="float64"><a href="#float64" data-name="float64">FLOAT64</a></dfn></dt>
-<dd><code>FLOAT64</code> values are written to their <span class="spec-ref"><a href="#block" data-name="block">Block</a></span> as 8 bytes in little endian order according to IEEE 754. Nothing is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
+<dd><code>FLOAT64</code> values are written to their <span class="spec-ref"><a href="#block" data-name="block">Block</a></span> as 8 bytes in little endian order according to IEEE 754&rsquo;s <code>binary64</code> variant. Nothing is written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span>.</dd>
 </dl>
 <dl>
 <dt><dfn id="bytes"><a href="#bytes" data-name="bytes">BYTES</a></dfn></dt>
@@ -578,8 +579,22 @@ Reading Argo messages often involves reading length prefixes followed by that ma
 <dt><dfn id="desc"><a href="#desc" data-name="desc">DESC</a></dfn></dt>
 <dd><code>DESC</code> values are self-describing, and primarily used to encode errors. This scheme is described in <em>Self-describing encoding</em>.</dd>
 </dl>
-<section id="sec-Self-describing-encoding" secid="5.6.1">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-Self-describing-encoding">5.6.1</a></span>Self-describing encoding</h3>
+<section id="sec-Variable-length-zig-zag-coding" secid="5.6.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Variable-length-zig-zag-coding">5.6.1</a></span>Variable-length zig-zag coding</h3>
+<p>The <dfn id="variable-length-zig-zag-coding"><a href="#variable-length-zig-zag-coding" data-name="variable-length-zig-zag-coding">variable-length zig-zag coding</a></dfn> is a way to encode signed integers as a variable-length byte sequence. Argo uses a scheme compatible with Google Protocol Buffers. It uses fewer bytes for values close to zero, which are more common in practice. In short, it &ldquo;zig-zags&rdquo; back and forth between positive and negative numbers: 0 is encoded as <code>0</code>, -1 as <code>1</code>, 1 as <code>10</code>, 2 as <code>11</code>, 2 as <code>100</code>, and so on. A <code>bigint</code> variable <code>n</code> in TypeScript can be transformed as follows, then written using the minimum number of bytes (without unnecessary leading zeros):</p>
+<div class="spec-algo" id="ToZigZag()">
+<span class="spec-call"><a href="#ToZigZag()" data-name="ToZigZag">ToZigZag</a>(<var data-name="n">n</var>)</span><ol>
+<li><code>return n &gt;= 0 ? n &lt;&lt; 1n : (n &lt;&lt; 1n) ^ (~0n)</code></li>
+</ol>
+</div>
+<div class="spec-algo" id="FromZigZag()">
+<span class="spec-call"><a href="#FromZigZag()" data-name="FromZigZag">FromZigZag</a>(<var data-name="n">n</var>)</span><ol>
+<li><code>return (n &amp; 0x1n) ? n &gt;&gt; 1n ^ (~0n) : n &gt;&gt; 1n</code></li>
+</ol>
+</div>
+</section>
+<section id="sec-Self-describing-encoding" secid="5.6.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-Self-describing-encoding">5.6.2</a></span>Self-describing encoding</h3>
 <p>Argo is intended to rely on known types taken from GraphQL queries and schemas. However, the <code>errors</code> array in GraphQL is very free-form <a href="https://spec.graphql.org/October2021/#sec-Errors">as specified in the GraphQL Spec</a>. To support this, as well as to ease debugging in certain circumstances, a self-describing format is included.</p>
 <p>Self-describing values use a <dfn id="type-marker"><a href="#type-marker" data-name="type-marker">Type marker</a></dfn>, a <span class="spec-ref"><a href="#label" data-name="label">Label</a></span> written to <span class="spec-ref"><a href="#core" data-name="core">Core</a></span> with a predetermined value representing the type of the value to follow.</p>
 <p>In the self-describing format, most values are encoded as usual, including using <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>. However, values in this format only use the following Blocks:</p>
@@ -645,7 +660,7 @@ For certain messages, this allows Argo representations to remain small in memory
 <a href="#note-6de3c">Note</a>
 The encoder MAY choose to duplicate values instead of returning backreferences whenever it chooses. For example, an easy optimization is to simply duplicate values which are smaller than the backreference ID itself.</div>
 <p>When decoding, the decoder MUST track backreference IDs for <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> with deduplication enabled, usually by storing an array of previously-encountered values. However, this MAY be skipped for messages in <code>NoDeduplication</code> mode.</p>
-<p>In order to maintain a compact data representation, backreferences (and therefore deduplication) are only supported for <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span> types.</p>
+<p>In order to maintain a compact data representation, backreferences (and therefore deduplication) are only supported for <span class="spec-ref"><a href="#labeled" data-name="labeled">Labeled</a></span> types. Note that even <span class="spec-ref"><a href="#unlabeled" data-name="unlabeled">Unlabeled</a></span> values may be written to <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span>, to impove compressability.</p>
 </section>
 <section id="sec-Errors" secid="5.8">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Errors">5.8</a></span>Errors</h2>
@@ -711,7 +726,7 @@ Normally, Argo does not allow for direction extension to field error objects out
 <section id="sec-Compression" secid="6.1.2">
 <h3><span class="spec-secid" title="link to this section"><a href="#sec-Compression">6.1.2</a></span>Compression</h3>
 <p>Compression of Argo messages is generally recommended. The <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> are designed to make Argo amenable to compression.</p>
-<p>The reference implementation compares different compression schemes. Based on this, <a href="https://github.com/google/brotli">Brotli</a> (at quality level 4) is recommended for most workloads. This is a nice balance of small payloads, fast compression and decompression, and wide support.</p>
+<p>The reference implementation compares different compression schemes. Based on this, <a href="https://github.com/google/brotli">Brotli</a> (at quality level 4) is recommended for most workloads. This is a nice balance of small payloads, fast compression and decompression, and wide support. If Brotli is not available, gzip (at level 6) is a good alternative.</p>
 <p>Without compression, Argo results in much smaller payloads than uncompressed JSON. If CPU usage is a concern, consider using a very fast compression algorithm (e.g. <a href="https://github.com/lz4/lz4">LZ4</a>).</p>
 </section>
 </section>
@@ -834,7 +849,7 @@ Normally, Argo does not allow for direction extension to field error objects out
 <h1><span class="spec-secid" title="link to this section"><a href="#sec-Appendix-Design-notes">B</a></span>Appendix: Design notes</h1>
 <p>This section is not a part of the technical specification, but instead provides additional background and insight.</p>
 <ul>
-<li>Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as <code>JSON.parse</code>. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. A Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.</li>
+<li>Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as <code>JSON.parse</code>. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. An Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.</li>
 <li>Byte alignment (instead of bit or word alignment) was chosen primarily for ease of implementation (e.g. no need to pack together consecutive booleans) balanced against the resulting size. Most GraphQL responses are unlikely to majorly benefit from bit packing anyway, and the use cases which would are probably better off using a custom scalar binary representation.</li>
 <li>Null vs. present fields are marked with <code>LABEL</code> per-field instead of using a bitmask for an entire object. This is a tad easier to implement on both sides. Bitmasks for null and non-null values made payloads larger during development, and were backed out.</li>
 <li>Field Errors can be represented inline for a few reasons:<ul>
@@ -843,7 +858,7 @@ Normally, Argo does not allow for direction extension to field error objects out
 </ul>
 </li>
 <li>Perhaps surprisingly, <code>Enum</code>s can&rsquo;t be safely represented as small numbers, since schema evolution rules allow for changes (e.g. reordering) which would alter the number on one side but not the other.</li>
-<li>Argo permits zero-copy for types which tend to be larger (<code>String</code> and <code>Bytes</code>). Low-level languages can refer to these values directly in the source buffer. The <code>NullTerminatedStrings</code> flag assists can assist here for C-style strings.</li>
+<li>Argo permits zero-copy for types which tend to be larger (<code>String</code> and <code>Bytes</code>). Low-level languages can refer to these values directly in the source buffer. The <code>NullTerminatedStrings</code> flag can assist here for C-style strings.</li>
 <li>De-duplication is never required on the writer. This permits optimizations like repeating label/value pairs which are shorter than a backreference to a previously-seen value.</li>
 <li>High-performance decoding of <code>VARINT</code> is possible with <a href="https://arxiv.org/abs/1503.07387">a vectorized implementation</a></li>
 <li>For large payloads with lots of duplication, the de-duplication is valuable even when the entire payload is compressed: values need not be encoded or decoded multiple times, and it can be used to avoid duplicated objects on the client side.</li>
@@ -933,6 +948,7 @@ Normally, Argo does not allow for direction extension to field error objects out
 <li><a href="#fixed">FIXED</a></li>
 <li><a href="#float-7-">Float (7)</a></li>
 <li><a href="#float64">FLOAT64</a></li>
+<li><a href="#FromZigZag()">FromZigZag</a></li>
 <li><a href="#graphql-response-types">GraphQL response types</a></li>
 <li><a href="#graphql-types">GraphQL types</a></li>
 <li><a href="#GraphQLTypeToWireType()">GraphQLTypeToWireType</a></li>
@@ -958,8 +974,10 @@ Normally, Argo does not allow for direction extension to field error objects out
 <li><a href="#selfdescribingerrors">SelfDescribingErrors</a></li>
 <li><a href="#string">STRING</a></li>
 <li><a href="#string-4-">String (4)</a></li>
+<li><a href="#ToZigZag()">ToZigZag</a></li>
 <li><a href="#type-marker">Type marker</a></li>
 <li><a href="#unlabeled">Unlabeled</a></li>
+<li><a href="#variable-length-zig-zag-coding">variable-length zig-zag coding</a></li>
 <li><a href="#varint">VARINT</a></li>
 <li><a href="#wire-schema">Wire schema</a></li>
 <li><a href="#wire-types">Wire types</a></li>
@@ -1015,7 +1033,8 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <li id="_sidebar_5.6"><a href="#sec-Data-encoding"><span class="spec-secid">5.6</span>Data encoding</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_5.6" /><label for="_toggle_5.6"></label>
 <ol>
-<li id="_sidebar_5.6.1"><a href="#sec-Self-describing-encoding"><span class="spec-secid">5.6.1</span>Self-describing encoding</a></li>
+<li id="_sidebar_5.6.1"><a href="#sec-Variable-length-zig-zag-coding"><span class="spec-secid">5.6.1</span>Variable-length zig-zag coding</a></li>
+<li id="_sidebar_5.6.2"><a href="#sec-Self-describing-encoding"><span class="spec-secid">5.6.2</span>Self-describing encoding</a></li>
 </ol>
 </li>
 <li id="_sidebar_5.7"><a href="#sec-Backreferences"><span class="spec-secid">5.7</span>Backreferences</a></li>

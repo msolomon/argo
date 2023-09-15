@@ -509,7 +509,7 @@ VARINT
 : `VARINT` (variable-length integer) values are written to _Core_ and use the _variable-length zig-zag coding_.
 
 FLOAT64
-: `FLOAT64` values are written to their _Block_ as 8 bytes in little endian order according to IEEE 754.
+: `FLOAT64` values are written to their _Block_ as 8 bytes in little endian order according to IEEE 754's `binary64` variant.
 Nothing is written to _Core_.
 
 BYTES
@@ -551,6 +551,24 @@ If the underlying value is present and _Unlabeled_, first the _Non-null Label_ i
 DESC
 : `DESC` values are self-describing, and primarily used to encode errors.
 This scheme is described in _Self-describing encoding_.
+
+#### Variable-length zig-zag coding
+
+:: The _variable-length zig-zag coding_ is a way to encode signed integers as a variable-length byte sequence.
+Argo uses a scheme compatible with Google Protocol Buffers.
+It uses fewer bytes for values close to zero, which are more common in practice.
+In short, it "zig-zags" back and forth between positive and negative numbers:
+0 is encoded as `0`, -1 as `1`, 1 as `10`, 2 as `11`, 2 as `100`, and so on.
+A `bigint` variable `n` in TypeScript can be transformed as follows,
+then written using the minimum number of bytes (without unnecessary leading zeros):
+
+ToZigZag(n):
+
+- `return n >= 0 ? n << 1n : (n << 1n) ^ (~0n)`
+
+FromZigZag(n):
+
+- `return (n & 0x1n) ? n >> 1n ^ (~0n) : n >> 1n`
 
 #### Self-describing encoding
 
@@ -641,6 +659,7 @@ However, this MAY be skipped for messages in `NoDeduplication` mode.
 
 In order to maintain a compact data representation,
 backreferences (and therefore deduplication) are only supported for _Labeled_ types.
+Note that even _Unlabeled_ values may be written to _Blocks_, to impove compressability.
 
 ## Errors
 
@@ -753,6 +772,7 @@ The _Blocks_ are designed to make Argo amenable to compression.
 The reference implementation compares different compression schemes. Based on this,
 [Brotli](https://github.com/google/brotli) (at quality level 4) is recommended for most workloads.
 This is a nice balance of small payloads, fast compression and decompression, and wide support.
+If Brotli is not available, gzip (at level 6) is a good alternative.
 
 Without compression, Argo results in much smaller payloads than uncompressed JSON.
 If CPU usage is a concern, consider using a very fast compression algorithm (e.g. [LZ4](https://github.com/lz4/lz4)).
@@ -846,14 +866,14 @@ Please consider the tradeoffs above.
 
 This section is not a part of the technical specification, but instead provides additional background and insight.
 
-- Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as `JSON.parse`. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. A Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.
+- Argo is intended for use with code generation, where particular queries against a schema are known at code generation time, and a codec can be generated from this information. This is not often a great fit for web clients, but is great for native clients (or servers). Web clients would need to first download the codec, and a Javascript codec is unlikely to be as performant as `JSON.parse`. This could be worked around by supporting both and downloading the codec out-of-band, then upgrading from JSON to Argo. A codec in WASM might meet performance needs. An Argo interpreter (instead of a code-generated codec) might reduce the download size. Even so, the tradeoffs are unfavorable.
 - Byte alignment (instead of bit or word alignment) was chosen primarily for ease of implementation (e.g. no need to pack together consecutive booleans) balanced against the resulting size. Most GraphQL responses are unlikely to majorly benefit from bit packing anyway, and the use cases which would are probably better off using a custom scalar binary representation.
 - Null vs. present fields are marked with `LABEL` per-field instead of using a bitmask for an entire object. This is a tad easier to implement on both sides. Bitmasks for null and non-null values made payloads larger during development, and were backed out.
 - Field Errors can be represented inline for a few reasons:
   - In a reader, after reading a field you are guaranteed to know whether there was an error or just a null (unless operating in _OutOfBandFieldErrors_ mode)
   - We know most of the `path` in the current response from our location, and do not need to write most of it explicitly, saving space.
 - Perhaps surprisingly, `Enum`s can't be safely represented as small numbers, since schema evolution rules allow for changes (e.g. reordering) which would alter the number on one side but not the other.
-- Argo permits zero-copy for types which tend to be larger (`String` and `Bytes`). Low-level languages can refer to these values directly in the source buffer. The `NullTerminatedStrings` flag assists can assist here for C-style strings.
+- Argo permits zero-copy for types which tend to be larger (`String` and `Bytes`). Low-level languages can refer to these values directly in the source buffer. The `NullTerminatedStrings` flag can assist here for C-style strings.
 - De-duplication is never required on the writer. This permits optimizations like repeating label/value pairs which are shorter than a backreference to a previously-seen value.
 - High-performance decoding of `VARINT` is possible with [a vectorized implementation](https://arxiv.org/abs/1503.07387)
 - For large payloads with lots of duplication, the de-duplication is valuable even when the entire payload is compressed: values need not be encoded or decoded multiple times, and it can be used to avoid duplicated objects on the client side.
