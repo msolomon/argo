@@ -767,12 +767,13 @@ the `Content-Type` header SHOULD also use the MIME type `application/argo`.
 ### Compression
 
 Compression of Argo messages is generally recommended.
-The _Blocks_ are designed to make Argo amenable to compression.
+The _Blocks_ are designed to make Argo particularl amenable to compression.
 
 The reference implementation compares different compression schemes. Based on this,
 [Brotli](https://github.com/google/brotli) (at quality level 4) is recommended for most workloads.
 This is a nice balance of small payloads, fast compression and decompression, and wide support.
 If Brotli is not available, gzip (at level 6) is a good alternative.
+Small responses (say, less than 500 bytes) need not be compressed at all.
 
 Without compression, Argo results in much smaller payloads than uncompressed JSON.
 If CPU usage is a concern, consider using a very fast compression algorithm (e.g. [LZ4](https://github.com/lz4/lz4)).
@@ -907,7 +908,7 @@ This section is not a part of the technical specification, but instead provides 
 - Whenever a default value in encountered for a scalar type which is deduplicatable, implicitly store it with a backreference ID and use it later. This may break if the schema evolves.
 - Bake in default backreferences for common strings: 'line', 'column', 'path'. For certain small messages, this could make a difference. The extra complexity doesn't seem worth it though.
 - Instead of a self-describing format, simply embed JSON. This is not a knock-out win, especially for the resulting API.
-- Use a variable-length compact float format, such as [vf128](https://github.com/michaeljclark/vf128), [compact float](https://github.com/kstenerud/compact-float), or even ASN.1's REAL BER/DER. This would be most helpful for GraphQL APIs which return many Floats with values near zero.
+- Use a variable-length compact float format, such as [vf128](https://github.com/michaeljclark/vf128), [compact float](https://github.com/kstenerud/compact-float), or even ASN.1's REAL BER/DER. This would be most helpful for GraphQL APIs which return many Floats with values near zero. Other options might be [ALP: Adaptive Lossless floating-Point Compression](https://ir.cwi.nl/pub/33334/33334.pdf) or the "Pseudodecimal Encoding" from [BtrBlocks](https://www.cs.cit.tum.de/fileadmin/w00cfj/dis/papers/btrblocks.pdf).
 - Encode the entire `ExecutionResult`'s type in each _Wire schema_, including the errors array. In particular, the user would need to provide their intended `extensions` format and stick to it, and we'd need to fudge the type of `path` (which mixes numbers and strings in the GraphQL spec). The upshot would be total elimination of the self-describing format and the inconvenience, inefficiency, and complexity that causes.
 - Specifying which types actually use backreferences in a given message could be made more granular.
   For example, the header could be extended with scheme similar to _UserFlags_,
