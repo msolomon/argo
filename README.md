@@ -19,6 +19,8 @@ Argo\:
 
 Compressed **Argo responses are typically 5%-15% smaller** than corresponding compressed JSON responses.
 
+Uncompressed **Argo responses are typically 50-80% smaller** than corresponding JSON responses.
+
 ## Specification
 
 Argo has a formal specification:
