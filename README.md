@@ -1,6 +1,6 @@
 # ⛵ Argo
 
-_Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
+_Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._ View [Argo on GitHub](https://github.com/msolomon/argo).
 
 **Argo is a compact and compressible binary serialization format for** [GraphQL](https://graphql.org).
 It aims to:
