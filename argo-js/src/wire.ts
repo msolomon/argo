@@ -124,6 +124,64 @@ export namespace Wire {
       default: throw 'Programmer error: deduplicateByDefault does not make sense for ' + JSON.stringify(t)
     }
   }
+  
+  export function pathToWirePath(wt: Wire.Type, path: (string | number)[]): number[] {
+    switch (wt.type) {
+      case "BLOCK":
+      case "NULLABLE":
+        return pathToWirePath(wt.of, path)
+      case "ARRAY": {
+        const [arrayIdx, ...tail] = path
+        if (typeof arrayIdx !== "number") throw "Array index must be numeric, got: " + arrayIdx
+        return [arrayIdx, ...pathToWirePath(wt.of, tail)]
+      }
+      case "RECORD": {
+        const [fieldName, ...tail] = path
+        const fieldIndex = wt.fields.findIndex(({ name }) => name === fieldName)
+        if (fieldIndex === -1) throw "Encoding error: could not find record field: " + fieldName
+        const field = wt.fields[fieldIndex]
+        return [fieldIndex, ...pathToWirePath(field.type, tail)]
+      }
+      case "STRING":
+      case "VARINT":
+      case "BOOLEAN":
+      case "FLOAT64":
+      case "BYTES":
+      case "DESC":
+      case "FIXED":
+        return []
+      default: throw "Programmer error: pathToWirePath can't handle " + JSON.stringify(path)
+    }
+  }
+    
+  export function wirePathToPath(wt: Wire.Type, path: number[]): (number | string)[] {
+    switch (wt.type) {
+      case "BLOCK":
+      case "NULLABLE":
+        return wirePathToPath(wt.of, path)
+      case "ARRAY": {
+        const [arrayIdx, ...tail] = path
+        return [arrayIdx, ...wirePathToPath(wt.of, tail)]
+      }
+      case "RECORD": {
+        const [fieldIndex, ...tail] = path
+        if (fieldIndex < 0 || fieldIndex >= wt.fields.length) {
+          throw "Encoding error: could not find record field by index: " + fieldIndex
+        }
+        const field = wt.fields[fieldIndex]
+        return [field.name, ...wirePathToPath(field.type, tail)]
+      }
+      case "STRING":
+      case "VARINT":
+      case "BOOLEAN":
+      case "FLOAT64":
+      case "BYTES":
+      case "DESC":
+      case "FIXED":
+        return []
+      default: throw "Programmer error: wirePathToPath can't handle " + JSON.stringify(path)
+    }
+  }
 
   export namespace SelfDescribing {
     export namespace TypeMarker {
