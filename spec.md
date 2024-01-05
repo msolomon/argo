@@ -1,6 +1,6 @@
 # ⛵ Argo
 
-_Version 1.0.0_.
+_Version 1.1.0_.
 _Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
 
 **Argo is a compact and compressible binary serialization format for** [GraphQL](https://graphql.org).
@@ -150,7 +150,7 @@ The wire schema is a single WireType which describes how to encode an entire pay
 
 WireType ::
 
-- `STRING()` | `BOOLEAN()` | `VARINT()` | `FLOAT64()` | `BYTES()` | `DESC()`
+- `STRING()` | `BOOLEAN()` | `VARINT()` | `FLOAT64()` | `BYTES()` | `DESC()` | `PATH()`
 - `FIXED(lengthInBytes: Int)`
 - `RECORD(fields: Field[])` where `Field(name: String, of: WireType, omittable: Boolean)`
 - `ARRAY(of: WireType)`
@@ -554,6 +554,14 @@ DESC
 : `DESC` values are self-describing, and primarily used to encode errors.
 This scheme is described in _Self-describing encoding_.
 
+PATH
+: `PATH` values represent a path into a GraphQL response, such as are used inside Error values.
+Inline field error paths are relative to the location they appear,
+and all others are relative to the response root.
+First, GraphQL spec-compliant paths are transformed to a list of integers as described in
+[Path value transformation](#sec-Path-value-transformation).
+Then, this list of integers is encoded exactly as an `ARRAY` of `VARINT` values.
+
 #### Variable-length zig-zag coding
 
 :: The _variable-length zig-zag coding_ is a way to encode signed integers as a variable-length byte sequence.
@@ -645,7 +653,7 @@ eliminating the need to encode (and later decode) the entire value again.
 Each _Block_ has a separate backreference ID space.
 This means backreference IDs are not unique across types: a backreference ID -5 refers to a different value for `String` than it does for a hypothetical `MyEnum`.
 Backreference IDs count down, beginning at the largest non-reserved negative label value:
-this is -3, since the _Absent label_ (-2) is the smallest reserved value.
+this is -4, since the _Error label_ (-3) is the smallest reserved value.
 
 Note: For certain messages, this allows Argo representations to remain small in memory by avoiding duplication even after decompression (and further, after parsing). It also helps keep Argo messages small without compression.
 
@@ -667,7 +675,7 @@ Note that even _Unlabeled_ values may be written to _Blocks_, to impove compress
 
 Errors require special treatment for three reasons:
 
-1. [Field errors](#sec-Field-errors) are inlined with data.
+1. [Field errors](#sec-Field-errors) are inlined with data (except in _OutOfBandFieldErrors_ _Mode_).
    This makes it easy to distinguish between null and an error as soon as a value is read,
    and also makes their representation more compact.
 
@@ -685,7 +693,7 @@ If required, _SelfDescribingErrors_ can be used to allow for this.
 
 ### Error values
 
-Errors are written in a specific format,
+Error values are written in a specific format,
 which has the following schema in GraphQL (and a corresponding schema in Argo):
 
 ```graphql
@@ -697,19 +705,18 @@ type Location {
 type Error {
   message: String!
   location: [Location!]
-  path: [String!]
+  path: PATH
+  extensions: DESC
 }
 ```
 
 These all take the values described in the GraphQL spec with these exceptions:
 
-1. The `path` field uses String even for numeric path segments.
-   Numeric path segments should be converted back to integers in the reader's code generator.
-2. The `extensions` field is encoded separately as described next
-
-After this, the value of the `extensions` field follows in _Core_.
-This is written as an `Object` in the _Self-describing object_ format with any values the writer chooses,
-or as `Null` if there are no extensions.
+1. The `path` field uses the _Path encoding_ described below.
+   Paths should be converted to a more convenient format in the reader's code generator,
+   such as intermixed path strings and integer indexes.
+2. The `extensions` field is written as a nullable `Object` in the _Self-describing object_ format
+   with any values the writer chooses, or as `Null` if there are no extensions.
 
 Note: `path` and `extensions` are not representable as normal GraphQL responses:
 `path` mixes String and Int primitive values, which GraphQL forbids for data;
@@ -728,18 +735,62 @@ encoded as [Error values](#sec-Error-values).
 
 Nullable fields are the only valid location for
 [Field errors](https://spec.graphql.org/October2021/#sec-Errors.Field-errors).
-When a Field error is encountered, the error propagates to the nearest nullable encompassing field,
+When Field errors are encountered, the errors propagate to the nearest nullable encompassing field,
 and then an `Error` _Label_ is written to _Core_.
-
-The [Error value](#sec-Error-value) should be then written to _Core_, using the format above.
+All relevant field errors should then be written to _Core_
+as a `ARRAY` of [Error value](#sec-Error-value)s using the format above.
 However, the `path` field should only encode the path from the field which the error propagated to to the field which the error occurred in.
 This is because the path from the root of the query is knowable due to where the `Error` Label is encountered.
 This makes the representation more compact.
+However, implementations should make full path easily available to users.
 
 When operating in _OutOfBandFieldErrors_ mode, errors are not written as described here.
-Instead, an Error or Null _Label_ is written to _Core_ (with no additional error data following),
+Instead, an Error (preferred) or Null _Label_ is written to _Core_ (with no additional error data following),
 and the error is written separately to the errors array.
 The `path` must include the full path from the root.
+
+### Path value transformation
+
+Argo transforms GraphQL location paths before encoding them as _PATH_ in order to make them more compact.
+
+_PathToWirePath()_ is used to transform a GraphQL location path into a list of integers,
+and _WirePathToPath()_ transforms an encoded list of integers into a GraphQL location path.
+
+PathToWirePath(path, wireType):
+
+- If {wireType} is `RECORD`:
+  - Set {fieldName} to the first element of {path}, which must be a string
+  - Set {fieldIndex} to the 0-based index of the `RECORD` field which matches {fieldName}
+  - Set {tail} to an array equal to {path} with its first element omitted
+  - Set {underlyingType} to the underlying type of {wireType}
+  - Return `fieldIndex` prepended to `PathToWirePath(tail, underlyingType)`
+- If {wireType} is `ARRAY`:
+  - Set {arrayIdx} to the first element of {path}, which must be an integer index
+  - Set {tail} to an array equal to {path} with its first element omitted
+  - Set {underlyingType} to the underlying type of {wireType}
+  - Return `arrayIdx` prepended to `PathToWirePath(tail, underlyingType)`
+- If {wireType} is `NULLABLE` or `BLOCK`:
+  - Set {underlyingType} to the underlying type of {wireType}
+  - Return `PathToWirePath(path, underlyingType)`
+- Otherwise, return {path} (which must be an empty array)
+
+WirePathToPath(path, wireType):
+
+- If {wireType} is `RECORD`:
+  - Set {fieldIndex} to the first element of {path}, which must be a string
+  - Set {fieldName} to the name of the field at the 0-based index {fieldIndex} in the `RECORD`
+  - Set {tail} to an array equal to {path} with its first element omitted
+  - Set {underlyingType} to the underlying type of {wireType}
+  - Return `fieldName` prepended to `WirePathToPath(tail, underlyingType)`
+- If {wireType} is `ARRAY`:
+  - Set {arrayIdx} to the first element of {path}, which must be an integer index
+  - Set {tail} to an array equal to {path} with its first element omitted
+  - Set {underlyingType} to the underlying type of {wireType}
+  - Return `arrayIdx` prepended to `WirePathToPath(tail, underlyingType)`
+- If {wireType} is `NULLABLE` or `BLOCK`:
+  - Set {underlyingType} to the underlying type of {wireType}
+  - Return `WirePathToPath(path, underlyingType)`
+- Otherwise, return {path} (which must be an empty array)
 
 # Argo APIs
 
@@ -949,3 +1000,18 @@ Each version of Argo explicitly targets one version of the GraphQL spec, which i
 # E. Authors and contributors
 
 Argo was created and authored by [Mike Solomon](https://msol.io).
+
+# F. Changelog
+
+## Version 1.1
+
+BREAKING CHANGE - some changes are backwards incompatible, but no known implementation relied on them.
+
+- Introduced compact paths for errors (and with an eye to streaming) by encoding as a list of integers,
+  described in [Path value transformation](#sec-Path-value-transformation)
+- Added new `PATH` wire type - closes [#1](https://github.com/msolomon/argo/issues/1)
+- Inline errors are now arrays of errors instead of a single error - closes [#2](https://github.com/msolomon/argo/issues/2)
+
+## Version 1.0
+
+Initial release.

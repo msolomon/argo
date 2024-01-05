@@ -22,7 +22,7 @@ export class ArgoDecoder {
   counts: Map<string, number> = new Map() // counts of decoding actions, to assist understanding and debugging
 
   track = (path: Path | undefined, msg: string, buf: BufRead, value: any) => {
-    if (this.DEBUG) this.tracked.push({ path: pathToArray(path).join('.'), msg, pos: buf.position, value, })
+    if (this.DEBUG) this.tracked.push({ path: pathToArray(path).join('.'), msg, pos: buf.position, value })
   }
 
   count = (key: string, amnt: number = 1) => {
@@ -36,7 +36,7 @@ export class ArgoDecoder {
 
   /**
    * Decode the Argo message, returning the result as an ExecutionResult
-   * 
+   *
    * @param wt The type of the message, as a Wire.Type
    * @returns The decoded message
    * @throws If the message is invalid for the given type
@@ -68,7 +68,7 @@ export class ArgoDecoder {
       case 'NULLABLE':
         const peekLabel = buf.get()
         if (peekLabel == Label.Null[0]) {
-          this.track(path, 'null', buf, null);
+          this.track(path, 'null', buf, null)
           this.count('null')
           buf.incrementPosition()
           return null
@@ -81,10 +81,24 @@ export class ArgoDecoder {
           this.track(path, 'error', buf, undefined)
           this.count('error')
           buf.incrementPosition()
-          const error = this.readSelfDescribing(buf, path)
-          this.track(path, 'error value', buf, undefined)
-          // A different implementation might choose a different behavior, like attaching the error to the result
-          return null // simple for compatibility, but up to implementations what to do with inline errors 
+          const length = Number(Label.read(buf))
+          this.track(path, 'number of errors', buf, length)
+          let errors = []
+          if (this.slicer.header.selfDescribingErrors) {
+            errors = new Array(length).fill(undefined).map((_, i) => {
+              const error = this.readSelfDescribing(buf, path)
+              this.track(path, 'self-describing error value', buf, undefined)
+              return error
+            })
+          } else {
+            return new Array(length).fill(undefined).map((_, i) => {
+              const error = this.readArgo(buf, addPath(path, i, block?.key), Wire.ERROR)
+              this.track(path, 'error value', buf, undefined)
+              return error
+            })
+          }
+          // A different implementation might choose a different behavior, like attaching the errors to the result
+          return null // simple for compatibility, but up to implementations what to do with inline errors
         }
 
         if (!Wire.isLabeled(wt.of)) {
@@ -92,7 +106,8 @@ export class ArgoDecoder {
           if (marker != Label.NonNullMarker) {
             this.track(path, 'invalid non-null', buf, marker)
             throw 'invalid non-null ' + marker + '\n' + Wire.print(wt) + '\n' + buf.position + 'at ' + pathToArray(path)
-          } {
+          }
+          {
             this.count('non-null')
             this.track(path, 'non-null', buf, marker)
           }
@@ -117,7 +132,9 @@ export class ArgoDecoder {
           if (omittable) {
             const labelPeek = buf.get()
             // const label = Label.read(buf)
-            if (labelPeek == Label.Error[0]) { throw 'TODO: handle error' }
+            if (labelPeek == Label.Error[0]) {
+              throw 'TODO: handle error'
+            }
             if (!Wire.isLabeled(type) && labelPeek == Label.NonNull[0]) {
               this.track(path, 'non-null', buf, name)
               this.count('non-null field')
@@ -144,7 +161,7 @@ export class ArgoDecoder {
         const length = Number(Label.read(buf))
         this.track(path, 'array length', buf, length)
         this.count('bytes: array length', Label.encode(BigInt(length)).length)
-        return (new Array(length).fill(undefined).map((_, i) => this.readArgo(buf, addPath(path, i, block?.key), wt.of)))
+        return new Array(length).fill(undefined).map((_, i) => this.readArgo(buf, addPath(path, i, block?.key), wt.of))
       }
 
       case 'BOOLEAN':
@@ -152,9 +169,12 @@ export class ArgoDecoder {
         this.track(path, 'read boolean label', buf, label)
         this.count('bytes: boolean')
         switch (label) {
-          case Label.FalseMarker: return false
-          case Label.TrueMarker: return true
-          default: throw 'invalid boolean label ' + label
+          case Label.FalseMarker:
+            return false
+          case Label.TrueMarker:
+            return true
+          default:
+            throw 'invalid boolean label ' + label
         }
 
       case 'STRING':
@@ -162,7 +182,9 @@ export class ArgoDecoder {
       case 'VARINT':
       case 'FLOAT64':
       case 'FIXED':
-        if (block?.key == null) { throw 'Programmer error: need block key for ' + Wire.print(wt) }
+        if (block?.key == null) {
+          throw 'Programmer error: need block key for ' + Wire.print(wt)
+        }
         const reader = this.getBlockReader(block, wt)
         this.track(path, 'reader read by block', buf, block)
         const value = reader.read(buf)
@@ -186,17 +208,20 @@ export class ArgoDecoder {
         this.track(path, 'self-describing', buf, {})
         return this.readSelfDescribing(buf, path)
 
-      default: throw `Unsupported wire type ${wt}`
+      default:
+        throw `Unsupported wire type ${wt}`
     }
   }
 
   readSelfDescribing = (buf: BufRead, path: Path | undefined): any => {
     const label = Label.read(buf)
     switch (label) {
-
-      case Wire.SelfDescribing.TypeMarker.Null: return null
-      case Wire.SelfDescribing.TypeMarker.False: return false
-      case Wire.SelfDescribing.TypeMarker.True: return true
+      case Wire.SelfDescribing.TypeMarker.Null:
+        return null
+      case Wire.SelfDescribing.TypeMarker.False:
+        return false
+      case Wire.SelfDescribing.TypeMarker.True:
+        return true
 
       case Wire.SelfDescribing.TypeMarker.Object: {
         const obj: { [key: string]: any } = {}
@@ -212,8 +237,7 @@ export class ArgoDecoder {
 
       case Wire.SelfDescribing.TypeMarker.List:
         const length = Number(Label.read(buf))
-        return new Array(length).fill(undefined)
-          .map((_, i) => this.readSelfDescribing(buf, addPath(path, i, undefined)))
+        return new Array(length).fill(undefined).map((_, i) => this.readSelfDescribing(buf, addPath(path, i, undefined)))
 
       case Wire.SelfDescribing.TypeMarker.String:
         return this.readArgo(buf, path, Wire.STRING, Wire.SelfDescribing.Blocks.STRING)
@@ -227,7 +251,8 @@ export class ArgoDecoder {
       case Wire.SelfDescribing.TypeMarker.Float:
         return this.readArgo(buf, path, Wire.FLOAT64, Wire.SelfDescribing.Blocks.FLOAT64)
 
-      default: throw 'Invalid self-describing type marker: ' + label
+      default:
+        throw 'Invalid self-describing type marker: ' + label
     }
   }
 
@@ -242,7 +267,7 @@ export class ArgoDecoder {
 
   makeBlockReader(t: Wire.Type, dedupe: boolean): BlockReader<any> {
     switch (t.type) {
-      case "STRING":
+      case 'STRING':
         let reader: BlockReader<string>
         if (dedupe) reader = new DeduplicatingLabelBlockReader<string>(this.slicer.nextBlock, ArgoDecoder.utf8decode)
         else reader = new LabelBlockReader<string>(this.slicer.nextBlock, ArgoDecoder.utf8decode)
@@ -250,26 +275,22 @@ export class ArgoDecoder {
           reader.afterNewRead = () => reader.buf.incrementPosition() // skip the null byte
         }
         return reader
-      case "BYTES":
-        if (dedupe) return new DeduplicatingLabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
-        else return new LabelBlockReader<Uint8Array>(this.slicer.nextBlock, bytes => bytes)
-      case "VARINT":
+      case 'BYTES':
+        if (dedupe) return new DeduplicatingLabelBlockReader<Uint8Array>(this.slicer.nextBlock, (bytes) => bytes)
+        else return new LabelBlockReader<Uint8Array>(this.slicer.nextBlock, (bytes) => bytes)
+      case 'VARINT':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
         return new UnlabeledVarIntBlockReader(this.slicer.nextBlock)
-      case "FLOAT64":
+      case 'FLOAT64':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
-        return new FixedSizeBlockReader<number>(
-          this.slicer.nextBlock,
-          bytes => new Float64Array(bytes)[0],
-          Float64Array.BYTES_PER_ELEMENT)
-      case "FIXED":
+        return new FixedSizeBlockReader<number>(this.slicer.nextBlock, (bytes) => new Float64Array(bytes)[0], Float64Array.BYTES_PER_ELEMENT)
+      case 'FIXED':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
-        return new FixedSizeBlockReader(this.slicer.nextBlock, bytes => bytes, t.length)
+        return new FixedSizeBlockReader(this.slicer.nextBlock, (bytes) => bytes, t.length)
       default:
         throw 'Unsupported block type ' + t
     }
   }
-
 }
 
 /** Given an entire Argo message, splits apart header, blocks, and core. Makes no copies. */

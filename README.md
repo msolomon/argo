@@ -25,7 +25,8 @@ Uncompressed **Argo responses are typically 50-80% smaller** than corresponding 
 
 Argo has a formal specification:
 
-- [Version 1.0.x](https://msolomon.github.io/argo/versions/1.0/spec) is the latest version
+- [Version 1.1.x](https://msolomon.github.io/argo/versions/1.1/spec) (latest)
+- [Version 1.0.x](https://msolomon.github.io/argo/versions/1.0/spec)
 
 ## Reference implementation
 

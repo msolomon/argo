@@ -26,7 +26,7 @@ export class ArgoEncoder {
   }
 
   track = (path: Path | undefined, msg: string, buf: BufWrite, value: any) => {
-    if (this.DEBUG) this.tracked.push({ path: pathToArray(path).join('.'), msg, pos: buf.position, value, })
+    if (this.DEBUG) this.tracked.push({ path: pathToArray(path).join('.'), msg, pos: buf.position, value })
   }
 
   log = (msg: string | object) => {
@@ -60,11 +60,7 @@ export class ArgoEncoder {
       }
     }
 
-    const dataLength =
-      header.length +
-      dataBytesNeeded +
-      (shouldWriteBlocks ? bufLength.length : 0) +
-      this.buf.length
+    const dataLength = header.length + dataBytesNeeded + (shouldWriteBlocks ? bufLength.length : 0) + this.buf.length
     const buf = new Buf(dataLength)
 
     // write the header
@@ -92,7 +88,7 @@ export class ArgoEncoder {
   private static NullTerminator = new Uint8Array([0])
   makeBlockWriter(t: Wire.Type, dedupe: boolean): BlockWriter<any> {
     switch (t.type) {
-      case "STRING":
+      case 'STRING':
         let writer: BlockWriter<string | undefined>
         if (dedupe) writer = DeduplicatingBlockWriter.lengthOfBytes(ArgoEncoder.utf8encode)
         else writer = BlockWriter.lengthOfBytes(ArgoEncoder.utf8encode)
@@ -100,18 +96,18 @@ export class ArgoEncoder {
           writer.afterNewWrite = () => writer.valuesAsBytes.push(ArgoEncoder.NullTerminator)
         }
         return writer
-      case "BYTES":
-        if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes(bytes => bytes)
-        else return BlockWriter.lengthOfBytes(bytes => bytes)
-      case "VARINT":
+      case 'BYTES':
+        if (dedupe) return DeduplicatingBlockWriter.lengthOfBytes((bytes) => bytes)
+        else return BlockWriter.lengthOfBytes((bytes) => bytes)
+      case 'VARINT':
         if (dedupe) throw 'Unimplemented: deduping  ' + t.type
         return BlockWriter.noLabel(Label.encode)
       case 'FLOAT64':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
-        return BlockWriter.noLabel(v => new Uint8Array(new Float64Array([v])))
-      case "FIXED":
+        return BlockWriter.noLabel((v) => new Uint8Array(new Float64Array([v])))
+      case 'FIXED':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
-        return BlockWriter.noLabel(bytes => bytes)
+        return BlockWriter.noLabel((bytes) => bytes)
       default:
         throw 'Unsupported dedupe type ' + t
     }
@@ -121,8 +117,11 @@ export class ArgoEncoder {
     const writer = this.getWriter<T>(block, t)
     const blockLengthBefore = writer.valuesAsBytes.length
     const label = writer.write(v)
-    if (label != null) { this.buf.write(Label.encode(label)) }
-    if (this.header.inlineEverything) { // write to buf instead of block
+    if (label != null) {
+      this.buf.write(Label.encode(label))
+    }
+    if (this.header.inlineEverything) {
+      // write to buf instead of block
       if (writer.valuesAsBytes.length == blockLengthBefore + 1) writer.writeLastToBuf(this.buf)
     }
     return label
@@ -145,19 +144,28 @@ export class ArgoEncoder {
 
   private writeArgo = (path: Path | undefined, js: any, wt: Wire.Type, block?: Wire.BLOCK): void => {
     switch (wt.type) {
-
       case 'NULLABLE':
         if (js == null) {
           this.track(path, 'null', this.buf, Label.Null)
           return this.buf.write(Label.Null)
         }
 
+        let errorArray: Error[] = []
         if (js instanceof Error) {
+          errorArray = [js]
+        } else if (Array.isArray(js) && js.length > 0 && js[0] instanceof Error) {
+          errorArray = js
+        }
+        if (errorArray.length > 0) {
           this.track(path, 'error', this.buf, js)
           this.buf.write(Label.Error)
-          if (!this.header.selfDescribingErrors) throw 'Unimplemented: non-self-describing errors'
-          this.writeSelfDescribing(path, js)
-          return
+          this.buf.write(Label.encode(BigInt(errorArray.length)))
+          return errorArray.forEach((e) => {
+            if (this.header.selfDescribingErrors) this.writeSelfDescribing(path, js)
+            else {
+              this.writeError(path, e)
+            }
+          })
         }
 
         if (!Wire.isLabeled(wt.of)) {
@@ -167,7 +175,9 @@ export class ArgoEncoder {
         return this.writeArgo(path, js, wt.of)
 
       case 'BLOCK':
-        if (block != null) { throw `Was already in block '${block}', unexpected to switch to '${wt.key}'. ${Wire.print(wt)}.` }
+        if (block != null) {
+          throw `Was already in block '${block}', unexpected to switch to '${wt.key}'. ${Wire.print(wt)}.`
+        }
         this.track(path, 'block with key', this.buf, wt.key)
         return this.writeArgo(path, js, wt.of, wt)
 
@@ -175,13 +185,15 @@ export class ArgoEncoder {
         this.track(path, 'record with num fields', this.buf, wt.fields.length)
 
         for (const { name, type, omittable } of wt.fields) {
-          if (js && name in js && js[name] != null) { // field actually present
+          if (js && name in js && js[name] != null) {
+            // field actually present
             if (omittable && !Wire.isLabeled(type)) {
               this.track(path, 'record field is present but omittable, writing non-null', this.buf, name)
               this.buf.write(Label.NonNull)
             }
             this.writeArgo(addPath(path, name, block?.key), js[name], type)
-          } else if (omittable && js && (!(name in js) || js[name] === undefined)) { // field not present, but omittable
+          } else if (omittable && js && (!(name in js) || js[name] === undefined)) {
+            // field not present, but omittable
             this.track(path, 'record field is absent but omittable, writing Absent', this.buf, name)
             this.buf.write(Label.Absent)
           } else if (Wire.isNULLABLE(type)) {
@@ -216,7 +228,9 @@ export class ArgoEncoder {
       case 'FLOAT64':
       case 'FIXED':
         this.track(path, 'writing with block key', this.buf, block)
-        if (block == null) { throw 'Programmer error: need block for ' + Wire.print(wt) }
+        if (block == null) {
+          throw 'Programmer error: need block for ' + Wire.print(wt)
+        }
         const label = this.write(block, wt, js)
         this.track(path, wt.type, this.buf, js)
         this.track(path, 'label', this.buf, label)
@@ -226,14 +240,14 @@ export class ArgoEncoder {
         this.track(path, 'self-describing', this.buf, js)
         return this.writeSelfDescribing(path, js)
 
-      default: throw `Unsupported wire type ${wt}`
+      default:
+        throw `Unsupported wire type ${wt}`
     }
   }
 
   writeSelfDescribing = (path: Path | undefined, js: any): void => {
     let type = typeof js
     switch (type) {
-
       case 'object':
         if (js == null) {
           this.buf.write(Wire.SelfDescribing.Null)
@@ -244,7 +258,8 @@ export class ArgoEncoder {
         } else if (js instanceof Uint8Array) {
           this.buf.write(Wire.SelfDescribing.Bytes)
           this.write(Wire.SelfDescribing.Blocks.BYTES, Wire.BYTES, js)
-        } else { // encode as if it's a regular javascript object
+        } else {
+          // encode as if it's a regular javascript object
           this.buf.write(Wire.SelfDescribing.Object)
           this.buf.write(Label.encode(Object.keys(js).length))
           Object.entries(js).forEach(([field, v]) => {
@@ -284,4 +299,22 @@ export class ArgoEncoder {
         throw `Cannot encode unsupported type ${type} at ${path}`
     }
   }
+
+  writeError = (path: Path | undefined, error: Error): void => {
+    const value = {
+      message: error.name + ' ' + error.message,
+      location: null, // real implementations will often be able to fill this out
+      path: path,
+      extensions: {
+        stackTrace: error.stack,
+      },
+    }
+    this.writeArgo(path, value, Wire.ERROR)
+  }
+  // export const ERROR = {
+  //   message: block(Wire.STRING, 'String', deduplicateByDefault(Wire.STRING)),
+  //   location: nullable(LOCATION),
+  //   path: nullable(PATH),
+  //   extensions: nullable(DESC),
+  // }
 }
