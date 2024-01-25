@@ -11,6 +11,7 @@ interface Character {
   name: String
   friends: [Character]
   appearsIn: [Episode]
+  secretBackstory: String
 }
 
 type Human implements Character {
