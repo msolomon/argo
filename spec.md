@@ -301,9 +301,17 @@ CollectFieldWireTypes(selectionType, selectionSet):
 - For each {alias} and ordered set of {fields} in {CollectFieldsStatic(selectionSet)}:
   - For each {field} in {fields}:
     - Initialize {omittable} to {false}
-    - If {field} was selected by a fragment spread, set {typeCondition} to the name of the fragment
-    - If {field} was selected by an inline fragment, set {typeCondition} to the name of the type condition specified in the inline fragment
-    - If {typeCondition} is set, but not set to the name of {selectionType}, set omittable to {true}
+    - If {field} was selected by a fragment spread, set {typeCondition} to the name of the type condition specified in the fragment definition
+    - If {field} was selected by an inline fragment and a type condition has been specified, set {typeCondition} to the name of the type condition specified in the inline fragment
+    - If {typeCondition} is set, but not set to the name of {selectionType}, set {omittable} to {true}
+    - If {field} provides the directive `@include`, let {includeDirective} be that directive.
+      - If {includeDirective}'s {if} argument is variable, set {omittable} to {true}
+    - If {field} provides the directive `@skip`, let {skipDirective} be that directive.
+      - If {skipDirective}'s {if} argument is variable, set {omittable} to {true}
+    - If {field} was selected by a fragment spread or inline fragment that provides the directive `@include`, let {includeDirective} be that directive.
+      - If {includeDirective}'s {if} argument is variable, set {omittable} to {true}
+    - If {field} was selected by a fragment spread or inline fragment that provides the directive `@skip`, let {skipDirective} be that directive.
+      - If {skipDirective}'s {if} argument is variable, set {omittable} to {true}
     - If {field} is a selection set:
       - Set {wrapped} to the result of calling {TypeToWireType()} with the {field}'s GraphQL type
       -
