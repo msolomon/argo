@@ -306,7 +306,6 @@ CollectFieldWireTypes(selectionType, selectionSet):
     - If {typeCondition} is set, but not set to the name of {selectionType}, set omittable to {true}
     - If {field} is a selection set:
       - Set {wrapped} to the result of calling {TypeToWireType()} with the {field}'s GraphQL type
-      -
       - Let {wrap(wireType)} be a function which recursively applies `NULLABLE`, `BLOCK`, and `ARRAY` wrappers around {wireType} in the same order they appear in {wrapped}
       - Set {type} to the result of calling `CollectFieldWireTypes(field.type, field.selectionSet)`
       - Set {type} to the result of calling {wrap(type)}
@@ -1001,9 +1000,20 @@ Each version of Argo explicitly targets one version of the GraphQL spec, which i
 
 Argo was created and authored by [Mike Solomon](https://msol.io).
 
+A big Thank You to these fine folks who have contributed on GitHub!
+
+- [Andrew Bennett](https://github.com/potatosalad)
+- [Jimmy Bourassa](https://github.com/jbourassa)
+
 # F. Changelog
 
 ## Version 1.1
+
+### v1.1.1
+
+- `@include` and `@skip` directives [now result in omittable fields](https://github.com/msolomon/argo/issues/8)
+
+### v1.1.0
 
 BREAKING CHANGE - some changes are backwards incompatible, but no known implementation relied on them.
 
