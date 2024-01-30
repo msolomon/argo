@@ -47,13 +47,16 @@ export class Typer {
   }
 
   rootWireType(): Wire.Type {
-    const getField = this.makeGetField(this.rootType)
-    const data = this.collectFieldWireTypes(this.rootType, this.operation.selectionSet, getField)
     const fields = [
-      { name: 'data', type: Wire.nullable(data), omittable: false },
+      { name: 'data', type: Wire.nullable(this.dataWireType()), omittable: false },
       { name: 'errors', type: Wire.nullable({ type: Wire.TypeKey.ARRAY, of: Wire.DESC }), omittable: true },
     ]
     return { type: Wire.TypeKey.RECORD, fields }
+  }
+
+  dataWireType(): Wire.Type {
+    const getField = this.makeGetField(this.rootType)
+    return this.collectFieldWireTypes(this.rootType, this.operation.selectionSet, getField)
   }
 
   // this follows the spec's CollectFields, but is modified to require no runtime information
@@ -138,7 +141,12 @@ export class Typer {
         } else if (selectedBy.kind == Kind.INLINE_FRAGMENT) {
           typeCondition = selectedBy.typeCondition?.name.value
         }
-        const omittable = typeCondition != null && Typer.unwrap(selectionType).toString() != typeCondition
+        let omittable =
+          (typeCondition != null && Typer.unwrap(selectionType).toString() != typeCondition) ||
+          this.hasVariableIfDirective('include', field.directives) ||
+          this.hasVariableIfDirective('skip', field.directives) ||
+          this.hasVariableIfDirective('include', selectedBy.directives) ||
+          this.hasVariableIfDirective('skip', selectedBy.directives)
 
         const f = getField(field.name.value)
         if (field.selectionSet) {
@@ -161,6 +169,12 @@ export class Typer {
       this.types.set(field, record)
     }
     return record
+  }
+
+  // helper to return true if a @skip/@include has a variable `if` argument
+  private hasVariableIfDirective(name: string, directives?: readonly graphql.DirectiveNode[]): boolean {
+    const directive = directives?.find((dn) => dn.name.value == name)
+    return directive?.arguments?.some((an) => an.name.value == 'if' && an.value.kind == Kind.VARIABLE) || false
   }
 
   // if we have overlapping selections, merge them into a canonical order
