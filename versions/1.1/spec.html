@@ -114,7 +114,11 @@
 </li>
 <li><a href="#sec-Authors-and-contributors"><span class="spec-secid">E</span>Authors and contributors</a></li>
 <li><a href="#sec-Changelog"><span class="spec-secid">F</span>Changelog</a><ol>
-<li><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a></li>
+<li><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a><ol>
+<li><a href="#sec-v1-1-1"><span class="spec-secid">F.1.1</span>v1.1.1</a></li>
+<li><a href="#sec-v1-1-0"><span class="spec-secid">F.1.2</span>v1.1.0</a></li>
+</ol>
+</li>
 <li><a href="#sec-Version-1-0"><span class="spec-secid">F.2</span>Version 1.0</a></li>
 </ol>
 </li>
@@ -363,11 +367,27 @@ Much of this code may be easier to follow in the <a href="https://github.com/mso
 <li>For each <var data-name="alias">alias</var> and ordered set of <var data-name="fields">fields</var> in <span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="selectionSet">selectionSet</var>)</span>:<ol>
 <li>For each <var data-name="field">field</var> in <var data-name="fields">fields</var>:<ol>
 <li>Initialize <var data-name="omittable">omittable</var> to <span class="spec-keyword">false</span></li>
-<li>If <var data-name="field">field</var> was selected by a fragment spread, set <var data-name="typeCondition">typeCondition</var> to the name of the fragment</li>
-<li>If <var data-name="field">field</var> was selected by an inline fragment, set <var data-name="typeCondition">typeCondition</var> to the name of the type condition specified in the inline fragment</li>
-<li>If <var data-name="typeCondition">typeCondition</var> is set, but not set to the name of <var data-name="selectionType">selectionType</var>, set omittable to <span class="spec-keyword">true</span></li>
+<li>If <var data-name="field">field</var> was selected by a fragment spread, set <var data-name="typeCondition">typeCondition</var> to the name of the type condition specified in the fragment definition</li>
+<li>If <var data-name="field">field</var> was selected by an inline fragment and a type condition has been specified, set <var data-name="typeCondition">typeCondition</var> to the name of the type condition specified in the inline fragment</li>
+<li>If <var data-name="typeCondition">typeCondition</var> is set, but not set to the name of <var data-name="selectionType">selectionType</var>, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+<li>If <var data-name="field">field</var> provides the directive <code>@include</code>, let <var data-name="includeDirective">includeDirective</var> be that directive.<ol>
+<li>If <var data-name="includeDirective">includeDirective</var>&lsquo;s <var data-name="if">if</var> argument is variable, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+</ol>
+</li>
+<li>If <var data-name="field">field</var> provides the directive <code>@skip</code>, let <var data-name="skipDirective">skipDirective</var> be that directive.<ol>
+<li>If <var data-name="skipDirective">skipDirective</var>&lsquo;s <var data-name="if">if</var> argument is variable, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+</ol>
+</li>
+<li>If <var data-name="field">field</var> was selected by a fragment spread or inline fragment that provides the directive <code>@include</code>, let <var data-name="includeDirective">includeDirective</var> be that directive.<ol>
+<li>If <var data-name="includeDirective">includeDirective</var>&lsquo;s <var data-name="if">if</var> argument is variable, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+</ol>
+</li>
+<li>If <var data-name="field">field</var> was selected by a fragment spread or inline fragment that provides the directive <code>@skip</code>, let <var data-name="skipDirective">skipDirective</var> be that directive.<ol>
+<li>If <var data-name="skipDirective">skipDirective</var>&lsquo;s <var data-name="if">if</var> argument is variable, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+</ol>
+</li>
 <li>If <var data-name="field">field</var> is a selection set:<ol>
-<li>Set <var data-name="wrapped">wrapped</var> to the result of calling <span class="spec-call"><span data-name="TypeToWireType">TypeToWireType</span>()</span> with the <var data-name="field">field</var>&lsquo;s GraphQL type &ndash;</li>
+<li>Set <var data-name="wrapped">wrapped</var> to the result of calling <span class="spec-call"><span data-name="TypeToWireType">TypeToWireType</span>()</span> with the <var data-name="field">field</var>&lsquo;s GraphQL type</li>
 <li>Let <span class="spec-call"><span data-name="wrap">wrap</span>(<var data-name="wireType">wireType</var>)</span> be a function which recursively applies <code>NULLABLE</code>, <code>BLOCK</code>, and <code>ARRAY</code> wrappers around <var data-name="wireType">wireType</var> in the same order they appear in <var data-name="wrapped">wrapped</var></li>
 <li>Set <var data-name="type">type</var> to the result of calling <code>CollectFieldWireTypes(field.type, field.selectionSet)</code></li>
 <li>Set <var data-name="type">type</var> to the result of calling <span class="spec-call"><span data-name="wrap">wrap</span>(<var data-name="type">type</var>)</span></li>
@@ -989,17 +1009,32 @@ Normally, Argo does not allow for direction extension to field error objects out
 <section id="sec-Authors-and-contributors" secid="E">
 <h1><span class="spec-secid" title="link to this section"><a href="#sec-Authors-and-contributors">E</a></span>Authors and contributors</h1>
 <p>Argo was created and authored by <a href="https://msol.io">Mike Solomon</a>.</p>
+<p>A big Thank You to these fine folks who have contributed on GitHub!</p>
+<ul>
+<li><a href="https://github.com/potatosalad">Andrew Bennett</a></li>
+<li><a href="https://github.com/jbourassa">Jimmy Bourassa</a></li>
+</ul>
 </section>
 <section id="sec-Changelog" secid="F">
 <h1><span class="spec-secid" title="link to this section"><a href="#sec-Changelog">F</a></span>Changelog</h1>
 <section id="sec-Version-1-1" secid="F.1">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Version-1-1">F.1</a></span>Version 1.1</h2>
+<section id="sec-v1-1-1" secid="F.1.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-1">F.1.1</a></span>v1.1.1</h3>
+<p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
+<ul>
+<li><code>@include</code> and <code>@skip</code> directives <a href="https://github.com/msolomon/argo/issues/8">now result in omittable fields</a></li>
+</ul>
+</section>
+<section id="sec-v1-1-0" secid="F.1.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-0">F.1.2</a></span>v1.1.0</h3>
 <p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
 <ul>
 <li>Introduced compact paths for errors (and with an eye to streaming) by encoding as a list of integers, described in <a href="#sec-Path-value-transformation">Path value transformation</a></li>
 <li>Added new <code>PATH</code> wire type &ndash; closes <a href="https://github.com/msolomon/argo/issues/1">#1</a></li>
 <li>Inline errors are now arrays of errors instead of a single error &ndash; closes <a href="https://github.com/msolomon/argo/issues/2">#2</a></li>
 </ul>
+</section>
 </section>
 <section id="sec-Version-1-0" secid="F.2">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Version-1-0">F.2</a></span>Version 1.0</h2>
@@ -1179,7 +1214,13 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <li id="_sidebar_F"><a href="#sec-Changelog"><span class="spec-secid">F</span>Changelog</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_F" /><label for="_toggle_F"></label>
 <ol>
-<li id="_sidebar_F.1"><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a></li>
+<li id="_sidebar_F.1"><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a>
+<input hidden class="toggle" type="checkbox" id="_toggle_F.1" /><label for="_toggle_F.1"></label>
+<ol>
+<li id="_sidebar_F.1.1"><a href="#sec-v1-1-1"><span class="spec-secid">F.1.1</span>v1.1.1</a></li>
+<li id="_sidebar_F.1.2"><a href="#sec-v1-1-0"><span class="spec-secid">F.1.2</span>v1.1.0</a></li>
+</ol>
+</li>
 <li id="_sidebar_F.2"><a href="#sec-Version-1-0"><span class="spec-secid">F.2</span>Version 1.0</a></li>
 </ol>
 </li>
