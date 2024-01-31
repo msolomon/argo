@@ -1,6 +1,6 @@
 {
   "name": "argo-graphql",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Argo is a compact and compressible binary serialization format for GraphQL. This is the reference implementation.",
   "repository": {
     "type": "git",
