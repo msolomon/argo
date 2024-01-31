@@ -367,9 +367,25 @@ Much of this code may be easier to follow in the <a href="https://github.com/mso
 <li>For each <var data-name="alias">alias</var> and ordered set of <var data-name="fields">fields</var> in <span class="spec-call"><a href="#CollectFieldsStatic()" data-name="CollectFieldsStatic">CollectFieldsStatic</a>(<var data-name="selectionSet">selectionSet</var>)</span>:<ol>
 <li>For each <var data-name="field">field</var> in <var data-name="fields">fields</var>:<ol>
 <li>Initialize <var data-name="omittable">omittable</var> to <span class="spec-keyword">false</span></li>
-<li>If <var data-name="field">field</var> was selected by a fragment spread, set <var data-name="typeCondition">typeCondition</var> to the name of the fragment</li>
-<li>If <var data-name="field">field</var> was selected by an inline fragment, set <var data-name="typeCondition">typeCondition</var> to the name of the type condition specified in the inline fragment</li>
-<li>If <var data-name="typeCondition">typeCondition</var> is set, but not set to the name of <var data-name="selectionType">selectionType</var>, set omittable to <span class="spec-keyword">true</span></li>
+<li>If <var data-name="field">field</var> was selected by a fragment spread, set <var data-name="typeCondition">typeCondition</var> to the name of the type condition specified in the fragment definition</li>
+<li>If <var data-name="field">field</var> was selected by an inline fragment and a type condition has been specified, set <var data-name="typeCondition">typeCondition</var> to the name of the type condition specified in the inline fragment</li>
+<li>If <var data-name="typeCondition">typeCondition</var> is set, but not set to the name of <var data-name="selectionType">selectionType</var>, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+<li>If <var data-name="field">field</var> provides the directive <code>@include</code>, let <var data-name="includeDirective">includeDirective</var> be that directive.<ol>
+<li>If <var data-name="includeDirective">includeDirective</var>&lsquo;s <var data-name="if">if</var> argument is variable, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+</ol>
+</li>
+<li>If <var data-name="field">field</var> provides the directive <code>@skip</code>, let <var data-name="skipDirective">skipDirective</var> be that directive.<ol>
+<li>If <var data-name="skipDirective">skipDirective</var>&lsquo;s <var data-name="if">if</var> argument is variable, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+</ol>
+</li>
+<li>If <var data-name="field">field</var> was selected by a fragment spread or inline fragment that provides the directive <code>@include</code>, let <var data-name="includeDirective">includeDirective</var> be that directive.<ol>
+<li>If <var data-name="includeDirective">includeDirective</var>&lsquo;s <var data-name="if">if</var> argument is variable, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+</ol>
+</li>
+<li>If <var data-name="field">field</var> was selected by a fragment spread or inline fragment that provides the directive <code>@skip</code>, let <var data-name="skipDirective">skipDirective</var> be that directive.<ol>
+<li>If <var data-name="skipDirective">skipDirective</var>&lsquo;s <var data-name="if">if</var> argument is variable, set <var data-name="omittable">omittable</var> to <span class="spec-keyword">true</span></li>
+</ol>
+</li>
 <li>If <var data-name="field">field</var> is a selection set:<ol>
 <li>Set <var data-name="wrapped">wrapped</var> to the result of calling <span class="spec-call"><span data-name="TypeToWireType">TypeToWireType</span>()</span> with the <var data-name="field">field</var>&lsquo;s GraphQL type</li>
 <li>Let <span class="spec-call"><span data-name="wrap">wrap</span>(<var data-name="wireType">wireType</var>)</span> be a function which recursively applies <code>NULLABLE</code>, <code>BLOCK</code>, and <code>ARRAY</code> wrappers around <var data-name="wireType">wireType</var> in the same order they appear in <var data-name="wrapped">wrapped</var></li>
@@ -1005,6 +1021,7 @@ Normally, Argo does not allow for direction extension to field error objects out
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Version-1-1">F.1</a></span>Version 1.1</h2>
 <section id="sec-v1-1-1" secid="F.1.1">
 <h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-1">F.1.1</a></span>v1.1.1</h3>
+<p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
 <ul>
 <li><code>@include</code> and <code>@skip</code> directives <a href="https://github.com/msolomon/argo/issues/8">now result in omittable fields</a></li>
 </ul>

@@ -130,7 +130,7 @@ export class Typer {
    * This recursively determines the wire types for a given selectionset.
    * It also populates `this.types` so that wire types may be looked up by FieldNode.
    */
-  collectFieldWireTypes = (selectionType: GraphQLType, selectionSet: graphql.SelectionSetNode, getField: (n: string) => graphql.GraphQLField<unknown, unknown>): Wire.Type => {
+  collectFieldWireTypes = (selectionType: GraphQLType, selectionSet: graphql.SelectionSetNode, getField: (n: string, typeCondition?: string) => graphql.GraphQLField<unknown, unknown>): Wire.Type => {
     let recordFields: Wire.Field[] = []
     const recordNodes: FieldNode[] = []
     for (const [alias, fields] of this.collectFieldsStatic(selectionSet)) {
@@ -148,7 +148,7 @@ export class Typer {
           this.hasVariableIfDirective('include', selectedBy.directives) ||
           this.hasVariableIfDirective('skip', selectedBy.directives)
 
-        const f = getField(field.name.value)
+        const f = getField(field.name.value, typeCondition)
         if (field.selectionSet) {
           const wrapRecord = this.unwrapForSelectionSet(this.typeToWireType(f.type)).wrap
           recordNodes.push(field)
@@ -299,21 +299,8 @@ export class Typer {
   }
 
   private getFieldFromSelection = (t: graphql.GraphQLObjectType | graphql.GraphQLInterfaceType | graphql.GraphQLUnionType): ((n: string) => graphql.GraphQLField<unknown, unknown>) => {
-    let fields: graphql.GraphQLFieldMap<any, any> = {}
-    if (graphql.isUnionType(t)) {
-      for (const obj of this.schema.getPossibleTypes(t)) {
-        fields = { ...obj.getFields(), ...fields }
-      }
-    } else {
-      fields = t.getFields()
-    }
-    if (graphql.isInterfaceType(t)) {
-      // selection may come from any implementing object
-      for (const obj of this.schema.getImplementations(t).objects) {
-        fields = { ...obj.getFields(), ...fields }
-      }
-    }
-    return (n: string) => {
+    let fields: graphql.GraphQLFieldMap<any, any> | undefined = {}
+    return (n: string, typeCondition?: string) => {
       switch (n) {
         case graphql.SchemaMetaFieldDef.name:
           return graphql.SchemaMetaFieldDef
@@ -322,10 +309,24 @@ export class Typer {
         case graphql.TypeMetaFieldDef.name:
           return graphql.TypeMetaFieldDef
         default:
-          const field = fields[n]
-          if (!field) {
-            throw `Could not get field ${n} from ${t.toString()}`
+          if (graphql.isUnionType(t)) {
+            fields = this.schema
+              .getPossibleTypes(t)
+              .find((ot) => ot.name == typeCondition)
+              ?.getFields()
+          } else if (graphql.isInterfaceType(t)) {
+            fields = {
+              ...t.getFields(),
+              ...this.schema
+                .getImplementations(t)
+                .objects.find((o) => o.name == typeCondition)
+                ?.getFields(),
+            }
+          } else {
+            fields = t.getFields()
           }
+          const field = fields && fields[n]
+          if (!field) throw `Could not get field ${n} from ${t.toString()}`
           return field
       }
     }

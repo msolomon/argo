@@ -1019,6 +1019,8 @@ A big Thank You to these fine folks who have contributed on GitHub!
 
 ### v1.1.1
 
+BREAKING CHANGE - some changes are backwards incompatible, but no known implementation relied on them.
+
 - `@include` and `@skip` directives [now result in omittable fields](https://github.com/msolomon/argo/issues/8)
 
 ### v1.1.0

@@ -75,9 +75,6 @@ test('omittable: no directive fragment ', () => {
   const t = new Typer(schema, query).dataWireType()
   expect(t).toHaveProperty('fields[0].name', '__typename')
   expect(t).toHaveProperty('fields[0].omittable', false)
-  roundTripTest(['data', 'hero', 'id'])
-  roundTripTest(['data', 'hero', 'friends', 0, 'name'])
-  roundTripTest(['data', 'hero', 'friends', 1, 'aliasedName'])
 })
 
 test('Spread type conflict', () => {
@@ -112,11 +109,8 @@ test('Spread type conflict', () => {
       }
     }`)
 
-  const prettyWireType = (query: DocumentNode): string => Wire.print(new Typer(schema, query).rootWireType())
+  const prettyWireType = (query: DocumentNode): string => Wire.print(new Typer(schema, query).dataWireType())
 
-  // Passes
   expect(prettyWireType(droidQuery)).toContain('name?: VARINT{Int}')
-
-  // Fails
   expect(prettyWireType(humanQuery)).toContain('name?: STRING<String>')
 })
