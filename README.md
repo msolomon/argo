@@ -34,6 +34,17 @@ Argo has a formal specification:
 and can be found in [this repository](https://github.com/msolomon/argo).
 It is distributed on NPM under the name [argo-graphql](https://www.npmjs.com/package/argo-graphql).
 
+## 3rd party implementations
+
+These open-source implementations are maintained separately:
+
+- Erlang: [erlang-argo](https://github.com/WhatsApp/erlang-argo) from WhatsApp
+
 ## Authors and contributors
 
 Argo was created and authored by [Mike Solomon](https://msol.io).
+
+A big Thank You to these fine folks who have contributed on GitHub!
+
+- [Andrew Bennett](https://github.com/potatosalad)
+- [Jimmy Bourassa](https://github.com/jbourassa)
