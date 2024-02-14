@@ -115,8 +115,9 @@
 <li><a href="#sec-Authors-and-contributors"><span class="spec-secid">E</span>Authors and contributors</a></li>
 <li><a href="#sec-Changelog"><span class="spec-secid">F</span>Changelog</a><ol>
 <li><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a><ol>
-<li><a href="#sec-v1-1-1"><span class="spec-secid">F.1.1</span>v1.1.1</a></li>
-<li><a href="#sec-v1-1-0"><span class="spec-secid">F.1.2</span>v1.1.0</a></li>
+<li><a href="#sec-v1-1-2"><span class="spec-secid">F.1.1</span>v1.1.2</a></li>
+<li><a href="#sec-v1-1-1"><span class="spec-secid">F.1.2</span>v1.1.1</a></li>
+<li><a href="#sec-v1-1-0"><span class="spec-secid">F.1.3</span>v1.1.0</a></li>
 </ol>
 </li>
 <li><a href="#sec-Version-1-0"><span class="spec-secid">F.2</span>Version 1.0</a></li>
@@ -173,7 +174,7 @@ Nothing prevents running Registration Time and Execution Time steps at Execution
 </ul>
 <section id="sec-GraphQL-input-types" secid="2.1.1">
 <h3><span class="spec-secid" title="link to this section"><a href="#sec-GraphQL-input-types">2.1.1</a></span>GraphQL input types</h3>
-<p>GraphQL also includes Input types, which encode arguments and requests. Presently, Argo does not specify how to encode GraphQL input types because the expected benefits are small. However, this is a natural, straightforward, and backwards-compatible extension which may be added in a future version.</p>
+<p>GraphQL also includes Input types, which encode arguments and requests. Presently, Argo does not specify how to encode GraphQL input types because the expected benefits are small. However, this is a natural, straightforward, and backwards-compatible extension which may be added in a future version. See <a href="https://github.com/msolomon/argo/issues/4">#4</a> for more discussion.</p>
 </section>
 </section>
 <section id="sec-Wire-types" secid="2.2">
@@ -978,6 +979,9 @@ Normally, Argo does not allow for direction extension to field error objects out
 <li>Use a variable-length compact float format, such as <a href="https://github.com/michaeljclark/vf128">vf128</a>, <a href="https://github.com/kstenerud/compact-float">compact float</a>, or even ASN.1&rsquo;s REAL BER/DER. This would be most helpful for GraphQL APIs which return many Floats with values near zero. Other options might be <a href="https://ir.cwi.nl/pub/33334/33334.pdf">ALP: Adaptive Lossless floating-Point Compression</a> or the &ldquo;Pseudodecimal Encoding&rdquo; from <a href="https://www.cs.cit.tum.de/fileadmin/w00cfj/dis/papers/btrblocks.pdf">BtrBlocks</a>.</li>
 <li>Encode the entire <code>ExecutionResult</code>&lsquo;s type in each <span class="spec-ref"><a href="#wire-schema" data-name="wire-schema">Wire schema</a></span>, including the errors array. In particular, the user would need to provide their intended <code>extensions</code> format and stick to it, and we&rsquo;d need to fudge the type of <code>path</code> (which mixes numbers and strings in the GraphQL spec). The upshot would be total elimination of the self-describing format and the inconvenience, inefficiency, and complexity that causes.</li>
 <li>Specifying which types actually use backreferences in a given message could be made more granular. For example, the header could be extended with scheme similar to <em>UserFlags</em>, where a flag is set in the main header and an extra BitSet follows the Flags BitSet. This extra BitSet would set one bit in order for each potentially-deduplicatable type encountered in the message, in order. This could work around client-side inefficiency in bimodal deduplication patterns. However, this seems unlikely to be enough of a problem to justify the complexity.</li>
+<li>Default values. Fields could be marked (in the query or the schema, with query taking precedence) with a default value. Ideally, we would reserve a value (similar to Absent, Null, Error) to indicate when the default is used. (Alternatively, we could reserve/pun the first slot in the backreferences when a type ever uses a default.) This would avoid ever sending the full value, instead of sending it once. This would work best for very large strings which first appear very late in the message, or for non-deduplicatable types (like VARINT) with large encodings which appear many many times. These use cases seem to niche to justify the additional complexity.</li>
+<li><code>@stream</code> and <code>@defer</code> will likely require additional support. <a href="https://github.com/msolomon/argo/issues/12">#12</a> covers some of this. In addition, <span class="spec-ref"><a href="#blocks" data-name="blocks">Blocks</a></span> will need to become extensible. One scheme for this is to number each block in the same way as <span class="spec-ref"><a href="#backreferences" data-name="backreferences">Backreferences</a></span>. Then each new message begins with a Block section, but each block is prefixed with its backreference number. Alternatively, we could include all blocks, but I expect that will mostly be a bunch of zeroes. It will also need to support blocks not seen in the original message (though the possibilities will be known from the query).</li>
+<li>Constant values, outside of <code>CONST_STRING</code> for stream/defer. These are natural extensions, but have no use yet in GraphQL.</li>
 </ul>
 </section>
 </section>
@@ -1019,15 +1023,19 @@ Normally, Argo does not allow for direction extension to field error objects out
 <h1><span class="spec-secid" title="link to this section"><a href="#sec-Changelog">F</a></span>Changelog</h1>
 <section id="sec-Version-1-1" secid="F.1">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Version-1-1">F.1</a></span>Version 1.1</h2>
-<section id="sec-v1-1-1" secid="F.1.1">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-1">F.1.1</a></span>v1.1.1</h3>
+<section id="sec-v1-1-2" secid="F.1.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-2">F.1.1</a></span>v1.1.2</h3>
+<p>Added additional notes and links.</p>
+</section>
+<section id="sec-v1-1-1" secid="F.1.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-1">F.1.2</a></span>v1.1.1</h3>
 <p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
 <ul>
 <li><code>@include</code> and <code>@skip</code> directives <a href="https://github.com/msolomon/argo/issues/8">now result in omittable fields</a></li>
 </ul>
 </section>
-<section id="sec-v1-1-0" secid="F.1.2">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-0">F.1.2</a></span>v1.1.0</h3>
+<section id="sec-v1-1-0" secid="F.1.3">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-0">F.1.3</a></span>v1.1.0</h3>
 <p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
 <ul>
 <li>Introduced compact paths for errors (and with an eye to streaming) by encoding as a list of integers, described in <a href="#sec-Path-value-transformation">Path value transformation</a></li>
@@ -1217,8 +1225,9 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <li id="_sidebar_F.1"><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_F.1" /><label for="_toggle_F.1"></label>
 <ol>
-<li id="_sidebar_F.1.1"><a href="#sec-v1-1-1"><span class="spec-secid">F.1.1</span>v1.1.1</a></li>
-<li id="_sidebar_F.1.2"><a href="#sec-v1-1-0"><span class="spec-secid">F.1.2</span>v1.1.0</a></li>
+<li id="_sidebar_F.1.1"><a href="#sec-v1-1-2"><span class="spec-secid">F.1.1</span>v1.1.2</a></li>
+<li id="_sidebar_F.1.2"><a href="#sec-v1-1-1"><span class="spec-secid">F.1.2</span>v1.1.1</a></li>
+<li id="_sidebar_F.1.3"><a href="#sec-v1-1-0"><span class="spec-secid">F.1.3</span>v1.1.0</a></li>
 </ol>
 </li>
 <li id="_sidebar_F.2"><a href="#sec-Version-1-0"><span class="spec-secid">F.2</span>Version 1.0</a></li>

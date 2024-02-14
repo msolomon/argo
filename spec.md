@@ -99,6 +99,7 @@ These do not have rigorous definitions in the GraphQL spec. These include (but a
 GraphQL also includes Input types, which encode arguments and requests.
 Presently, Argo does not specify how to encode GraphQL input types because the expected benefits are small.
 However, this is a natural, straightforward, and backwards-compatible extension which may be added in a future version.
+See [#4](https://github.com/msolomon/argo/issues/4) for more discussion.
 
 ## Wire types
 
@@ -976,6 +977,22 @@ This section is not a part of the technical specification, but instead provides 
   This extra BitSet would set one bit in order for each potentially-deduplicatable type encountered in the message,
   in order. This could work around client-side inefficiency in bimodal deduplication patterns.
   However, this seems unlikely to be enough of a problem to justify the complexity.
+- Default values. Fields could be marked (in the query or the schema, with query taking precedence) with a default value.
+  Ideally, we would reserve a value (similar to Absent, Null, Error) to indicate when the default is used.
+  (Alternatively, we could reserve/pun the first slot in the backreferences when a type ever uses a default.)
+  This would avoid ever sending the full value, instead of sending it once.
+  This would work best for very large strings which first appear very late in the message,
+  or for non-deduplicatable types (like VARINT) with large encodings which appear many many times.
+  These use cases seem to niche to justify the additional complexity.
+- `@stream` and `@defer` will likely require additional support.
+  [#12](https://github.com/msolomon/argo/issues/12) covers some of this.
+  In addition, _Blocks_ will need to become extensible.
+  One scheme for this is to number each block in the same way as _Backreferences_.
+  Then each new message begins with a Block section, but each block is prefixed with its backreference number.
+  Alternatively, we could include all blocks, but I expect that will mostly be a bunch of zeroes.
+  It will also need to support blocks not seen in the original message (though the possibilities will be known from the query).
+- Constant values, outside of `CONST_STRING` for stream/defer.
+  These are natural extensions, but have no use yet in GraphQL.
 
 # C. Legal
 
@@ -1016,6 +1033,10 @@ A big Thank You to these fine folks who have contributed on GitHub!
 # F. Changelog
 
 ## Version 1.1
+
+### v1.1.2
+
+Added additional notes and links.
 
 ### v1.1.1
 
