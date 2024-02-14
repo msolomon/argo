@@ -67,9 +67,9 @@ export namespace Wire {
     type: TypeKey.RECORD,
     fields: [
       { name: 'message', type: block(Wire.STRING, 'String', deduplicateByDefault(Wire.STRING)), omittable: false },
-      { name: 'location', type: nullable(LOCATION), omittable: true },
-      { name: 'path', type: nullable(PATH), omittable: true },
-      { name: 'extensions', type: nullable(DESC), omittable: true },
+      { name: 'location', type: LOCATION, omittable: true },
+      { name: 'path', type: PATH, omittable: true },
+      { name: 'extensions', type: DESC, omittable: true },
     ],
   }
 
