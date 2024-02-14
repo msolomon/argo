@@ -311,10 +311,4 @@ export class ArgoEncoder {
     }
     this.writeArgo(path, value, Wire.ERROR)
   }
-  // export const ERROR = {
-  //   message: block(Wire.STRING, 'String', deduplicateByDefault(Wire.STRING)),
-  //   location: nullable(LOCATION),
-  //   path: nullable(PATH),
-  //   extensions: nullable(DESC),
-  // }
 }

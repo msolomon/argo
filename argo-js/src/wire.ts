@@ -54,7 +54,7 @@ export namespace Wire {
     omittable: boolean
   }
 
-  const VarintBlock = block(Wire.VARINT, 'Int', deduplicateByDefault(Wire.STRING))
+  const VarintBlock = block(Wire.VARINT, 'Int', deduplicateByDefault(Wire.VARINT))
   const LOCATION: Type = {
     type: TypeKey.RECORD,
     fields: [
@@ -150,15 +150,11 @@ export namespace Wire {
   export function deduplicateByDefault(t: Wire.Type): boolean {
     switch (t.type) {
       case 'STRING':
-        return true
-      case 'BOOLEAN':
-        return false
-      case 'VARINT':
-        return false
-      case 'FLOAT64':
-        return false
       case 'BYTES':
         return true
+      case 'BOOLEAN':
+      case 'VARINT':
+      case 'FLOAT64':
       case 'FIXED':
         return false
       default:
