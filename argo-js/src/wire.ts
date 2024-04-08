@@ -104,6 +104,14 @@ export namespace Wire {
     return type.type == TypeKey.RECORD
   }
 
+  export function hasRecord(type: Wire.Type): boolean {
+    if (isRECORD(type)) return true
+    if (isARRAY(type)) return hasRecord(type.of)
+    if (isNULLABLE(type)) return hasRecord(type.of)
+
+    return false
+  }
+
   export function isLabeled(wt: Wire.Type): Boolean {
     // do values start with a Label
     return isNULLABLE(wt) || isSTRING(wt) || isBOOLEAN(wt) || isBYTES(wt) || isARRAY(wt) || (isBLOCK(wt) && isLabeled(wt.of))

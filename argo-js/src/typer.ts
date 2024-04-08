@@ -187,6 +187,9 @@ export class Typer {
       for (const [name, fields] of grouped) {
         let wrapRecord = (n: Wire.Type) => n
         if (fields.length == 1) recordFields.push(...fields)
+        else if (!Wire.hasRecord(fields[0]!.type)) {
+          recordFields.push(fields[0]!)
+        }
         else {
           const combinedFields: Wire.Field[] = []
           const nodesToUpdate: FieldNode[] = []
