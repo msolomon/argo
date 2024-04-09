@@ -120,7 +120,7 @@ export class ArgoDecoder {
       case 'RECORD':
         this.track(path, 'record', buf, {})
         const obj: { [key: string]: any } = {}
-        for (const { name, type, omittable } of wt.fields) {
+        for (const { name, of: type, omittable } of wt.fields) {
           if (Wire.isLabeled(type)) {
             this.count('field: labeled')
           } else if (omittable) {

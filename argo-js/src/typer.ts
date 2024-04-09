@@ -48,8 +48,8 @@ export class Typer {
 
   rootWireType(): Wire.Type {
     const fields = [
-      { name: 'data', type: Wire.nullable(this.dataWireType()), omittable: false },
-      { name: 'errors', type: Wire.nullable({ type: Wire.TypeKey.ARRAY, of: Wire.DESC }), omittable: true },
+      { name: 'data', of: Wire.nullable(this.dataWireType()), omittable: false },
+      { name: 'errors', of: Wire.nullable({ type: Wire.TypeKey.ARRAY, of: Wire.DESC }), omittable: true },
     ]
     return { type: Wire.TypeKey.RECORD, fields }
   }
@@ -154,12 +154,12 @@ export class Typer {
           recordNodes.push(field)
           const getField = this.makeGetField(f.type)
           const type = wrapRecord(this.collectFieldWireTypes(f.type, field.selectionSet, getField))
-          const wfield: Wire.Field = { name: alias, type, omittable }
+          const wfield: Wire.Field = { name: alias, of: type, omittable }
           recordFields.push(wfield)
         } else {
           const type = this.typeToWireType(f.type)
           this.types.set(field, type)
-          recordFields.push({ name: alias, type, omittable })
+          recordFields.push({ name: alias, of: type, omittable })
         }
       }
     }
@@ -191,7 +191,7 @@ export class Typer {
           const combinedFields: Wire.Field[] = []
           const nodesToUpdate: FieldNode[] = []
           for (const field of fields) {
-            const { t, wrap } = this.unwrap(field.type)
+            const { t, wrap } = this.unwrap(field.of)
             if (!Wire.isRECORD(t)) {
               // overlapping scalars always have matching types in valid queries
               recordFields.push(field)
@@ -203,7 +203,7 @@ export class Typer {
 
             for (const [node, wtype] of this.types) {
               // TODO: optimize, probably with a reverse map
-              if (wtype === field.type) {
+              if (wtype === field.of) {
                 nodesToUpdate.push(node)
               }
             }
@@ -215,7 +215,7 @@ export class Typer {
             this.types.set(node, type)
           }
 
-          recordFields.push({ name, type, omittable: false })
+          recordFields.push({ name, of: type, omittable: false })
         }
       }
     }

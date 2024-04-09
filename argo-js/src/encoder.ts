@@ -184,7 +184,7 @@ export class ArgoEncoder {
       case 'RECORD': {
         this.track(path, 'record with num fields', this.buf, wt.fields.length)
 
-        for (const { name, type, omittable } of wt.fields) {
+        for (const { name, of: type, omittable } of wt.fields) {
           if (js && name in js && js[name] != null) {
             // field actually present
             if (omittable && !Wire.isLabeled(type)) {
