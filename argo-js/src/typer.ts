@@ -208,18 +208,19 @@ export class Typer {
               }
             }
           }
-            // recurses to merge the subqueries as well
-            const type: Wire.Type = wrapRecord(this.groupOverlapping(combinedFields))
-            for (const node of nodesToUpdate) {
-              this.types.set(node, type)
-            }
 
-            recordFields.push({ name, type, omittable: false })
+          // recurses to merge the subqueries as well
+          const type: Wire.Type = wrapRecord(this.groupOverlapping(combinedFields))
+          for (const node of nodesToUpdate) {
+            this.types.set(node, type)
           }
+
+          recordFields.push({ name, type, omittable: false })
+        }
       }
     }
-      const record: Wire.Type = { type: Wire.TypeKey.RECORD, fields: recordFields }
-      return record
+    const record: Wire.Type = { type: Wire.TypeKey.RECORD, fields: recordFields }
+    return record
   }
 
   /** Converts a GraphQL type to a wire type, provided it is _not_ a record, union, or interface. */

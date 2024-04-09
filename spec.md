@@ -1037,7 +1037,7 @@ A big Thank You to these fine folks who have contributed on GitHub!
 
 ### v1.1.3
 
-Clarified merging of field which are not collection sets in _CollectFieldWireTypes()_ .
+Clarified merging of fields which are not selection sets in _CollectFieldWireTypes()_ .
 
 ### v1.1.2
 
