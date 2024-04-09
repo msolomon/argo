@@ -322,7 +322,8 @@ CollectFieldWireTypes(selectionType, selectionSet):
     - Otherwise:
       - Set {type} to the result of calling `TypeToWireType(field.type)`
       - Append {Field(alias, type, omittable)} to {recordFields}
-    - For any {field} in {recordFields} which share a name, recursively combine fields into a single selection set {field} which orders selections in the same order as in {recordFields}
+    - For any {field} in {recordFields} which shares a name and is a selection set, recursively combine fields into a single selection set {field} which orders selections in the same order as in {recordFields}
+    - For any {field} in {recordFields} which shares a name but is not a selection set, remove all but the first from {recordFields} (these will be equivalent in all valid queries)
     - Return {recordFields}
 
 CollectFieldsStatic(selectionSet, visitedFragments) :
@@ -1033,6 +1034,10 @@ A big Thank You to these fine folks who have contributed on GitHub!
 # F. Changelog
 
 ## Version 1.1
+
+### v1.1.3
+
+Clarified merging of field which are not collection sets in _CollectFieldWireTypes()_ .
 
 ### v1.1.2
 

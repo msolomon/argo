@@ -150,7 +150,7 @@ export class Typer {
 
         const f = getField(field.name.value, typeCondition)
         if (field.selectionSet) {
-          const wrapRecord = this.unwrapForSelectionSet(this.typeToWireType(f.type)).wrap
+          const wrapRecord = this.unwrap(this.typeToWireType(f.type)).wrap
           recordNodes.push(field)
           const getField = this.makeGetField(f.type)
           const type = wrapRecord(this.collectFieldWireTypes(f.type, field.selectionSet, getField))
@@ -190,30 +190,36 @@ export class Typer {
         else {
           const combinedFields: Wire.Field[] = []
           const nodesToUpdate: FieldNode[] = []
-          for (const { type } of fields) {
-            const { record, wrap } = this.unwrapForSelectionSet(type)
+          for (const field of fields) {
+            const { t, wrap } = this.unwrap(field.type)
+            if (!Wire.isRECORD(t)) {
+              // overlapping scalars always have matching types in valid queries
+              recordFields.push(field)
+              break
+            }
+
             wrapRecord = wrap
-            combinedFields.push(...record.fields)
+            combinedFields.push(...t.fields)
 
             for (const [node, wtype] of this.types) {
               // TODO: optimize, probably with a reverse map
-              if (wtype === type) {
+              if (wtype === field.type) {
                 nodesToUpdate.push(node)
               }
             }
           }
-          // recurses to merge the subqueries as well
-          const type: Wire.Type = wrapRecord(this.groupOverlapping(combinedFields))
-          for (const node of nodesToUpdate) {
-            this.types.set(node, type)
-          }
+            // recurses to merge the subqueries as well
+            const type: Wire.Type = wrapRecord(this.groupOverlapping(combinedFields))
+            for (const node of nodesToUpdate) {
+              this.types.set(node, type)
+            }
 
-          recordFields.push({ name, type, omittable: false })
-        }
+            recordFields.push({ name, type, omittable: false })
+          }
       }
     }
-    const record: Wire.Type = { type: Wire.TypeKey.RECORD, fields: recordFields }
-    return record
+      const record: Wire.Type = { type: Wire.TypeKey.RECORD, fields: recordFields }
+      return record
   }
 
   /** Converts a GraphQL type to a wire type, provided it is _not_ a record, union, or interface. */
@@ -261,30 +267,29 @@ export class Typer {
     }
   }
 
-  unwrapForSelectionSet(wt: Wire.Type): { record: Wire.RECORD; wrap: (r: Wire.Type) => Wire.Type } {
-    if (Wire.isRECORD(wt)) {
-      return { record: wt, wrap: (wt: Wire.Type) => wt }
-    } else if (Wire.isNULLABLE(wt)) {
-      const { record, wrap } = this.unwrapForSelectionSet(wt.of)
-      return { record, wrap: (r: Wire.Type) => Wire.nullable(wrap(r)) }
+  /** Gets the underlying type, without surrounding nullables, arrays, or blocks */
+  unwrap(wt: Wire.Type): { t: Wire.Type; wrap: (r: Wire.Type) => Wire.Type } {
+    if (Wire.isNULLABLE(wt)) {
+      const { t, wrap } = this.unwrap(wt.of)
+      return { t, wrap: (r: Wire.Type) => Wire.nullable(wrap(r)) }
     } else if (Wire.isBLOCK(wt)) {
-      const { record, wrap } = this.unwrapForSelectionSet(wt.of)
+      const { t, wrap } = this.unwrap(wt.of)
       return {
-        record,
+        t,
         wrap: (r: Wire.Type) => {
           return { type: Wire.TypeKey.BLOCK, of: wrap(r), key: wt.key, dedupe: wt.dedupe }
         },
       }
     } else if (Wire.isARRAY(wt)) {
-      const { record, wrap } = this.unwrapForSelectionSet(wt.of)
+      const { t, wrap } = this.unwrap(wt.of)
       return {
-        record,
+        t,
         wrap: (r: Wire.Type) => {
           return { type: Wire.TypeKey.ARRAY, of: wrap(r) }
         },
       }
     } else {
-      throw 'tried to unwrap type which does not have selection set: ' + wt.toString()
+      return { t: wt, wrap: (wt: Wire.Type) => wt }
     }
   }
 
