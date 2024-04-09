@@ -114,3 +114,17 @@ test('Spread type conflict', () => {
   expect(prettyWireType(droidQuery)).toContain('name?: VARINT{Int}')
   expect(prettyWireType(humanQuery)).toContain('name?: STRING<String>')
 })
+
+test('Fragment with mergeable scalars', () => {
+  const schema = StarWarsSchema
+  const query = parse(`
+    query {
+      hero {
+        ... on Droid { name }
+        ... on Human { name }
+      }
+    }`)
+
+  const t = new Typer(schema, query).dataWireType()
+  expect(t).toHaveProperty('fields[0].type.of.fields[0].name', 'name')
+})

@@ -12,7 +12,7 @@
 <header>
 <h1>⛵ Argo</h1>
 <section id="intro">
-<p><em>Version 1.1.2</em>. <em>Compatible with <a href="https://spec.graphql.org/October2021">GraphQL October 2021 Edition</a>.</em></p>
+<p><em>Version 1.1.3</em>. <em>Compatible with <a href="https://spec.graphql.org/October2021">GraphQL October 2021 Edition</a>.</em></p>
 <p><strong>Argo is a compact and compressible binary serialization format for</strong> <a href="https://graphql.org">GraphQL</a>. It aims to:</p>
 <ul>
 <li><strong>Minimize end-to-end latency</strong> of GraphQL responses<ul>
@@ -115,9 +115,10 @@
 <li><a href="#sec-Authors-and-contributors"><span class="spec-secid">E</span>Authors and contributors</a></li>
 <li><a href="#sec-Changelog"><span class="spec-secid">F</span>Changelog</a><ol>
 <li><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a><ol>
-<li><a href="#sec-v1-1-2"><span class="spec-secid">F.1.1</span>v1.1.2</a></li>
-<li><a href="#sec-v1-1-1"><span class="spec-secid">F.1.2</span>v1.1.1</a></li>
-<li><a href="#sec-v1-1-0"><span class="spec-secid">F.1.3</span>v1.1.0</a></li>
+<li><a href="#sec-v1-1-3"><span class="spec-secid">F.1.1</span>v1.1.3</a></li>
+<li><a href="#sec-v1-1-2"><span class="spec-secid">F.1.2</span>v1.1.2</a></li>
+<li><a href="#sec-v1-1-1"><span class="spec-secid">F.1.3</span>v1.1.1</a></li>
+<li><a href="#sec-v1-1-0"><span class="spec-secid">F.1.4</span>v1.1.0</a></li>
 </ol>
 </li>
 <li><a href="#sec-Version-1-0"><span class="spec-secid">F.2</span>Version 1.0</a></li>
@@ -400,7 +401,8 @@ Much of this code may be easier to follow in the <a href="https://github.com/mso
 <li>Append <span class="spec-call"><span data-name="Field">Field</span>(<var data-name="alias">alias</var>, <var data-name="type">type</var>, <var data-name="omittable">omittable</var>)</span> to <var data-name="recordFields">recordFields</var></li>
 </ol>
 </li>
-<li>For any <var data-name="field">field</var> in <var data-name="recordFields">recordFields</var> which share a name, recursively combine fields into a single selection set <var data-name="field">field</var> which orders selections in the same order as in <var data-name="recordFields">recordFields</var></li>
+<li>For any <var data-name="field">field</var> in <var data-name="recordFields">recordFields</var> which shares a name and is a selection set, recursively combine fields into a single selection set <var data-name="field">field</var> which orders selections in the same order as in <var data-name="recordFields">recordFields</var></li>
+<li>For any <var data-name="field">field</var> in <var data-name="recordFields">recordFields</var> which shares a name but is not a selection set, remove all but the first from <var data-name="recordFields">recordFields</var> (these will be equivalent in all valid queries)</li>
 <li>Return <var data-name="recordFields">recordFields</var></li>
 </ol>
 </li>
@@ -1023,19 +1025,23 @@ Normally, Argo does not allow for direction extension to field error objects out
 <h1><span class="spec-secid" title="link to this section"><a href="#sec-Changelog">F</a></span>Changelog</h1>
 <section id="sec-Version-1-1" secid="F.1">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Version-1-1">F.1</a></span>Version 1.1</h2>
-<section id="sec-v1-1-2" secid="F.1.1">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-2">F.1.1</a></span>v1.1.2</h3>
+<section id="sec-v1-1-3" secid="F.1.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-3">F.1.1</a></span>v1.1.3</h3>
+<p>Clarified merging of fields which are not selection sets in <em>CollectFieldWireTypes()</em> .</p>
+</section>
+<section id="sec-v1-1-2" secid="F.1.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-2">F.1.2</a></span>v1.1.2</h3>
 <p>Added additional notes and links.</p>
 </section>
-<section id="sec-v1-1-1" secid="F.1.2">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-1">F.1.2</a></span>v1.1.1</h3>
+<section id="sec-v1-1-1" secid="F.1.3">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-1">F.1.3</a></span>v1.1.1</h3>
 <p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
 <ul>
 <li><code>@include</code> and <code>@skip</code> directives <a href="https://github.com/msolomon/argo/issues/8">now result in omittable fields</a></li>
 </ul>
 </section>
-<section id="sec-v1-1-0" secid="F.1.3">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-0">F.1.3</a></span>v1.1.0</h3>
+<section id="sec-v1-1-0" secid="F.1.4">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-0">F.1.4</a></span>v1.1.0</h3>
 <p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
 <ul>
 <li>Introduced compact paths for errors (and with an eye to streaming) by encoding as a list of integers, described in <a href="#sec-Path-value-transformation">Path value transformation</a></li>
@@ -1225,9 +1231,10 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <li id="_sidebar_F.1"><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_F.1" /><label for="_toggle_F.1"></label>
 <ol>
-<li id="_sidebar_F.1.1"><a href="#sec-v1-1-2"><span class="spec-secid">F.1.1</span>v1.1.2</a></li>
-<li id="_sidebar_F.1.2"><a href="#sec-v1-1-1"><span class="spec-secid">F.1.2</span>v1.1.1</a></li>
-<li id="_sidebar_F.1.3"><a href="#sec-v1-1-0"><span class="spec-secid">F.1.3</span>v1.1.0</a></li>
+<li id="_sidebar_F.1.1"><a href="#sec-v1-1-3"><span class="spec-secid">F.1.1</span>v1.1.3</a></li>
+<li id="_sidebar_F.1.2"><a href="#sec-v1-1-2"><span class="spec-secid">F.1.2</span>v1.1.2</a></li>
+<li id="_sidebar_F.1.3"><a href="#sec-v1-1-1"><span class="spec-secid">F.1.3</span>v1.1.1</a></li>
+<li id="_sidebar_F.1.4"><a href="#sec-v1-1-0"><span class="spec-secid">F.1.4</span>v1.1.0</a></li>
 </ol>
 </li>
 <li id="_sidebar_F.2"><a href="#sec-Version-1-0"><span class="spec-secid">F.2</span>Version 1.0</a></li>
