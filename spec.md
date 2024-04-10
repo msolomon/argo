@@ -1,6 +1,6 @@
 # ⛵ Argo
 
-_Version 1.1.3_.
+_Version 1.1.4_.
 _Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
 
 **Argo is a compact and compressible binary serialization format for** [GraphQL](https://graphql.org).
@@ -169,7 +169,7 @@ It must be a JSON object of the form: `{"type": "typeName" ...attributes...}` wh
   "fields": [
     {
       "name": "errors",
-      "type": {
+      "of": {
         "type": "NULLABLE",
         "of": { "type": "ARRAY", "of": { "type": "DESC" } }
       },
@@ -1034,6 +1034,10 @@ A big Thank You to these fine folks who have contributed on GitHub!
 # F. Changelog
 
 ## Version 1.1
+
+### v1.1.4
+
+Renamed `Field.type` to `Field.of` in the wire schema's JSON representation.
 
 ### v1.1.3
 

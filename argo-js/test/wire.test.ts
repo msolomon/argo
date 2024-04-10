@@ -126,5 +126,5 @@ test('Fragment with mergeable scalars', () => {
     }`)
 
   const t = new Typer(schema, query).dataWireType()
-  expect(t).toHaveProperty('fields[0].type.of.fields[0].name', 'name')
+  expect(t).toHaveProperty('fields[0].of.of.fields[0].name', 'name')
 })

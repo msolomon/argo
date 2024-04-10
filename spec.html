@@ -12,7 +12,7 @@
 <header>
 <h1>⛵ Argo</h1>
 <section id="intro">
-<p><em>Version 1.1.3</em>. <em>Compatible with <a href="https://spec.graphql.org/October2021">GraphQL October 2021 Edition</a>.</em></p>
+<p><em>Version 1.1.4</em>. <em>Compatible with <a href="https://spec.graphql.org/October2021">GraphQL October 2021 Edition</a>.</em></p>
 <p><strong>Argo is a compact and compressible binary serialization format for</strong> <a href="https://graphql.org">GraphQL</a>. It aims to:</p>
 <ul>
 <li><strong>Minimize end-to-end latency</strong> of GraphQL responses<ul>
@@ -115,10 +115,11 @@
 <li><a href="#sec-Authors-and-contributors"><span class="spec-secid">E</span>Authors and contributors</a></li>
 <li><a href="#sec-Changelog"><span class="spec-secid">F</span>Changelog</a><ol>
 <li><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a><ol>
-<li><a href="#sec-v1-1-3"><span class="spec-secid">F.1.1</span>v1.1.3</a></li>
-<li><a href="#sec-v1-1-2"><span class="spec-secid">F.1.2</span>v1.1.2</a></li>
-<li><a href="#sec-v1-1-1"><span class="spec-secid">F.1.3</span>v1.1.1</a></li>
-<li><a href="#sec-v1-1-0"><span class="spec-secid">F.1.4</span>v1.1.0</a></li>
+<li><a href="#sec-v1-1-4"><span class="spec-secid">F.1.1</span>v1.1.4</a></li>
+<li><a href="#sec-v1-1-3"><span class="spec-secid">F.1.2</span>v1.1.3</a></li>
+<li><a href="#sec-v1-1-2"><span class="spec-secid">F.1.3</span>v1.1.2</a></li>
+<li><a href="#sec-v1-1-1"><span class="spec-secid">F.1.4</span>v1.1.1</a></li>
+<li><a href="#sec-v1-1-0"><span class="spec-secid">F.1.5</span>v1.1.0</a></li>
 </ol>
 </li>
 <li><a href="#sec-Version-1-0"><span class="spec-secid">F.2</span>Version 1.0</a></li>
@@ -230,12 +231,12 @@ In a client-server architecture, GraphQL schemas frequently change on the server
 <section id="sec-Wire-schema-serialization" secid="3.1">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Wire-schema-serialization">3.1</a></span>Wire schema serialization</h2>
 <p>A Wire schema or WireType may be serialized in JSON. It must be a JSON object of the form: <code>{"type": "typeName" ...attributes...}</code> where <code>typeName</code> is one of the <span class="spec-ref"><a href="#wire-types" data-name="wire-types">Wire types</a></span> as a string, and the attributes are as sketched in <em>WireType</em> above.</p>
-<pre id="example-b1dcc" class="spec-example" data-language="json"><a href="#example-b1dcc">Example № 1</a><code><span class="token punctuation">{</span>
+<pre id="example-a9511" class="spec-example" data-language="json"><a href="#example-a9511">Example № 1</a><code><span class="token punctuation">{</span>
   <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"RECORD"</span><span class="token punctuation">,</span>
   <span class="token property">"fields"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
     <span class="token punctuation">{</span>
       <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"errors"</span><span class="token punctuation">,</span>
-      <span class="token property">"type"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"of"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
         <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"NULLABLE"</span><span class="token punctuation">,</span>
         <span class="token property">"of"</span><span class="token operator">:</span> <span class="token punctuation">{</span> <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"ARRAY"</span><span class="token punctuation">,</span> <span class="token property">"of"</span><span class="token operator">:</span> <span class="token punctuation">{</span> <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"DESC"</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span>
       <span class="token punctuation">}</span><span class="token punctuation">,</span>
@@ -1025,23 +1026,27 @@ Normally, Argo does not allow for direction extension to field error objects out
 <h1><span class="spec-secid" title="link to this section"><a href="#sec-Changelog">F</a></span>Changelog</h1>
 <section id="sec-Version-1-1" secid="F.1">
 <h2><span class="spec-secid" title="link to this section"><a href="#sec-Version-1-1">F.1</a></span>Version 1.1</h2>
-<section id="sec-v1-1-3" secid="F.1.1">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-3">F.1.1</a></span>v1.1.3</h3>
+<section id="sec-v1-1-4" secid="F.1.1">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-4">F.1.1</a></span>v1.1.4</h3>
+<p>Renamed <code>Field.type</code> to <code>Field.of</code> in the wire schema&rsquo;s JSON representation.</p>
+</section>
+<section id="sec-v1-1-3" secid="F.1.2">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-3">F.1.2</a></span>v1.1.3</h3>
 <p>Clarified merging of fields which are not selection sets in <em>CollectFieldWireTypes()</em> .</p>
 </section>
-<section id="sec-v1-1-2" secid="F.1.2">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-2">F.1.2</a></span>v1.1.2</h3>
+<section id="sec-v1-1-2" secid="F.1.3">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-2">F.1.3</a></span>v1.1.2</h3>
 <p>Added additional notes and links.</p>
 </section>
-<section id="sec-v1-1-1" secid="F.1.3">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-1">F.1.3</a></span>v1.1.1</h3>
+<section id="sec-v1-1-1" secid="F.1.4">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-1">F.1.4</a></span>v1.1.1</h3>
 <p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
 <ul>
 <li><code>@include</code> and <code>@skip</code> directives <a href="https://github.com/msolomon/argo/issues/8">now result in omittable fields</a></li>
 </ul>
 </section>
-<section id="sec-v1-1-0" secid="F.1.4">
-<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-0">F.1.4</a></span>v1.1.0</h3>
+<section id="sec-v1-1-0" secid="F.1.5">
+<h3><span class="spec-secid" title="link to this section"><a href="#sec-v1-1-0">F.1.5</a></span>v1.1.0</h3>
 <p>BREAKING CHANGE &ndash; some changes are backwards incompatible, but no known implementation relied on them.</p>
 <ul>
 <li>Introduced compact paths for errors (and with an eye to streaming) by encoding as a list of integers, described in <a href="#sec-Path-value-transformation">Path value transformation</a></li>
@@ -1231,10 +1236,11 @@ Written in <a href="https://spec-md.com" target="_blank">Spec Markdown</a>.</foo
 <li id="_sidebar_F.1"><a href="#sec-Version-1-1"><span class="spec-secid">F.1</span>Version 1.1</a>
 <input hidden class="toggle" type="checkbox" id="_toggle_F.1" /><label for="_toggle_F.1"></label>
 <ol>
-<li id="_sidebar_F.1.1"><a href="#sec-v1-1-3"><span class="spec-secid">F.1.1</span>v1.1.3</a></li>
-<li id="_sidebar_F.1.2"><a href="#sec-v1-1-2"><span class="spec-secid">F.1.2</span>v1.1.2</a></li>
-<li id="_sidebar_F.1.3"><a href="#sec-v1-1-1"><span class="spec-secid">F.1.3</span>v1.1.1</a></li>
-<li id="_sidebar_F.1.4"><a href="#sec-v1-1-0"><span class="spec-secid">F.1.4</span>v1.1.0</a></li>
+<li id="_sidebar_F.1.1"><a href="#sec-v1-1-4"><span class="spec-secid">F.1.1</span>v1.1.4</a></li>
+<li id="_sidebar_F.1.2"><a href="#sec-v1-1-3"><span class="spec-secid">F.1.2</span>v1.1.3</a></li>
+<li id="_sidebar_F.1.3"><a href="#sec-v1-1-2"><span class="spec-secid">F.1.3</span>v1.1.2</a></li>
+<li id="_sidebar_F.1.4"><a href="#sec-v1-1-1"><span class="spec-secid">F.1.4</span>v1.1.1</a></li>
+<li id="_sidebar_F.1.5"><a href="#sec-v1-1-0"><span class="spec-secid">F.1.5</span>v1.1.0</a></li>
 </ol>
 </li>
 <li id="_sidebar_F.2"><a href="#sec-Version-1-0"><span class="spec-secid">F.2</span>Version 1.0</a></li>

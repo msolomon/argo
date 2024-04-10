@@ -50,7 +50,7 @@ export namespace Wire {
 
   export type Field = {
     name: string
-    type: Wire.Type
+    of: Wire.Type
     omittable: boolean
   }
 
@@ -58,18 +58,18 @@ export namespace Wire {
   const LOCATION: Type = {
     type: TypeKey.RECORD,
     fields: [
-      { name: 'line', type: VarintBlock, omittable: false },
-      { name: 'column', type: VarintBlock, omittable: false },
+      { name: 'line', of: VarintBlock, omittable: false },
+      { name: 'column', of: VarintBlock, omittable: false },
     ],
   }
 
   export const ERROR: Type = {
     type: TypeKey.RECORD,
     fields: [
-      { name: 'message', type: block(Wire.STRING, 'String', deduplicateByDefault(Wire.STRING)), omittable: false },
-      { name: 'locations', type: { type: TypeKey.ARRAY, of: LOCATION }, omittable: true },
-      { name: 'path', type: PATH, omittable: true },
-      { name: 'extensions', type: DESC, omittable: true },
+      { name: 'message', of: block(Wire.STRING, 'String', deduplicateByDefault(Wire.STRING)), omittable: false },
+      { name: 'locations', of: { type: TypeKey.ARRAY, of: LOCATION }, omittable: true },
+      { name: 'path', of: PATH, omittable: true },
+      { name: 'extensions', of: DESC, omittable: true },
     ],
   }
 
@@ -138,7 +138,7 @@ export namespace Wire {
         case 'ARRAY':
           return recurse(wt.of) + '[]'
         case 'RECORD':
-          const fs = wt.fields.map(({ name, type, omittable }) => idnt(1) + `${name}${omittable ? '?' : ''}: ${recurse(type).trimStart()}`)
+          const fs = wt.fields.map(({ name, of: type, omittable }) => idnt(1) + `${name}${omittable ? '?' : ''}: ${recurse(type).trimStart()}`)
           return '{\n' + fs.join('\n') + '\n' + idnt() + '}'
         default:
           throw "Programmer error: print can't handle " + JSON.stringify(wt)
@@ -177,7 +177,7 @@ export namespace Wire {
         const fieldIndex = wt.fields.findIndex(({ name }) => name === fieldName)
         if (fieldIndex === -1) throw 'Encoding error: could not find record field: ' + fieldName
         const field = wt.fields[fieldIndex]
-        return [fieldIndex, ...pathToWirePath(field.type, tail)]
+        return [fieldIndex, ...pathToWirePath(field.of, tail)]
       }
       case 'STRING':
       case 'VARINT':
@@ -207,7 +207,7 @@ export namespace Wire {
           throw 'Encoding error: could not find record field by index: ' + fieldIndex
         }
         const field = wt.fields[fieldIndex]
-        return [field.name, ...wirePathToPath(field.type, tail)]
+        return [field.name, ...wirePathToPath(field.of, tail)]
       }
       case 'STRING':
       case 'VARINT':
