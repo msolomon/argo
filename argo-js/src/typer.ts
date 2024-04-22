@@ -56,13 +56,13 @@ export class Typer {
 
   dataWireType(): Wire.Type {
     const getField = this.makeGetField(this.rootType)
-    return this.collectFieldWireTypes(this.rootType, this.operation.selectionSet, getField)
+    return this.collectFieldWireTypes(this.rootType, this.operation.selectionSet, getField, false)
   }
 
   // this follows the spec's CollectFields, but is modified to require no runtime information
   // we note where we "deviate from the GraphQL spec", however, because this is not an _implementation_
   // of of the spec, it does _not_ violate the spec--it just differs
-  collectFieldsStatic = (selectionSet: graphql.SelectionSetNode, visitedFragments: Set<string> = new Set()): Map<string, SelectedFieldNode[]> => {
+  collectFieldsStatic = (selectionSet: graphql.SelectionSetNode, visitedFragments: Set<string>): Map<string, SelectedFieldNode[]> => {
     const groupedFields: Map<string, SelectedFieldNode[]> = new Map()
     const getGroupedField = (responseKey: string): SelectedFieldNode[] => {
       if (!groupedFields.has(responseKey)) groupedFields.set(responseKey, [])
@@ -129,11 +129,24 @@ export class Typer {
   /**
    * This recursively determines the wire types for a given selectionset.
    * It also populates `this.types` so that wire types may be looked up by FieldNode.
+   *
+   * An "inexact selection" is a selection nested under a fragment with a type condition that does not
+   * exactly match the selected type by name (e.g. an implementation of a union or interface).
+   * Inexact selections result in fields which are omittable,
+   * but exact selections are not omittable (unless marked with appropriate @skip/@include directives).
+   * inexactSelection is true iff the selectionset is an inexact selection
    */
-  collectFieldWireTypes = (selectionType: GraphQLType, selectionSet: graphql.SelectionSetNode, getField: (n: string, typeCondition?: string) => graphql.GraphQLField<unknown, unknown>): Wire.Type => {
+  collectFieldWireTypes = (
+    selectionType: GraphQLType,
+    selectionSet: graphql.SelectionSetNode,
+    getField: (n: string, typeCondition?: string) => graphql.GraphQLField<unknown, unknown>,
+    inexactSelection: boolean
+  ): Wire.Type => {
     let recordFields: Wire.Field[] = []
+    const exactSelections: Set<string> = new Set()
     const recordNodes: FieldNode[] = []
-    for (const [alias, fields] of this.collectFieldsStatic(selectionSet)) {
+    for (const [alias, fields] of this.collectFieldsStatic(selectionSet, new Set())) {
+      const fieldMap = new Map<FieldNode, graphql.GraphQLField<unknown, unknown>>()
       for (const { field, selectedBy } of fields) {
         let typeCondition: string | undefined = undefined
         if (selectedBy.kind == Kind.FRAGMENT_SPREAD) {
@@ -141,19 +154,26 @@ export class Typer {
         } else if (selectedBy.kind == Kind.INLINE_FRAGMENT) {
           typeCondition = selectedBy.typeCondition?.name.value
         }
+        let exactSelection = typeCondition === undefined || Typer.unwrap(selectionType).toString() == typeCondition
+        if (!inexactSelection && exactSelection) exactSelections.add(field.name.value)
+        fieldMap.set(field, getField(field.name.value, typeCondition))
+      }
+
+      for (const { field, selectedBy } of fields) {
+        const f = fieldMap.get(field)!
+        const guaranteed = exactSelections.has(field.name.value)
         let omittable =
-          (typeCondition != null && Typer.unwrap(selectionType).toString() != typeCondition) ||
+          !guaranteed ||
           this.hasVariableIfDirective('include', field.directives) ||
           this.hasVariableIfDirective('skip', field.directives) ||
           this.hasVariableIfDirective('include', selectedBy.directives) ||
           this.hasVariableIfDirective('skip', selectedBy.directives)
 
-        const f = getField(field.name.value, typeCondition)
         if (field.selectionSet) {
           const wrapRecord = this.unwrap(this.typeToWireType(f.type)).wrap
           recordNodes.push(field)
           const getField = this.makeGetField(f.type)
-          const type = wrapRecord(this.collectFieldWireTypes(f.type, field.selectionSet, getField))
+          const type = wrapRecord(this.collectFieldWireTypes(f.type, field.selectionSet, getField, !guaranteed))
           const wfield: Wire.Field = { name: alias, of: type, omittable }
           recordFields.push(wfield)
         } else {
@@ -179,48 +199,44 @@ export class Typer {
 
   // if we have overlapping selections, merge them into a canonical order
   groupOverlapping(fields: Wire.Field[]): Wire.RECORD {
-    let recordFields = fields
-    const grouped = groupBy(recordFields, (f) => f.name)
-    if (Array.from(grouped.values()).some((g) => g.length > 1)) {
-      // need to merge overlapping fields
-      recordFields = []
-      for (const [name, fields] of grouped) {
+    let recordFields: Wire.Field[] = []
+    const grouped = groupBy(fields, (f) => f.name)
+    for (const [name, fields] of grouped) {
+      const omittable = fields.some((f) => f.omittable)
+
+      if (!Wire.isRECORD(this.unwrap(fields[0].of).t)) {
+        // overlapping scalars always have matching underlying types in valid queries,
+        // but if any are omittable then the result must also be omittable
+        recordFields.push({ ...fields[0], omittable })
+      } else {
         let wrapRecord = (n: Wire.Type) => n
-        if (fields.length == 1) recordFields.push(...fields)
-        else {
-          const combinedFields: Wire.Field[] = []
-          const nodesToUpdate: FieldNode[] = []
-          for (const field of fields) {
-            const { t, wrap } = this.unwrap(field.of)
-            if (!Wire.isRECORD(t)) {
-              // overlapping scalars always have matching types in valid queries
-              recordFields.push(field)
-              break
-            }
+        const combinedFields: Wire.Field[] = []
+        const nodesToUpdate: FieldNode[] = []
+        for (const field of fields) {
+          const { t, wrap } = this.unwrap(field.of)
+          if (!Wire.isRECORD(t)) throw 'Expected record type'
+          wrapRecord = wrap
+          combinedFields.push(...t.fields)
 
-            wrapRecord = wrap
-            combinedFields.push(...t.fields)
-
-            for (const [node, wtype] of this.types) {
-              // TODO: optimize, probably with a reverse map
-              if (wtype === field.of) {
-                nodesToUpdate.push(node)
-              }
+          for (const [node, wtype] of this.types) {
+            // TODO: optimize, probably with a reverse map
+            if (wtype === field.of) {
+              nodesToUpdate.push(node)
             }
           }
-
-          // recurses to merge the subqueries as well
-          const type: Wire.Type = wrapRecord(this.groupOverlapping(combinedFields))
-          for (const node of nodesToUpdate) {
-            this.types.set(node, type)
-          }
-
-          recordFields.push({ name, of: type, omittable: false })
         }
+
+        // recurses to merge the subqueries as well
+        const type: Wire.Type = wrapRecord(this.groupOverlapping(combinedFields))
+        for (const node of nodesToUpdate) {
+          this.types.set(node, type)
+        }
+
+        recordFields.push({ name, of: type, omittable })
       }
     }
-    const record: Wire.Type = { type: Wire.TypeKey.RECORD, fields: recordFields }
-    return record
+
+    return { type: Wire.TypeKey.RECORD, fields: recordFields }
   }
 
   /** Converts a GraphQL type to a wire type, provided it is _not_ a record, union, or interface. */
@@ -323,16 +339,13 @@ export class Typer {
           } else if (graphql.isInterfaceType(t)) {
             fields = {
               ...t.getFields(),
-              ...this.schema
-                .getImplementations(t)
-                .objects.find((o) => o.name == typeCondition)
-                ?.getFields(),
+              ...(typeCondition && (this.schema.getType(typeCondition) as graphql.GraphQLInterfaceType | graphql.GraphQLObjectType)?.getFields()),
             }
           } else {
             fields = t.getFields()
           }
           const field = fields && fields[n]
-          if (!field) throw `Could not get field ${n} from ${t.toString()}`
+          if (!field) throw `Could not get field ${n} from ${t.toString()} ${typeCondition && typeCondition != t.toString() ? '(does ' + typeCondition + ' implement ' + t + ')?' : ''}`
           return field
       }
     }
