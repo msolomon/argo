@@ -188,11 +188,57 @@ test('Fragment with mergeable records', () => {
    id: STRING<ID>
    idInt?: VARINT{Int}
    properties?: {
-    x?: VARINT{Int}
+    x: VARINT{Int}
     y?: STRING<String>
     z?: STRING<String>
    }
    idString: STRING<String>
+  }?
+}`)
+})
+
+test('Fragment with mergeable records that does not have to merge', () => {
+  const schema = buildSchema(`
+    type Query {
+      hero: Character
+    }
+    interface Character {
+      id: ID!
+    }
+    type Droid implements Character {
+      id: ID!
+      properties: DroidProperties!
+    }
+    type DroidProperties {
+      x: Int!
+      y: String!
+    }
+    type Human implements Character {
+      id: ID!
+    }
+  `)
+
+  const mergeQuery = parse(`
+    query {
+      hero {
+        ... on Droid {
+          id
+          properties {
+            x
+            y
+          }
+        }
+      }
+    }`)
+
+  const type = new Typer(schema, mergeQuery).dataWireType()
+  expect(Wire.print(type)).toEqual(`{
+ hero: {
+   id?: STRING<ID>
+   properties?: {
+    x: VARINT{Int}
+    y: STRING<String>
+   }
   }?
 }`)
 })

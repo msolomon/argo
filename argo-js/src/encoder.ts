@@ -201,7 +201,7 @@ export class ArgoEncoder {
             this.writeArgo(addPath(path, name, block?.key), js[name], type)
           } else {
             this.track(path, 'record field is absent and not-nullable, error', this.buf, name)
-            throw 'Error: record field is absent and not-nullable: ' + path
+            throw new Error('Error: record field is absent and not-nullable: ' + pathToArray(path))
           }
         }
         return
