@@ -158,7 +158,7 @@ test('Fragment with mergeable records', () => {
   `)
 
   const mergeQuery = parse(`
-    query {
+    query($v: Boolean!) {
       hero {
         ... on Droid {
           id # not omittable, since selected 'on Character' below, and hero is a Character
@@ -177,7 +177,7 @@ test('Fragment with mergeable records', () => {
         }
         ... on Character {
           id
-          idString
+          idString @skip(if: $v)
         }
       }
     }`)
@@ -192,7 +192,7 @@ test('Fragment with mergeable records', () => {
     y?: STRING<String>
     z?: STRING<String>
    }
-   idString: STRING<String>
+   idString?: STRING<String>
   }?
 }`)
 })
