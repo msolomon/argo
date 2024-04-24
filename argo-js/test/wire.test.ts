@@ -128,3 +128,66 @@ test('Fragment with mergeable scalars', () => {
   const t = new Typer(schema, query).dataWireType()
   expect(t).toHaveProperty('fields[0].of.of.fields[0].name', 'name')
 })
+
+test('Fragment with mergeable records', () => {
+  const schema = buildSchema(`
+    type Query {
+      hero: Character
+    }
+
+    interface Character { id: ID! }
+
+    type Droid implements Character {
+      id: ID!
+      properties: DroidProperties!
+    }
+    type DroidProperties {
+      x: Int!
+      y: String!
+    }
+    type Human implements Character {
+      id: ID!
+      properties: HumanProperties!
+    }
+    type HumanProperties {
+      x: Int!
+      z: String!
+    }
+  `)
+
+  const mergeQuery = parse(`
+    query {
+      hero {
+        ... on Character { id }
+        ... on Droid {
+          id
+          properties {
+            x
+            y
+          }
+        }
+        ... on Human {
+          id
+          properties {
+            x
+            z
+          }
+        }
+      }
+    }`)
+
+  const prettyWireType = (query: DocumentNode): string => Wire.print(new Typer(schema, query).dataWireType())
+
+  console.log(JSON.stringify(new Typer(schema, mergeQuery).dataWireType(), null, 2))
+
+  expect(prettyWireType(mergeQuery)).toEqual(`{
+ hero: {
+   id?: STRING<ID>
+   properties?: {
+    x: VARINT{Int}
+    y?: STRING<String>
+    z?: STRING<String>
+   }
+  }?
+}`)
+})
