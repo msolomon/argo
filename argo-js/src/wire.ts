@@ -91,6 +91,9 @@ export namespace Wire {
   export function isFIXED(type: Wire.Type): type is Wire.FIXED {
     return type.type == TypeKey.FIXED
   }
+  export function isDESC(type: Wire.Type): type is Wire.DESC {
+    return type.type == TypeKey.DESC
+  }
   export function isBLOCK(type: Wire.Type): type is Wire.BLOCK {
     return type.type == TypeKey.BLOCK
   }
@@ -156,6 +159,7 @@ export namespace Wire {
       case 'VARINT':
       case 'FLOAT64':
       case 'FIXED':
+      case 'DESC':
         return false
       default:
         throw 'Programmer error: deduplicateByDefault does not make sense for ' + JSON.stringify(t)

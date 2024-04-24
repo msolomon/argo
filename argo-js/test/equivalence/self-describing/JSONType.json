@@ -1,0 +1,40 @@
+{
+  "data": {
+    "json": {
+      "name": "John Doe",
+      "age": 30,
+      "score": -10.1,
+      "eligible": false,
+      "null": null,
+      "entries": [
+        {
+          "name": "Entry 1",
+          "value": 10
+        },
+        {
+          "name": "Entry 2",
+          "value": 20
+        }
+      ]
+    },
+    "nullJson": null,
+    "requiredJson": {
+      "name": "John Doe",
+      "age": 30,
+      "score": -10.1,
+      "eligible": false,
+      "null": null,
+      "entries": [
+        {
+          "name": "Entry 1",
+          "value": 10
+        },
+        {
+          "name": "Entry 2",
+          "value": 20
+        }
+      ]
+    },
+    "nullRequiredJson": null
+  }
+}

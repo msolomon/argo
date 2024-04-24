@@ -160,7 +160,7 @@ export class ArgoDecoder {
       case 'ARRAY': {
         const length = Number(Label.read(buf))
         this.track(path, 'array length', buf, length)
-        this.count('bytes: array length', Label.encode(BigInt(length)).length)
+        this.count('bytes: array length', Label.encode(length).length)
         return new Array(length).fill(undefined).map((_, i) => this.readArgo(buf, addPath(path, i, block?.key), wt.of))
       }
 
@@ -283,7 +283,7 @@ export class ArgoDecoder {
         return new UnlabeledVarIntBlockReader(this.slicer.nextBlock)
       case 'FLOAT64':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
-        return new FixedSizeBlockReader<number>(this.slicer.nextBlock, (bytes) => new Float64Array(bytes)[0], Float64Array.BYTES_PER_ELEMENT)
+        return new FixedSizeBlockReader<number>(this.slicer.nextBlock, (bytes) => new Float64Array(bytes.buffer)[0], Float64Array.BYTES_PER_ELEMENT)
       case 'FIXED':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
         return new FixedSizeBlockReader(this.slicer.nextBlock, (bytes) => bytes, t.length)

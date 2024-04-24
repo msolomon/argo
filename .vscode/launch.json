@@ -11,10 +11,10 @@
       "name": "Debug Jest Tests",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceRoot}/cedar-js",
+      "cwd": "${workspaceRoot}/argo-js",
       "runtimeArgs": [
         "--inspect-brk",
-        "${workspaceRoot}/cedar-js/node_modules/.bin/jest",
+        "${workspaceRoot}/argo-js/node_modules/.bin/jest",
         "--runInBand"
       ],
       "console": "integratedTerminal",
