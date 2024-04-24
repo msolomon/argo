@@ -104,7 +104,7 @@ export class ArgoEncoder {
         return BlockWriter.noLabel(Label.encode)
       case 'FLOAT64':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
-        return BlockWriter.noLabel((v) => new Uint8Array(new Float64Array([v])))
+        return BlockWriter.noLabel<number>((v) => new Uint8Array(new Float64Array([v]).buffer))
       case 'FIXED':
         if (dedupe) throw 'Unimplemented: deduping ' + t.type
         return BlockWriter.noLabel((bytes) => bytes)
@@ -199,6 +199,9 @@ export class ArgoEncoder {
           } else if (Wire.isNULLABLE(type)) {
             this.track(path, 'record field is absent but nullable', this.buf, name)
             this.writeArgo(addPath(path, name, block?.key), js[name], type)
+          } else if (Wire.isBLOCK(type) && Wire.isDESC(type.of)) {
+            this.track(path, 'record field is null but self-describing', this.buf, name)
+            this.writeArgo(addPath(path, name, block?.key), js[name], type)
           } else {
             this.track(path, 'record field is absent and not-nullable, error', this.buf, name)
             throw new Error('Error: record field is absent and not-nullable: ' + pathToArray(path))
@@ -214,7 +217,7 @@ export class ArgoEncoder {
           console.log(this.tracked)
           throw `Could not encode non - array as array: ${js} `
         }
-        this.buf.write(Label.encode(BigInt(js.length)))
+        this.buf.write(Label.encode(js.length))
         return js.forEach((v, i) => this.writeArgo(addPath(path, i, block?.key), v, wt.of))
       }
 

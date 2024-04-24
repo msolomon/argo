@@ -1,6 +1,6 @@
 # ⛵ Argo
 
-_Version 1.1.4_.
+_Version 1.2.0_.
 _Compatible with [GraphQL October 2021 Edition](https://spec.graphql.org/October2021)._
 
 **Argo is a compact and compressible binary serialization format for** [GraphQL](https://graphql.org).
@@ -203,7 +203,7 @@ Selection sets and selections are handled differently.
   - List becomes `ARRAY`
   - All types are non-null by default, and nullable types are wrapped in `NULLABLE`
   - Custom scalars (and any built-ins which set it) use the `@ArgoCodec` directive to choose a wire type
-  - Scalars (except Boolean) may use the `@ArgoDeduplicate` directive to opt in or out of deduplication
+  - Scalars (except Boolean and `DESC`) may use the `@ArgoDeduplicate` directive to opt in or out of deduplication
 
 Note: Though it seems more efficient to represent Enums as `VARINT`, there is no guarantee that the writer's view of the Enum type exactly matches the reader's. The schema may have changed: in the writer's schema, if an Enum's values have been reordered, or if an Enum value has been added before the end (but will otherwise never be sent to this particular reader), the reader and writer do not have enough information to agree on the correct numbering.
 
@@ -228,6 +228,7 @@ enum ArgoCodecType {
   Boolean
   BYTES
   FIXED
+  DESC
 }
 
 directive @ArgoCodec(codec: ArgoCodecType!, fixedLength: Int) on SCALAR | ENUM
@@ -244,6 +245,7 @@ It specifies the Wire type to use for that scalar or enum.
 : `String`, `Int`, `Float`, and `Boolean` match the behavior for these built-in GraphQL types
 (i.e. they are transformed to `STRING`, `VARINT`, `FLOAT64`, and `BOOLEAN` respectively).
 `BYTES` and `FIXED`, used for binary data, correspond to those _Wire types_.
+`DESC` corresponds to the self-describing Wire type.
 : The `fixedLength` argument is required for `FIXED` scalars,
 and specifies the length of the fixed-length binary data.
 It is an error to specify `fixedLength` for any other Wire type.
@@ -253,6 +255,7 @@ It is an error to specify `fixedLength` for any other Wire type.
 : The _@ArgoDeduplicate_ directive is optional, and may be used on any scalar or enum.
 The default deduplication behavior (used when the directive is absent) is described above in
 [Creating a Wire schema](#sec-Creating-a-Wire-schema), and is based on the codec used.
+Note that deduplication is still only allowed on Labeled types.
 
 ## Algorithms
 
@@ -643,10 +646,10 @@ Bytes (5)
 : Written as _Type marker_ 5 in _Core_, followed by a non-self-describing `BYTES` with Block key "Bytes".
 
 Int (6)
-: Written as _Type marker_ 5 in _Core_, followed by a non-self-describing `VARINT` with Block key "Int".
+: Written as _Type marker_ 6 in _Core_, followed by a non-self-describing `VARINT` with Block key "Int".
 
 Float (7)
-: Written as _Type marker_ 6 in _Core_, followed by a non-self-describing `FLOAT64` with Block key "Float".
+: Written as _Type marker_ 7 in _Core_, followed by a non-self-describing `FLOAT64` with Block key "Float".
 
 ## Backreferences
 
@@ -1032,6 +1035,13 @@ A big Thank You to these fine folks who have contributed on GitHub!
 - [Jimmy Bourassa](https://github.com/jbourassa)
 
 # F. Changelog
+
+## Version 1.2
+
+### v1.2.0
+
+- Permit self-describing types (i.e. `DESC`) to be specified in `@ArgoCodec` directives.
+- Fixed typos in Self-describing encoding section.
 
 ## Version 1.1
 

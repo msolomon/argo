@@ -1,0 +1,24 @@
+scalar JSON @ArgoCodec(codec: DESC)
+
+type Query {
+  json: JSON
+  requiredJson: JSON!
+}
+
+
+#########################################################
+# Argo directives
+#########################################################
+
+enum ArgoCodecType {
+  String
+  Int
+  Float
+  Boolean
+  BYTES
+  FIXED
+  DESC
+}
+
+directive @ArgoCodec(codec: ArgoCodecType!, fixedLength: Int) on SCALAR | ENUM
+directive @ArgoDeduplicate(deduplicate: Boolean! = true) on SCALAR | ENUM

@@ -1,5 +1,5 @@
-import { DirectiveLocation, DirectiveNode, GraphQLBoolean, GraphQLDirective, GraphQLEnumType, GraphQLInt, GraphQLNonNull, ConstDirectiveNode, GraphQLType, GraphQLScalarType, BooleanValueNode, StringValueNode, IntValueNode } from "graphql";
-import { Wire } from "./wire";
+import { DirectiveLocation, GraphQLBoolean, GraphQLDirective, GraphQLEnumType, GraphQLInt, GraphQLNonNull, ConstDirectiveNode, GraphQLScalarType, BooleanValueNode, StringValueNode } from 'graphql'
+import { Wire } from './wire'
 
 /** Marks a type for de-duplication. Works best with large values which re-appear often. */
 export const ArgoDeduplicateDirective = new GraphQLDirective({
@@ -15,7 +15,7 @@ export const ArgoDeduplicateDirective = new GraphQLDirective({
       description: 'Should values of this type be deduplicated?',
       type: new GraphQLNonNull(GraphQLBoolean),
       defaultValue: true,
-    }
+    },
   },
   isRepeatable: false,
 })
@@ -27,6 +27,7 @@ export enum ArgoCodec {
   Boolean = 'Boolean',
   BYTES = 'BYTES',
   FIXED = 'FIXED',
+  DESC = 'DESC',
 }
 
 /** Describes the Argo codecs which are available */
@@ -58,13 +59,18 @@ export const ArgoCodecType = new GraphQLEnumType({
       description: 'Serialize and deserialize a scalar as Argo FIXED: a fixed-length byte array.',
       value: ArgoCodec.FIXED,
     },
-  }
+    DESC: {
+      description: 'Serialize and deserialize a scalar as Argo DESC: a flexible self-describing binary format (somewhat like JSON).',
+      value: ArgoCodec.DESC,
+    },
+  },
 })
 
 /** Specifies how to encode and decode a (custom) Scalar */
 export const ArgoCodecDirective = new GraphQLDirective({
   name: 'ArgoCodec',
-  description: 'Specifies how to serialize and deserialize this scalar. This is necessary for custom scalars to work with Argo serialization. Adding, changing, or removing this directive is typically a breaking change.',
+  description:
+    'Specifies how to serialize and deserialize this scalar. This is necessary for custom scalars to work with Argo serialization. Adding, changing, or removing this directive is typically a breaking change.',
   locations: [
     DirectiveLocation.SCALAR,
     DirectiveLocation.ENUM,
@@ -84,7 +90,7 @@ export const ArgoCodecDirective = new GraphQLDirective({
 })
 
 function getDirectiveByName(directives: readonly ConstDirectiveNode[] | undefined, name: string): ConstDirectiveNode | undefined {
-  return directives?.find(d => d.name.value === name)
+  return directives?.find((d) => d.name.value === name)
 }
 
 // TODO: make the directive reading below more robust
@@ -92,24 +98,39 @@ function getDirectiveByName(directives: readonly ConstDirectiveNode[] | undefine
 export function getArgoCodecDirectiveValue(node: GraphQLScalarType | GraphQLEnumType): Wire.Type | undefined {
   const directive = getDirectiveByName(node.astNode?.directives, ArgoCodecDirective.name)
   if (directive == undefined) return undefined
-  const codec = (directive.arguments?.find(a => a.name.value === 'codec')?.value as StringValueNode)?.value
-  const fixedLengthNode = directive.arguments?.find(a => a.name.value === 'fixedLength')?.value
+  const codec = (directive.arguments?.find((a) => a.name.value === 'codec')?.value as StringValueNode)?.value
+  const fixedLengthNode = directive.arguments?.find((a) => a.name.value === 'fixedLength')?.value
   let length: number | undefined
-  if (fixedLengthNode == undefined || fixedLengthNode?.kind == 'NullValue') { }
-  else if (fixedLengthNode?.kind == 'IntValue') length = parseInt(fixedLengthNode.value)
+  if (fixedLengthNode == undefined || fixedLengthNode?.kind == 'NullValue') {
+  } else if (fixedLengthNode?.kind == 'IntValue') length = parseInt(fixedLengthNode.value)
   else throw 'Invalid fixedLength kind on ArgoCodecDirective: ' + fixedLengthNode?.kind
   let wire: Wire.Type
   switch (codec as ArgoCodec) {
-    case ArgoCodec.String: wire = Wire.STRING; break
-    case ArgoCodec.Int: wire = Wire.VARINT; break
-    case ArgoCodec.Float: wire = Wire.FLOAT64; break
-    case ArgoCodec.Boolean: wire = Wire.BOOLEAN; break
-    case ArgoCodec.BYTES: wire = Wire.BYTES; break
+    case ArgoCodec.String:
+      wire = Wire.STRING
+      break
+    case ArgoCodec.Int:
+      wire = Wire.VARINT
+      break
+    case ArgoCodec.Float:
+      wire = Wire.FLOAT64
+      break
+    case ArgoCodec.Boolean:
+      wire = Wire.BOOLEAN
+      break
+    case ArgoCodec.BYTES:
+      wire = Wire.BYTES
+      break
     case ArgoCodec.FIXED:
       if (length == null) throw 'fixedLength argument is required on ArgoCodecDirective for FIXED codec'
       wire = { type: Wire.TypeKey.FIXED, length }
       break
-    default: throw 'Invalid codec value on ArgoCodecDirective'
+    case ArgoCodec.DESC:
+      wire = Wire.DESC
+      break
+
+    default:
+      throw 'Invalid codec value on ArgoCodecDirective'
   }
   if (length != null && codec != ArgoCodec.FIXED) {
     throw 'fixedLength argument on ArgoCodecDirective is only allowed for FIXED codec, not ' + codec
@@ -121,9 +142,12 @@ export function getArgoCodecDirectiveValue(node: GraphQLScalarType | GraphQLEnum
 export function getArgoDeduplicateDirectiveValue(node: GraphQLScalarType | GraphQLEnumType): boolean | undefined {
   const directive = getDirectiveByName(node.astNode?.directives, ArgoDeduplicateDirective.name)
   if (directive == undefined) return undefined
-  const deduplicateNode = directive.arguments?.find(a => a.name.value === 'deduplicate')?.value
+  const deduplicateNode = directive.arguments?.find((a) => a.name.value === 'deduplicate')?.value
   let deduplicate: boolean | undefined
-  if (deduplicateNode?.kind == 'NullValue') { deduplicate = true } // default on ArgoDeduplicateDirective
+  if (deduplicateNode?.kind == 'NullValue') {
+    deduplicate = true
+  } // default on ArgoDeduplicateDirective
   else if (deduplicateNode?.kind == 'BooleanValue') deduplicate = deduplicateNode.value
   else throw 'Invalid deduplicate value on ArgoCodecDirective'
+  return deduplicate
 }

@@ -5,7 +5,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { buildSchema, parse, DocumentNode, GraphQLSchema } from 'graphql'
-import { ExecutionResultCodec, Typer } from '../../src'
+import { ArgoEncoder, BitSet, ExecutionResultCodec, Typer } from '../../src'
 import { brotliCompressSync, gzipSync, constants } from 'zlib'
 import zstd from '@mongodb-js/zstd'
 import * as lz4 from 'lz4'
@@ -14,15 +14,16 @@ import { StarWarsSchema } from './starwarsequivalence'
 
 jest.setTimeout(10000)
 
-declare global { // from equivalence-environment
+declare global {
+  // from equivalence-environment
   var testPath: string
 }
 
 function slurp(file: Promise<fs.promises.FileHandle> | string): Promise<string> {
-  if (typeof (file) === 'string') {
+  if (typeof file === 'string') {
     return slurp(fs.promises.open(file))
   }
-  return file.then(f => {
+  return file.then((f) => {
     const contents = f.readFile({ encoding: 'utf8' })
     f.close()
     return contents
@@ -37,7 +38,10 @@ async function* loadTests(dir: string = path.dirname(testPath)) {
       count++
     }
   }
-  if (count == 0) for await (const test of loadTest(dir)) { yield test }
+  if (count == 0)
+    for await (const test of loadTest(dir)) {
+      yield test
+    }
 }
 
 async function* loadTest(dir: string) {
@@ -46,10 +50,8 @@ async function* loadTest(dir: string) {
   const results: Map<string, any> = new Map()
   for await (const p of walk(dir)) {
     if (p.endsWith('/schema.graphql')) continue
-    else if (p.endsWith('.graphql'))
-      queries.set(path.basename(p, '.graphql'), parse(await slurp(p)))
-    else if (p.endsWith('.json'))
-      results.set(path.basename(p, '.json'), await JSON.parse(await slurp(p)))
+    else if (p.endsWith('.graphql')) queries.set(path.basename(p, '.graphql'), parse(await slurp(p)))
+    else if (p.endsWith('.json')) results.set(path.basename(p, '.json'), await JSON.parse(await slurp(p)))
     else if (p.includes('disabled')) continue
     else throw `Got unexpected file in test: ${p}`
   }
@@ -66,37 +68,35 @@ async function* loadTest(dir: string) {
       schema,
       query,
       expected,
-      json
+      json,
     }
   }
 }
 
 async function* walk(dir: string, dirsOnly: boolean = false): AsyncGenerator<string> {
   for await (const d of await fs.promises.opendir(dir)) {
-    const entry = path.join(dir, d.name);
+    const entry = path.join(dir, d.name)
     if (d.isDirectory() && !d.name.includes('disabled')) {
       yield entry
-      yield* walk(entry, dirsOnly);
-    }
-    else if (d.isFile() && !dirsOnly) yield entry;
+      yield* walk(entry, dirsOnly)
+    } else if (d.isFile() && !dirsOnly) yield entry
   }
 }
 
 // this is Cap'n Proto's packing algorithm, which basically compresses long strings of 0 bytes
 // see https://capnproto.org/encoding.html#packing
 function capnpPackedLength(bytes: Uint8Array): number {
-  const encode = transEncodeSync(new Uint8Array(2048));
+  const encode = transEncodeSync(new Uint8Array(2048))
   let done = false
   const source = {
     next() {
       if (!done) {
         done = true
         return { done: false, value: bytes }
-      }
-      else return { done }
+      } else return { done }
     },
   }
-  const packed = encode(source);
+  const packed = encode(source)
   let length = 0
   let p = packed.next()
   while (!p.done) {
@@ -109,7 +109,7 @@ function capnpPackedLength(bytes: Uint8Array): number {
 test('Star Wars equivalence tests', async () => {
   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
   for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
-    console.log("============================================================\nRunning test:", name)
+    console.log('============================================================\nRunning test:', name)
     await runEquivalence(name, query, json, StarWarsSchema, expected)
   }
 })
@@ -117,7 +117,7 @@ test('Star Wars equivalence tests', async () => {
 test('Queries are serialized equivalently', async () => {
   for await (const { name, dir, query, json, schema, expected } of loadTests()) {
     if (dir.includes('starwars')) continue
-    console.log("============================================================\nRunning test:", name)
+    console.log('============================================================\nRunning test:', name)
     await runEquivalence(name, query, json, schema, expected)
   }
 })
@@ -136,7 +136,7 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
   const ci = new ExecutionResultCodec(schema, query)
 
   const argoBytes = ci.jsToArgo(expected)
-  argoBytes.compact() // make sure we don't have usused space, since later we access the underlying array
+  argoBytes.compact() // make sure we don't have unused space, since later we access the underlying array
   argoBytes.resetPosition() // start at the beginning, not the end
 
   const compactJson = JSON.stringify(expected)
@@ -169,7 +169,7 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
   const zstdArgoSize = (await zstd.compress(Buffer.from(argoBytes.uint8array), ZstdLevel)).byteLength
   const lz4ArgoSize = lz4.encode(Buffer.from(argoBytes.uint8array), { streamChecksum: false }).byteLength
   const capnpArgoSize = capnpPackedLength(Buffer.from(argoBytes.uint8array))
-  const savedWithArgo = (json: number, argo: number) => `${(json - argo).toLocaleString("en-US")} bytes (${100 - Math.round(argo / json * 100)}%)`
+  const savedWithArgo = (json: number, argo: number) => `${(json - argo).toLocaleString('en-US')} bytes (${100 - Math.round((argo / json) * 100)}%)`
 
   const sizes: { [index: string]: any } = {
     uncompressed: { level: 0, json: compactJsonLength, argo: argoBytes.length, saved: savedWithArgo(compactJsonLength, argoBytes.length) },
@@ -188,4 +188,41 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
   sizes[`best (${smallest[0]})`] = smallest[1] // always show best at bottom of table
 
   console.table(sizes)
+
+  function testDifferentOptions(encoder: ArgoEncoder) {
+    const argoBytes = ci.jsToArgoWithEncoder(expected, encoder)
+    argoBytes.compact() // make sure we don't have unused space, since later we access the underlying array
+    argoBytes.resetPosition() // start at the beginning, not the end
+
+    const fromArgoResult = ci.argoToJs(argoBytes)
+    const argoToJson = JSON.stringify(fromArgoResult, null, 2)
+    if (argoToJson !== json) {
+      expect(argoToJson).toEqual(json)
+    }
+  }
+
+  let encoder = new ArgoEncoder()
+  encoder.header.inlineEverything = true
+  testDifferentOptions(encoder)
+
+  encoder = new ArgoEncoder()
+  encoder.header.selfDescribing = true
+  testDifferentOptions(encoder)
+
+  encoder = new ArgoEncoder()
+  encoder.header.inlineEverything = true
+  encoder.header.selfDescribing = true
+  testDifferentOptions(encoder)
+
+  encoder = new ArgoEncoder()
+  encoder.header.nullTerminatedStrings = true
+  testDifferentOptions(encoder)
+
+  encoder = new ArgoEncoder()
+  encoder.header.noDeduplication = true
+  testDifferentOptions(encoder)
+
+  encoder = new ArgoEncoder()
+  encoder.header.userFlags = BitSet.setBit(0n, 5)
+  testDifferentOptions(encoder)
 }

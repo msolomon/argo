@@ -1,0 +1,6 @@
+query JSON {
+  json
+  nullJson: json
+  requiredJson
+  nullRequiredJson: requiredJson
+}
