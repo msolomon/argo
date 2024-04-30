@@ -128,3 +128,117 @@ test('Fragment with mergeable scalars', () => {
   const t = new Typer(schema, query).dataWireType()
   expect(t).toHaveProperty('fields[0].of.of.fields[0].name', 'name')
 })
+
+test('Fragment with mergeable records', () => {
+  const schema = buildSchema(`
+    type Query {
+      hero: Character
+    }
+    interface Character {
+      id: ID!
+      idString: String!
+      idInt: Int!
+    }
+    type Droid implements Character {
+      id: ID!
+      properties: DroidProperties!
+    }
+    type DroidProperties {
+      x: Int!
+      y: String!
+    }
+    type Human implements Character {
+      id: ID!
+      properties: HumanProperties!
+    }
+    type HumanProperties {
+      x: Int!
+      z: String!
+    }
+  `)
+
+  const mergeQuery = parse(`
+    query($v: Boolean!) {
+      hero {
+        ... on Droid {
+          id # not omittable, since selected 'on Character' below, and hero is a Character
+          idInt # omittable, since not selected 'on Character' (important for forward compatibility)
+          properties {
+            x
+            y
+          }
+        }
+        ... on Human {
+          id
+          properties {
+            x
+            z
+          }
+        }
+        ... on Character {
+          id
+          idString @skip(if: $v)
+        }
+      }
+    }`)
+
+  const type = new Typer(schema, mergeQuery).dataWireType()
+  expect(Wire.print(type)).toEqual(`{
+ hero: {
+   id: STRING<ID>
+   idInt?: VARINT{Int}
+   properties?: {
+    x: VARINT{Int}
+    y?: STRING<String>
+    z?: STRING<String>
+   }
+   idString?: STRING<String>
+  }?
+}`)
+})
+
+test('Fragment with mergeable records that does not have to merge', () => {
+  const schema = buildSchema(`
+    type Query {
+      hero: Character
+    }
+    interface Character {
+      id: ID!
+    }
+    type Droid implements Character {
+      id: ID!
+      properties: DroidProperties!
+    }
+    type DroidProperties {
+      x: Int!
+      y: String!
+    }
+    type Human implements Character {
+      id: ID!
+    }
+  `)
+
+  const mergeQuery = parse(`
+    query {
+      hero {
+        ... on Droid {
+          id
+          properties {
+            x
+            y
+          }
+        }
+      }
+    }`)
+
+  const type = new Typer(schema, mergeQuery).dataWireType()
+  expect(Wire.print(type)).toEqual(`{
+ hero: {
+   id?: STRING<ID>
+   properties?: {
+    x: VARINT{Int}
+    y: STRING<String>
+   }
+  }?
+}`)
+})
