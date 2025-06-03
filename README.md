@@ -32,7 +32,7 @@ Argo has a formal specification:
 ## Reference implementation
 
 `argo-js` is a reference implementation of Argo in TypeScript,
-and can be found in [this repository](https://github.com/msolomon/argo).
+and can be found in [this repository](https://github.com/msolomon/argo/tree/main/argo-js#readme).
 It is distributed on NPM under the name [argo-graphql](https://www.npmjs.com/package/argo-graphql).
 
 ## 3rd party implementations
