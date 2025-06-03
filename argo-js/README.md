@@ -14,14 +14,15 @@ Tests may be run with `npm test` or `yarn test`.
 
 ### Features
 
-Feature | Implemented? | Notes
-[InlineEverything](https://msolomon.github.io/argo/spec#inlineeverything)           | ✅ |
-[SelfDescribing](https://msolomon.github.io/argo/spec#selfdescribing)               | ✅ |
-[OutOfBandFieldErrors](https://msolomon.github.io/argo/spec#outofbandfielderrors)   | ✅ |
-[SelfDescribingErrors](https://msolomon.github.io/argo/spec#selfdescribingerrors)   | ⚠️ | Inline field errors not supported
-[NullTerminatedStrings](https://msolomon.github.io/argo/spec#nullterminatedstrings) | ✅ |
-[NoDeduplication](https://msolomon.github.io/argo/spec#nodeduplication)             | ✅ |
-[HasUserFlags](https://msolomon.github.io/argo/spec#hasuserflags)                   | ⚠️ | No user flags implemented
+| Feature | Implemented? | Notes |
+|---|---|---|
+| [InlineEverything](https://msolomon.github.io/argo/spec#inlineeverything)           | ✅ | |
+| [SelfDescribing](https://msolomon.github.io/argo/spec#selfdescribing)               | ✅ | |
+| [OutOfBandFieldErrors](https://msolomon.github.io/argo/spec#outofbandfielderrors)   | ✅ | |
+| [SelfDescribingErrors](https://msolomon.github.io/argo/spec#selfdescribingerrors)   | ⚠️ | Inline field errors not supported |
+| [NullTerminatedStrings](https://msolomon.github.io/argo/spec#nullterminatedstrings) | ✅ | |
+| [NoDeduplication](https://msolomon.github.io/argo/spec#nodeduplication)             | ✅ | |
+| [HasUserFlags](https://msolomon.github.io/argo/spec#hasuserflags)                   | ⚠️ | No user flags implemented |
 
 ### Performance
 
