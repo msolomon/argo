@@ -1,0 +1,12 @@
+{
+ data: {
+   hero: {
+     id: STRING<String>
+     name: STRING<String>?
+     friends: {
+         name: STRING<String>?
+        }?[]?
+    }?
+  }?
+ errors?: DESC[]?
+}

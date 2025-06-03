@@ -1,0 +1,43 @@
+{
+ data: {
+   organization: {
+     name: STRING<String>?
+     url: STRING<URI>
+     repository: {
+       name: STRING<String>
+       autoMergeAllowed: BOOLEAN
+       description: STRING<String>?
+       pullRequests: {
+        edges: {
+            node: {
+              title: STRING<String>
+              mergeable: STRING<MergeableState>
+              comments: {
+               totalCount: VARINT{Int}
+               pageInfo: {
+                hasNextPage: BOOLEAN
+                endCursor: STRING<String>?
+               }
+               nodes: {
+                   __typename: STRING<String>
+                   bodyText: STRING<String>
+                   reactionGroups: {
+                      content: STRING<ReactionContent>
+                      viewerHasReacted: BOOLEAN
+                     }[]?
+                   author: {
+                     __typename: STRING<String>
+                     name?: STRING<String>?
+                     twitterUsername?: STRING<String>?
+                     avatarUrl?: STRING<URI>
+                    }?
+                  }?[]?
+              }
+             }?
+           }?[]?
+       }
+      }?
+    }?
+  }?
+ errors?: DESC[]?
+}

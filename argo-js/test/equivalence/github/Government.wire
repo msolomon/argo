@@ -1,0 +1,36 @@
+{
+ data: {
+   nodes: {
+      id: STRING<ID>
+      name?: STRING<String>?
+      repositories?: {
+       nodes: {
+           name: STRING<String>
+           createdAt: STRING<DateTime>
+           url: STRING<URI>
+           homepageUrl: STRING<URI>?
+           languages: {
+             nodes: {
+                 name: STRING<String>
+                }?[]?
+            }?
+           pullRequests: {
+            nodes: {
+                author: {
+                  login: STRING<String>
+                 }?
+                title: STRING<String>
+               }?[]?
+           }
+          }?[]?
+      }
+     }?[]
+   rateLimit: {
+     limit: VARINT{Int}
+     cost: VARINT{Int}
+     remaining: VARINT{Int}
+     resetAt: STRING<DateTime>
+    }?
+  }?
+ errors?: DESC[]?
+}

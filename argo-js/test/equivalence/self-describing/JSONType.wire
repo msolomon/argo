@@ -1,0 +1,9 @@
+{
+ data: {
+   json: DESC{JSON}?
+   nullJson: DESC{JSON}?
+   requiredJson: DESC{JSON}
+   nullRequiredJson: DESC{JSON}
+  }?
+ errors?: DESC[]?
+}

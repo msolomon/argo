@@ -1,0 +1,18 @@
+{
+ data: {
+   hero: {
+     name: STRING<String>?
+     friends: {
+         name?: STRING<String>?
+         friends2: {
+             friends3: {
+                 name?: STRING<String>?
+                 appearsIn?: STRING<Episode>?[]?
+                }?[]?
+            }?[]?
+         appearsIn?: STRING<Episode>?[]?
+        }?[]?
+    }?
+  }?
+ errors?: DESC[]?
+}

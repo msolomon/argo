@@ -1,0 +1,3 @@
+data__schemaqueryTypefieldsnameheroargsepisodedescriptionÒIf omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.typekindENUMEpisodeofTypedefaultValue
+humanidid of the humanNON_NULL#SCALARString%
+droid)id of the droid-#/1%

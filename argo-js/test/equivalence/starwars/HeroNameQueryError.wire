@@ -1,0 +1,9 @@
+{
+ data: {
+   hero: {
+     name: STRING<String>?
+     secretBackstory: STRING<String>?
+    }?
+  }?
+ errors?: DESC[]?
+}

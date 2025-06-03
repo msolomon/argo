@@ -1,0 +1,259 @@
+ò@æ±Ruby on RailsrailsAllow adapter `#execute` methods  to take `allow_retry` optionY3Vyc29yOnYyOpHOTKZIDA==IssueCommentYeah, this sounds reasonable, so let's upgrade it to public API: if someone is directly calling execute and passing along a SQL query string, it seems fair to allow them to also state that their supplied query is retryable (through whatever prior info they might have about what's in the string).
+(In practice that means we'll need to ensure it's available on all the adapters / every execute, and covered by a test.)UserMatthew Draper_matthewd@matthewd I've extended the option to all of the execute methods across the various adapters. I'd love to hear your thoughts on the best way to test this -- going through with_raw_connection to test retry logic is simple enough, because we can pass a block that raises the connection-related error we want, when we want it to.
+With #execute, it's trickier because all we have to work with is the SQL string we're passing through.. We could use a SELECT SLEEP statement and kill the process to trigger a connection error, but as previously discussed, that's messy (and won't work for sqlite).. I could also mess around with mocks and simply verify that we're forwarding the allow_retry option to with_raw_connection (with the actual with_raw_connection retry logic tested by the tests above ^), but that doesn't seem particularly useful either.. Thoughts? üòÑ
+EDIT: I realized we don't actually need to sleep, we can just kill the connection process, attempt to query, which will trigger a reconnect, retry and then succeed. I've pushed a test for this, it's quite simple so hopefully it will do the trick.Adrianna ChangadriannakchangDeprecate delegation to connection handler from BaseMake PR template less onerousFix double logging in `ActiveRecord::QueryLogs`Y3Vyc29yOnYyOpHOTdTAOQ==@byroot could this be backported to 7-0-stable please?Bart de WaterExpose the request.parameter_filterFix encryption of column default valuesAvoid `value_for_database` if attribute not updatedAdd `read_attribute_for_database`Fix `ciphertext_for` for yet-to-be-encrypted valuesFix a bug where using groups and counts with long table names would return incorrect results.Y3Vyc29yOnYyOpHOTJsusA==Backported to 7-0-stable a6d0f80.Ryuta KamizonoSkip validation options for `change_table` in old migrationsY3Vyc29yOnYyOpHOTJ5mXA==Thank you!Eileen M. UchitelleeileencodesFix missed deprecationsAdd missing `preview` event  to `ActiveStorage::LogSubscriber`Y3Vyc29yOnYyOpHOTKknjA==Could you update the Active Storage CHANGELOG?Alex Ghiculescu@ghiculescu Done üëçüèºChedli BourguibaFix Action View compatibility with jbuilderY3Vyc29yOnYyOpHOTL1iZg==Thank you for taking care of that.Haroon AhmedAllow ErrorReporter to handle several error classesY3Vyc29yOnYyOpHOTLbo7A==Jean Boussier_byrootAssets Precompile in Rails Guide is NOT showing the steps for Sprockets 4Y3Vyc29yOnYyOpHOTMxH8g==Thanks! Could you change your PR body to include "Fixes #46184", then this will auto-close the issue when it's merged.Sure!Matias SallesLooks good. Please squash your commits and then we'll have to wait for someone from the core team to review üëçThanks for the suggestions!Thanks @matiassalles99 and @ghiculescu !Petrik de Heusfour54MemoryStore: preserve entry ttl when incrementingPR template: note about auto-closing issues [ci skip]Fix Action Mailer not skipped when Active Job is (7-0-stable)Y3Vyc29yOnYyOpHOTOuiog==It looks like Action Cable test failures would be fixed by a backport of #46106.
+The Active Record tests are failing due to a mismatch between Postgres server version and pg_dump version, but I don't think I know enough about the buildkite config to figure out how to fix that (it doesn't look like postgresql-client is versioned in https://github.com/rails/buildkite-config/blob/397480bc0303f81470e6ea039bea36a658431068/Dockerfile#L89, so I'm not sure why its grabbing 14 instead of 15)Hartley McGuireAs far as I know, PostgreSQl 15 has been released on Oct 13, 2022.
+https://www.postgresql.org/about/news/postgresql-15-released-2526/
+Rails CI runs PostgreSQl server using postgres:alpine docker image provided by https://hub.docker.com/_/postgres/tags
+while pg_dump client is installed by apt-get. I assume the postgres:alpine docker image bumped to the latest while the apt repository provides 14.
+https://github.com/rails/buildkite-config/blob/397480bc0303f81470e6ea039bea36a658431068/docker-compose.yml#L113Yasuo HondayahondaI have not investigated if there are any way to update the test to allow pg_dump 14 can connect to PostgreSQL server 15, there are two possible workarounds.
+
+Add the apt repository https://wiki.postgresql.org/wiki/Apt and install pg_dump version 15
+Lock PostgreSQL docker image to 14. Refer to rails/buildkite-config#14 how to doI have not investigated if there are any way to update the test to allow pg_dump 14 can connect to PostgreSQL server 15, there are two possible workarounds.
+
+Looks like pg_dump version must be same or newer than the PostgreSQL server version, so this option should not work.
+Here are backgrounds:
+
+Dumping from a server newer than pg_dump is likely not to work at all.
+
+There was a --ignore-version option that was deprecated since PostgreSQL 8.4
+https://www.postgresql.org/docs/8.3/app-pgdump.html
+
+--ignore-version
+Ignore version mismatch between pg_dump and the database server.
+pg_dump can dump from servers running previous releases of PostgreSQL, but very old versions are not supported anymore (currently, those prior to 7.0). Dumping from a server newer than pg_dump is likely not to work at all. Use this option if you need to override the version check (and if pg_dump then fails, don't say you weren't warned).Since the failure did not reproduce locally, I have restarted the entire build.PostgreSQL failures are addressed.
+I have opened #46334 for 7-0-stable branch to address/workaround Action Cable failures. I am not sure which way is better, backporting #46106 to 7-0-stable or #46334 .
+At least we have identified the cause of failures, I think it is good to merge to 7-0-stable.Fix double logs if Rails.logger outputs to STDERRClarify activerecord changelog for sqlcommenterFix test where broadcaster doesn't define #silenceFix SQLCommenter value serializationY3Vyc29yOnYyOpHOTNhMPw==Test failures seem unrelated to my changes.@bdewater Great catch! Sorry I missed that part of the spec ü§¶‚Äç‚ôÇÔ∏è
+I'm not a maintainer, so I can't approve, but this fix looks good to me.Lucas Swartmodulitos@bdewater please squash your commits.Addressed the last bits of feedback and squashed commits.Apply config to `Rails.application.deprecators`Add deprecator-only overload for `assert_deprecated`Add `ActiveRecord.deprecator`Allow specifying columns to use in ActiveRecord::Base object queriesY3Vyc29yOnYyOpHOTWl-dQ==ü§î I was thinking for a while about the naming. query_constraints seems to be related to all queries and as mentioned is too generic. What about something more closer to the actual usage (-> persistence) aka persistence_constraints?Josef ≈†im√°nekWhat about something more closer to the actual usage (-> persistence) aka persistence_constraints?
+
+I can see where this suggestion is coming from and it's fair if scoped to this particular PR as currently it only changes persistence behavior, however, I'm afraid that calling it persistence will limit our long-term vision for the feature which includes making sure that .reload respects the config, associations like comment.blog_post respecting query constraints of the Blog model and presumably, mainly for the composite primary keys use-case, we may even need .find method to respect a different signature like
+class Vehicle < ActiveRecord::Base
+   query_constraints :make, :model
+end
+
+Vehicle.find(["Toyota", "Corolla"])
+For this reason we would like to stick to query or querying term or any other term but as long as it implies "querying behavior" in generalNikita VasilevskyImprove BelongsToAssociationsTest's `test_destroy_linked_models` by adding two assertionsY3Vyc29yOnYyOpHOTOPgGg==Looks good!Point 'Canberra' time zone mapping to Australia/Canberra'Y3Vyc29yOnYyOpHOTi3RZA==Hey @radar, thanks for the PR! Based on previous discussion (#22440), I'm not sure if this will be accepted.
+Looking at the rest of the mappings, there are other examples of different "places" mapping to the same zone as well, like "Bangkok" => "Asia/Bangkok", and "Hanoi" => "Asia/Bangkok". I think time_zone_options_for_select intentionally doesn't use the values of this hash because of this. How are you generating your select?I'm generating this select via this code:
+ActiveSupport::TimeZone.all.map { |tz| [tz.tzinfo.name, tz.to_s] },
+
+The select itself is generated in some React code.
+I understand there are indeed other places where are inaccurate. I do not particularly need those to be correct myself at the moment, I was just concerned with the Australian ones being consistent.Ryan Biggryanbigg#22440 was about adding more entries, here it's about one entry consistency. I think this PR makes sense.I think that this change made ActiveSupport::TimeZone.country_zones("AU") -country zones for Australia- list missing Canberra:
+Before the change (just undoing that change at my just-synced Rails fork):
+> before_upgrade = ActiveSupport::TimeZone.country_zones("AU").map(&:name)
+=> ["Perth", "Australia/Eucla", "Adelaide", "Australia/Broken_Hill", "Darwin", "Antarctica/Macquarie", "Australia/Lindeman", "Brisbane", "Canberra", "Hobart", "Melbourne", "Sydney", "Australia/Lord_Howe"] # `Canberra` is here
+irb(#<ActiveSupport::BroadcastLoggerTest:0x00007fa169a68e90>):010:0> before_upgrade.size
+=> 13
+After the change (latest main):
+> after_upgrade = ActiveSupport::TimeZone.country_zones("AU").map(&:name)
+=> ["Perth", "Australia/Eucla", "Adelaide", "Australia/Broken_Hill", "Darwin", "Antarctica/Macquarie", "Australia/Lindeman", "Brisbane", "Hobart", "Melbourne", "Sydney", "Australia/Lord_Howe"] # `Canberra` is NOT here
+irb(#<ActiveSupport::BroadcastLoggerTest:0x00007fa169a68e90>):014:0> after_upgrade.size
+=> 12
+irb(#<ActiveSupport::BroadcastLoggerTest:0x00007fa169a68e90>):013:0> before_upgrade - after_upgrade
+=> ["Canberra"]
+I didn't yet dig through on why such a simple change will cause something like this, posting it here in case someone knows what's happening on top of their head.Ahmed Shahin@codeminator Thanks for raising this.
+It looks like this is due to the behaviour of the ActiveSupport::TimeZone#load_country_zones method. It goes:
+  def load_country_zones(code)
+          country = TZInfo::Country.get(code)
+          country.zone_identifiers.flat_map do |tz_id|
+            if MAPPING.value?(tz_id)
+              MAPPING.inject([]) do |memo, (key, value)|
+                memo << self[key] if value == tz_id
+                memo
+              end
+            else
+              create(tz_id, nil, TZInfo::Timezone.get(tz_id))
+            end
+          end.sort!
+        end
+
+The important bit is:
+country = TZInfo::Country.get(code)
+          country.zone_identifiers
+
+The zone_identifiers here does not include Australia/Canberra.
+I'll take a look at why that is.Ok, looks like Australia/Canberra is what's referred to as a linked timezone, a timezone that refers to a different timezone. There's a few of these for Australia:
+country = TZInfo::Country.get("AU")
+ids = country.zone_identifiers
+TZInfo::Timezone.all_linked_zones.select { |z| ids.include?(z.canonical_zone.identifier) }
+Returns:
+=> [#<TZInfo::TimezoneProxy: Australia/ACT>,
+ #<TZInfo::TimezoneProxy: Australia/Canberra>,
+ #<TZInfo::TimezoneProxy: Australia/Currie>,
+ #<TZInfo::TimezoneProxy: Australia/LHI>,
+ #<TZInfo::TimezoneProxy: Australia/NSW>,
+ #<TZInfo::TimezoneProxy: Australia/North>,
+ #<TZInfo::TimezoneProxy: Australia/Queensland>,
+ #<TZInfo::TimezoneProxy: Australia/South>,
+ #<TZInfo::TimezoneProxy: Australia/Tasmania>,
+ #<TZInfo::TimezoneProxy: Australia/Victoria>,
+ #<TZInfo::TimezoneProxy: Australia/West>,
+ #<TZInfo::TimezoneProxy: Australia/Yancowinna>]
+
+I wonder if it would make sense here to update load_country_zones to also include these linked timezones as well?Yeah, it looks like this gets tricky.
+On one hand, I think returning all those linked zones would be undesirably duplicative in general (setting aside Canberra, the rest don't seem terribly useful).
+On the other, it looks like it would also be impossible: while tzinfo-data knows them as linked zones, and we can identify them as such programmatically, without that gem (on the OSes I've tried) things get more complicated.
+
+Australia/Canberra doesn't show up in TZInfo::Country.get("AU")
+it does appear as a regular non-linked zone when specifically asked for via TZInfo::Timezone.get
+when so fetched, I can't find any way of determining it's a link to Sydney (and by extension, inferring it's in Australia)
+
+(Of course Australia is a slightly special case, because the region prefix carries a very strong country-determining hint, but that's not true for anywhere else.)
+ISTM that while this change has highlighted the case for Canberra in particular, in general it's an indication that it is simply incorrect for an application to assume load_country_zones will contain all string values that might exist inside the given country. If you're using tzinfo-data, to answer "is this timezone in Australia?", you'll need to canonicalize the candidate zone name first. If you're using the system tzinfo... I'm not sure that's answerable at all?!fix typo in pull request template [ci-skip]Y3Vyc29yOnYyOpHOTPL_rw==Thank you, @stadniklksndr! üëçJonathan HefnerAdd multi-database support for the `db:version` taskAdd `ActiveSupport.deprecator`Fix `clear_all_connections!` deprecation warningAdds validate to foreign keys and check constraints in schema.rbY3Vyc29yOnYyOpHOTPbofg==@nvasilevski Thank you for the suggestions! I implemented them.Tommy GravesTAGravesImprove missing template error pageY3Vyc29yOnYyOpHOTbN_MQ==Merci @byroot üëãüèªü§óOlivier LacanMaking this an ActiveSupport::ActionableError with a button to create the template would be awesome.Chris Oliverexcid3Adjusted redis version in Gemfile EntryDon't remove duplicates from args arrayY3Vyc29yOnYyOpHOTQkxZA==Good catch!  Thank you, @BrentWheeldon! üòÉAdd `{Abstract,Action}Controller.deprecator`Fix invalid content type deprecation warningAdd load_defaults doc for query_log_tags_format [ci skip]Y3Vyc29yOnYyOpHOTQ6lMA==Thank you, @skipkayhil! üëãAdd missing defaults to new_framework_defaultsY3Vyc29yOnYyOpHOTQ-jQA==Thank you, @skipkayhil! üôåAdd missing configs to new_framework_defaults_7_0Fix missed connection handler callOnly ask people to run migration in a environment in non-development environmentsBackport: Handle `Date` objects for PostgreSQL `timestamptz` columnsY3Vyc29yOnYyOpHOTSNsTg==The red tests aren't related, they are fixed by #46334Add `ActionDispatch.deprecator`Invalidate transaction as early as possibleY3Vyc29yOnYyOpHOTXLnhg==Nice! I'll tell myself that prior to with_raw_connection there wasn't a similarly fitting place to put invalidation closer to the initial failure üòÖ
+
+For example after properly invalidating transaction state, we should be able to get rid of the following check
+
+Yeah, that sounds much better.
+
+making framework a bit smarter and a bit forgiving
+
+TBH, I've been wondering if we should do even more here. Right now we correctly track whether there's really a transaction still open on the DB side, but we don't interfere if the app tries to run a query. I feel like I could easily make the argument that if your Ruby code is nested in a situation where it could/should reasonably believe that it's wrapped by a transaction, but the transaction has in fact disappeared, we should refuse to talk to the server until the code has unwound to a point where we have officially rolled back on our side. ü§îAdded a changelog entry.
+
+we should refuse to talk to the server until the code has unwound to a point where we have officially rolled back on our side.
+
+I like the idea and honestly I'm glad to see your opinion as I wasn't confident and still feel at least a bit uncomfortable moving the responsibility of properly handling deadlock or any incorrect usage to the framework instead of addressing it on the application side üòÖAdded a unit test as the one with real deadlock looks too integration-likeFix "possibly useless use of ::" warningY3Vyc29yOnYyOpHOTSRGrA==Do those tests fail if you just remove those lines instead? I think the configs should be getting set now due to b4fffc3@skipkayhil  You're correct!  Though these very same tests were added in b4fffc3, which is a bit odd.Fix "character class has duplicated range" warningFix running ActiveJob tests for sidekiq 7.0Map through subtype in `PostgreSQL::OID::Array`Fix flakey tests due to leaking migration stateAdd `ActionMailer.deprecator`Fix "possibly useless use of a constant" warningsImprove singular association creationAdd assertion helpers to `PendingMigrationsTest`Add `ActionView.deprecator`Add frozen to dangerous methodsY3Vyc29yOnYyOpHOTZLmYg==@byroot Sorry for the ping, but can I do something for the ci?It's all good. You just had very bad luck on that CI run.Thanks!my pleasure!Add `ActiveJob.deprecator`Add `ActiveStorage.deprecator`Fix pending migrations error messageFix collation for changing column to non-stringAdd other framework deprecators`ActiveRecord::Persistence#reload` respects `query_constraints` configFix `insert_all`/`upsert_all` to handle STIUpdate docs for ActiveRecord::AttributeMethods#[]=Y3Vyc29yOnYyOpHOTYZnkQ==Thank you, @gregnavis! üëçImprove Parametric Scopes documentation [ci-skip]Y3Vyc29yOnYyOpHOTcAXTA==Thanks for the review @jonathanhefner - I learned a lot from it. All suggestions implemented and I rebased the branch into a single commit.Robert Starsiklevo@jonathanhefner Perfect, that indeed reads so much better.
+I have also aligned the # => in the code sample vertically, as per documentation guidelines, and linked the url_for and form_with to respective api.rubyonrails.org documentation, as I noticed in other sections of the guides.To explain a bit about linking to the API docs: what we usually do is link the first occurrence of a method name in a guide, similar to how Wikipedia links the first occurrence of term in a wiki article.  Sometimes it makes sense to link additional occurrences; sometimes it makes sense to not link any occurrence, because the method isn't the focus of the guide.
+Here, I think it's fine to link url_for, but it would be good to link the first occurrence under https://guides.rubyonrails.org/v7.0.4/routing.html#creating-paths-and-urls-from-objects instead.  I'm on the fence about form_with, since it's not really related to routing, but it won't hurt.
+Also, I feel like reference-style links (i.e. [][] syntax, instead of []() syntax) help keep the document readable when editing.  You can also re-use them if you do link additional occurrences of a method name.
+I went ahead and pushed a commit with these minor changes, but otherwise everything looks great!  Thank you, @klevo! üéâMany thanks @jonathanhefner ü§ùAdd link to Rollback in transactions doc.Y3Vyc29yOnYyOpHOTZ3FTA==Thanks @dersam !Fix active model errors add documentationY3Vyc29yOnYyOpHOTaVUbw==Thanks @spuyet !Add :touch to has_one options in documentation [ci-skip]Y3Vyc29yOnYyOpHOTcIjIQ==Thank you, @lazaronixon! üòÑChange from escapeHTML() to html_escape()Call pending_migrations onceFix schema_up_to_date connectionY3Vyc29yOnYyOpHOTbhMng==cc/ @coding-chimp once merged this should fix the issue you were seeing when upgrading.Add `Rails.deprecator`Y3Vyc29yOnYyOpHOTg9MDg==@jonathanhefner With this change I have a failing CI - https://github.com/fatkodima/online_migrations/actions/runs/3432986855/jobs/5722837319. You probably also need to add the require to rails/generators/testing/behavior.rb or into some other files it already requires.fatkodimaMake error highlight readable on dark modeY3Vyc29yOnYyOpHOTb4ZcQ==For anyone curious, the contrast ratio of the previous text color (#ECECEC) to the error highlight background (#FFFF99) was 1.12, and the contrast ratio with the new color (#333333) is 12.04.  
+Thank you, @bdewater! üòÜFix clear_all_connections! NoMethodErrorY3Vyc29yOnYyOpHOTb6tqw==ü§¶
+Do you happen to know why the NoMethodError does not show up in CI (but the deprecation warning from #46338 did)?ü§¶
+Do you happen to know why the NoMethodError does not show up in CI (but the deprecation warning from #46338 did)?
+
+They were skipped because a connection could not be established.
+
+
+Build artifact
+
+
+
+  
+    
+      rails/actioncable/test/subscription_adapter/postgresql_test.rb
+    
+    
+         Line 29
+      in
+      de30481
+    
+  
+  
+    
+
+        
+          
+           skip "Couldn't connect to PostgreSQL: #{database_config.inspect}"Caleb BuxtoncalebbuxtonThey were skipped because a connection could not be established.
+
+The tests were skipped, but the teardown method was run, as evidenced by the warning messages I mentioned in #46338.
+I have not fully traced the problem, but I see that Minitest captures the error and adds it to self.failures.  However, when the test is skipped, the first element of self.failures is a Minitest::Skip instance.  And skipped? checks self.failure, which returns only the first element of self.failures.
+In any case, your change is correct!  Thank you, @cpb!  üòÉThey were skipped because a connection could not be established.
+
+The tests were skipped, but the teardown method was run, as evidenced by the warning messages I mentioned in #46338.
+I have not fully traced the problem, but I see that Minitest captures the error and adds it to self.failures. However, when the test is skipped, the first element of self.failures is a Minitest::Skip instance. And skipped? checks self.failure, which returns only the first element of self.failures.
+In any case, your change is correct! Thank you, @cpb! üòÉ
+
+Sounds like you did fully trace the problem! Unless you mean, the postgres connection in buildkite üòÖFix clear_reloadable_connections! deprecation warningY3Vyc29yOnYyOpHOTb6Ung==Thank you, @cpb! üëãCorrect controller path on missing template error pageY3Vyc29yOnYyOpHOTcIhjQ==Thank you, @sampatbadhe! üëçFixes flakey race condition in `railties/test/application/server_test.rb`Y3Vyc29yOnYyOpHOTeiX7w==I have comfirmed this pull request addresses the following failure.
+$ cd railties
+$ bin/test test/application/server_test.rb
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:32454: warning: statement not reached
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:32615: warning: statement not reached
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:32651: warning: statement not reached
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:32740: warning: statement not reached
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:32756: warning: statement not reached
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:32822: warning: statement not reached
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:32863: warning: statement not reached
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:32888: warning: statement not reached
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/mail-2.7.1/lib/mail/parsers/address_lists_parser.rb:31984: warning: assigned but unused variable - testEof
+Run options: --seed 36499
+
+# Running:
+
+.F
+
+Failure:
+ApplicationTests::ServerTest#test_run_+server+_blocks_after_the_server_starts [/home/yahonda/src/github.com/rails/rails/railties/test/application/server_test.rb:65]:
+"Listening" expected, but got:
+
+
+Puma starting in single mode...
+* Puma version: 6.0.0 (ruby 3.1.2-p20) ("Sunflower")
+*  Min threads: 5
+*  Max threads: 5
+*  Environment: development
+*          PID: 7797
+Exiting
+/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:334:in `initialize': Address already in use - bind(2) for "127.0.0.1" port 3000 (Errno::EADDRINUSE)
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:334:in `new'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:334:in `add_tcp_listener'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:328:in `block in add_tcp_listener'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:327:in `each'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:327:in `add_tcp_listener'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:164:in `block in parse'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:147:in `each'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:147:in `parse'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/runner.rb:164:in `load_and_bind'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/single.rb:44:in `run'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/launcher.rb:186:in `run'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/rack/handler/puma.rb:72:in `run'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/rack-2.2.4/lib/rack/server.rb:327:in `start'
+	from /home/yahonda/src/github.com/rails/rails/railties/lib/rails/commands/server/server_command.rb:38:in `start'
+	from /home/yahonda/src/github.com/rails/rails/railties/lib/rails/commands/server/server_command.rb:144:in `block in perform'
+	from <internal:kernel>:90:in `tap'
+	from /home/yahonda/src/github.com/rails/rails/railties/lib/rails/commands/server/server_command.rb:135:in `perform'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/thor-1.2.1/lib/thor/command.rb:27:in `run'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/thor-1.2.1/lib/thor/invocation.rb:127:in `invoke_command'
+	from /home/yahonda/src/github.com/rails/rails/railties/lib/rails/command/base.rb:186:in `invoke_command'
+	from /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/thor-1.2.1/lib/thor.rb:392:in `dispatch'
+	from /home/yahonda/src/github.com/rails/rails/railties/lib/rails/command/base.rb:91:in `perform'
+	from /home/yahonda/src/github.com/rails/rails/railties/lib/rails/command.rb:48:in `invoke'
+	from /home/yahonda/src/github.com/rails/rails/railties/lib/rails/commands.rb:18:in `<top (required)>'
+	from bin/rails:4:in `require'
+	from bin/rails:4:in `<main>'
+.
+Expected "\r\nPuma starting in single mode...\r\n* Puma version: 6.0.0 (ruby 3.1.2-p20) (\"Sunflower\")\r\n*  Min threads: 5\r\n*  Max threads: 5\r\n*  Environment: development\r\n*          PID: 7797\r\nExiting\r\n/home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:334:in `initialize': \e[1mAddress already in use - bind(2) for \"127.0.0.1\" port 3000 (\e[1;4mErrno::EADDRINUSE\e[m\e[1m)\e[m\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:334:in `new'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:334:in `add_tcp_listener'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:328:in `block in add_tcp_listener'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:327:in `each'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:327:in `add_tcp_listener'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:164:in `block in parse'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:147:in `each'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/binder.rb:147:in `parse'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/runner.rb:164:in `load_and_bind'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/single.rb:44:in `run'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/puma/launcher.rb:186:in `run'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/puma-6.0.0/lib/rack/handler/puma.rb:72:in `run'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/rack-2.2.4/lib/rack/server.rb:327:in `start'\r\n\tfrom /home/yahonda/src/github.com/rails/rails/railties/lib/rails/commands/server/server_command.rb:38:in `start'\r\n\tfrom /home/yahonda/src/github.com/rails/rails/railties/lib/rails/commands/server/server_command.rb:144:in `block in perform'\r\n\tfrom <internal:kernel>:90:in `tap'\r\n\tfrom /home/yahonda/src/github.com/rails/rails/railties/lib/rails/commands/server/server_command.rb:135:in `perform'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/thor-1.2.1/lib/thor/command.rb:27:in `run'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/thor-1.2.1/lib/thor/invocation.rb:127:in `invoke_command'\r\n\tfrom /home/yahonda/src/github.com/rails/rails/railties/lib/rails/command/base.rb:186:in `invoke_command'\r\n\tfrom /home/yahonda/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/thor-1.2.1/lib/thor.rb:392:in `dispatch'\r\n\tfrom /home/yahonda/src/github.com/rails/rails/railties/lib/rails/command/base.rb:91:in `perform'\r\n\tfrom /home/yahonda/src/github.com/rails/rails/railties/lib/rails/command.rb:48:in `invoke'\r\n\tfrom /home/yahonda/src/github.com/rails/rails/railties/lib/rails/commands.rb:18:in `<top (required)>'\r\n\tfrom bin/rails:4:in `require'\r\n\tfrom bin/rails:4:in `<main>'\r\n" to include "Listening".
+
+
+bin/test test/application/server_test.rb:45
+
+
+
+Finished in 11.437234s, 0.1749 runs/s, 0.8743 assertions/s.
+2 runs, 10 assertions, 1 failures, 0 errors, 0 skips
+$Rails Guides - set "cursor: pointer" and on hover "color: #005cc5" css to copy code button [ci-skip]Y3Vyc29yOnYyOpHOTgwkIA==Thanks @sampatbadhe !
+This looks good to me.Thank you for review @p8 and @jonathanhefner, I have applied the text color to #005cc5 on hover, could you please take a look at updated demo.Sampat Badhesampatbadhe@jonathanhefner @sampatbadhe  This looks great to me!
+
+(Sidenote: There are several answers on Stack Exchange and this popular blog post that suggest non-link buttons should not use a pointer cursor. However, UI trends may be changing. For example, I notice that GitHub's non-link buttons use a cursor pointer.)
+
+Hmm, now I'm not sure about the pointer. Maybe the hover color is good enough. ü§î
+On the other hand, the pointer does seem to get used for non-link buttons for some of the apps I tried (Discord, Twitter, Basecamp, Teams)...On the other hand, the pointer does seem to get used for non-link buttons for some of the apps I tried (Discord, Twitter, Basecamp, Teams)...
+
+Let's embrace the future!
+Thank you, @sampatbadhe! üòÑ  And thank you, @p8! üöÄLock error_highlight version to 0.4.0Y3Vyc29yOnYyOpHOTfYqPQ==I'd rather us just fix Rails forward instead of locking - or at least know someone is working on fixing. Fixes should be pretty straight forward (looks like we can just replace assert_equal for assert_match in most places). Maybe we should see if anyone in the discord wants to work on it?I'm going to merge this for now, but I mentioned this in Discord and hopefully someone will pick it up. If it's not fixed by Thursday I will do it. üëçüèºThanks for the comment. I have locked error_highlight version is because I am waiting for the feedback of ruby/error_highlight#28 . If this issue is resolved, I think we can unlock error_hightlight version to newer.Revert "Merge pull request #46282 from jonathanhefner/active_model-forgetting_assignment-avoid-value_for_databaseFix `Enumerable#many?` to handle previous enumerator methods parametersUpdate ActiveRecord::Associations::CollectionProxy#== documentationY3Vyc29yOnYyOpHOTiKDYA==Thanks for the PR @AlexB52 !
+It looks like this got changed a long time ago in the following commit.
+Before this commit records were only seen as equal even if persisted.
+4718d09@AlexB52 can you squash your commits?@p8 Sorry I should have done it before asking for another review.
+I've squashed the commits. How does the it look like?
+Thanks for your help.Alexandre BarretalxbarretNo worries @AlexB52 üòÑ . This looks great.
+Thanks for contributing!Track parent key as string in `ParameterFilter`Reintegrate `AS::ParameterFilter::CompiledFilter`Add filtering of encrypted attributes in #inspectY3Vyc29yOnYyOpHOTjxjiw==Thanks for the review!
+
+Is there a reason why we wouldn't want to make that work, instead of adding a new config?
+
+Totally reasonable, I started with a new config because this would be a change in behavior but I agree using the existing config would be simpler.
+
+I think we could add klass.filter_attributes += [attribute] to install_auto_filtered_parameters_hook, and then remove the on_load(:action_controller) guard
+
+Makes sense to me, I'll update with this.Thank you, @skipkayhil! üòÉAdd missing `assert_not_deprecated` deprecator argsUpdate deprecation-related config descriptions [ci-skip]Fix `index_exists?` to handle empty columns argumentAdd missing require to `railties/lib/rails/generators/testing/behavior.rb`Y3Vyc29yOnYyOpHOTiKfiQ==Thank you, @fatkodima! üôåUse filename when printing pending migrationsCheck for transaction  before invalidating the stateY3Vyc29yOnYyOpHOTiTy7A==I merged because that could be considered a bug, but I think we should go with alternative 3. We use a null object pattern exactly to avoid the kind of conditionals we have here. I'd also remove this indirection of calling invalidate! in the state and ask the transaction itself to invalidate its state. That way we don't need a NullState object.Rafael Mendon√ßa Fran√ßaImprove the MissingExactTemplate error pageY3Vyc29yOnYyOpHOTiTKBw==Looks great! Thank you so much.John Hawthornjhawthorn@codergeek121 Thanks so much for taking this on! üòäSidenote @codergeek121 you should include a screenshot of the feature so folks can link to this PR and see the good stuff it brings. üëçüèªUpdate ActiveRecord::QueryMethods#in_order_of example [ci-skip]Y3Vyc29yOnYyOpHOTjt-jw==Thank you, @sampatbadhe! üëãImprove layout of Sprockets 3 & 4 manifest documentation [ci-skip]Previews paths should not be eager loadedFix markdown inline code typoY3Vyc29yOnYyOpHOTjfb8Q==Thank you, @felipedmesquita! üéâUpdate active_record_basics.mdY3Vyc29yOnYyOpHOTjt6Xw==5.4. Delete
+Likewise, once retrieved an Active Record object can be destroyed which removes it from the database.
+=>
+Likewise, once retrieved, an Active Record object can be destroyed, which removes it from the database.James Johnson(correct typo/grammar in section 5.4. Delete)
+#=> Original/
+Likewise, once retrieved an Active Record object can be destroyed which removes it from the database.
+#=> Changed/
+Likewise, once retrieved, an Active Record object can be destroyed, which removes it from the database.Thank you, @xmas7! üéâReplace hardcoded edge links in guides [ci skip]Y3Vyc29yOnYyOpHOTjxTiQ==Thank you, @skipkayhil! üëçË(https://github.com/railshttps://avatars.githubusercontent.com/u/1034?v=4https://avatars.githubusercontent.com/u/22918438?v=4https://avatars.githubusercontent.com/u/496367?u=e3a63a2f7db3bea0507f2a6bcc6650db58a96e6d&v=4https://avatars.githubusercontent.com/u/12642?u=76645b9234fbbeb252f789a670b62927cf998541&v=4https://avatars.githubusercontent.com/u/1080678?u=b6e211b7766e6aa01e794067f67dd65d419c0150&v=4https://avatars.githubusercontent.com/u/509837?u=2d74700cf8b38f93129b2d7246af18b375eb50c5&v=4https://avatars.githubusercontent.com/u/1371733?v=4https://avatars.githubusercontent.com/u/658005?u=81713f40effa1c1346d180b161c0b12008008514&v=4https://avatars.githubusercontent.com/u/44640?v=4https://avatars.githubusercontent.com/u/57004457?u=2190df7e9f78739609f69d2c4b786662b1a29121&v=4https://avatars.githubusercontent.com/u/28561?u=095779352a57f75e734987829f3f67a10e5780ed&v=4https://avatars.githubusercontent.com/u/6014046?u=3972bfb97451f7f90e051df2e49fb7b8ee83e28d&v=4https://avatars.githubusercontent.com/u/73684?v=4https://avatars.githubusercontent.com/u/4207017?u=7dd832c1fa73a6937e45dd9c4344866ef7fd758e&v=4https://avatars.githubusercontent.com/u/193936?u=0009ccae9daa72c7b1c8590f9c67560b29a54902&v=4https://avatars.githubusercontent.com/u/5512772?u=bbae6d87b3499e6b3662664cf4be0e84cc40f6d2&v=4https://avatars.githubusercontent.com/u/2687?u=1931cab48a8e76951fbd0971b888d3e07256cb4a&v=4https://avatars.githubusercontent.com/u/2878498?u=d8f104db89756c4800d8bdd9840cd9248d19094c&v=4https://avatars.githubusercontent.com/u/771968?v=4https://avatars.githubusercontent.com/u/2263711?u=3965d0bf3fb264e722bc0b260520660bf65c0f8c&v=4https://avatars.githubusercontent.com/u/65950?u=ec45f172c76603aa99c91aaf6ac0df7495a941ff&v=4https://avatars.githubusercontent.com/u/67093?v=4https://avatars.githubusercontent.com/u/18326941?u=9c80d53725bdd6b6cc2c91585d2b153b7dbc66a7&v=4https://avatars.githubusercontent.com/u/32981?u=a833ff929bd1d3845c767579b5f4569812451798&v=4https://avatars.githubusercontent.com/u/5657035?u=48dc5950e98b199e1ed1e8c5c3f1e4bfd2b39691&v=4https://avatars.githubusercontent.com/u/10550?u=e38f76993e7f50ab3d43f7521f50416711cee8d9&v=4https://avatars.githubusercontent.com/u/5279284?u=40cbc3d0cb818159797fa8856c88c9e87fd8bd49&v=4https://avatars.githubusercontent.com/u/7149034?u=708524166a9954da5c702cfa180ee3ff4551c189&v=4https://avatars.githubusercontent.com/u/47848?u=41ccf0d1865a17f47d140f73a3293f1f3559fc0f&v=4https://avatars.githubusercontent.com/u/131752?u=32ddf1119b1d189c9bd241a721b36ea01c29f61e&v=4https://avatars.githubusercontent.com/u/109500550?u=60e490033853898de862e0de84bd30a652a6dccf&v=4UNKNOWN»        
+                                              lTHUMBS_UPTHUMBS_DOWNLAUGHHOORAYCONFUSEDHEARTROCKETEYES“1  0 
+»  | 0 ¬  
+   
+    ` § 	        h  h    :    ^ 0 l 	        ∫  F    N    f    B    f    ∫ 0 B 	        ∏  x 0  	        &º  .    | 0 \ 	        ∫ 2 	         f  V 0 D 	        ∫  f 0 A 	        b  í 0
+ Ï 	        O 
+ 	        æ ‡ 	        O 6 	        m P 	        ∏  b    j    z 0 Œ 	        º ¸ 	        b í 	        áâ! ≤ 	        áâ! û 	        áâ! – 	        áâ!  b    ^    d    H 0 V 	        ) § 	        º J 	        ac r 	        )  ^    h    :    à 0 ‘ 	        ∫ ƒ 	        "º  ≤ 0  	        É  r 0 ﬁ 	        É Œ 	        ∂ “ 	        ac ö 	        º ú 	        …À) ∫ 	        …À) ¸ 	        	  V 0 > 	        d  h    <    `    Ä 0 ~ 	        º  F 0 4 	        ∏ » 	        b  N    N 0 X 	        ﬂ-  X    X    r 0 8 	        ﬂ-  \ 0 8 	        ﬂ-  b    D    ¢    à 0 l 	        O  >    V 0 à 	        	 ÷ 	        π' î 	        π'  P 0  	        É   	        ﬂ-  d    V    ^    ^    :    b    J    `    6    > 0 | 	        æ r 	        ac  	        ac  	        5  4    <    H    ^    >    å    V    d 0 6 	        ﬂ-  b 0 ñ 	        
+∏ ∂ 	        ÔÒ7 ¥ 	        ﬂ- @ 	        ÔÒ7  R 0   	        uw  R 0   	        uw  p 0 : 	        ﬂ-  R    8    @ 0 Æ 	        CE  , 0 ú 	        º  T 0 ∏ 	        ﬂ-  P 0 Ï 	        ﬂ- ˙ 	        ∏ ¿ 	        ﬂ- ä
+ 	        ´≠;  j 0 * 	        ﬂ-  l 0 : 	        ﬂ-  í 0 îÅ 	        áâ!  » 0 X 	        uw ú 	        º ¥ 	        uw ¿ 	        ﬂ-  J 0 ¬ 	        CE ∏ 	        CE Æ 	        áâ!  ‚    é    Ü 0 ‰ 	        uw J 	        uw ö 	         º ä 	        uw  ^    b    b 0 ö 	        É 8 	        ﬂ-  f    p    h    î 0 6 	        ﬂ-  Z    h 0 ¥ 	        0∏  V 0 > 	        ∫ j 	        ˜1 ö 	        ˜1  ~ 0 : 	        ﬂ-  Ñ    R    : 0 B 	        ﬂ-  < 0 ∏ 	        ¿ ¨ 	        πE . 	        ﬂ-  ` 0 8 	        ﬂ-

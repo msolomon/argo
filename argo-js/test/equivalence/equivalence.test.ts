@@ -5,7 +5,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { buildSchema, parse, DocumentNode, GraphQLSchema } from 'graphql'
-import { ArgoEncoder, BitSet, ExecutionResultCodec, Typer } from '../../src'
+import {ArgoEncoder, BitSet, ExecutionResultCodec, Typer, Wire} from '../../src'
 import { brotliCompressSync, gzipSync, constants } from 'zlib'
 import zstd from '@mongodb-js/zstd'
 import * as lz4 from 'lz4'
@@ -53,6 +53,8 @@ async function* loadTest(dir: string) {
     else if (p.endsWith('.graphql')) queries.set(path.basename(p, '.graphql'), parse(await slurp(p)))
     else if (p.endsWith('.json')) results.set(path.basename(p, '.json'), await JSON.parse(await slurp(p)))
     else if (p.includes('disabled')) continue
+    else if (p.endsWith('.argo')) continue
+    else if (p.endsWith('.wire')) continue
     else throw `Got unexpected file in test: ${p}`
   }
   expect(queries.size).toBeGreaterThan(0)
@@ -110,7 +112,7 @@ test('Star Wars equivalence tests', async () => {
   const starwarsDir = path.join(path.dirname(testPath), 'starwars')
   for await (const { name, query, json, expected, dir } of loadTests(starwarsDir)) {
     console.log('============================================================\nRunning test:', name)
-    await runEquivalence(name, query, json, StarWarsSchema, expected)
+    await runEquivalence(name, query, json, StarWarsSchema, expected, dir)
   }
 })
 
@@ -118,7 +120,7 @@ test('Queries are serialized equivalently', async () => {
   for await (const { name, dir, query, json, schema, expected } of loadTests()) {
     if (dir.includes('starwars')) continue
     console.log('============================================================\nRunning test:', name)
-    await runEquivalence(name, query, json, schema, expected)
+    await runEquivalence(name, query, json, schema, expected, dir)
   }
 })
 
@@ -132,7 +134,7 @@ test('Typer', async () => {
   }
 })
 
-async function runEquivalence(name: string, query: DocumentNode, json: string, schema: GraphQLSchema, expected: any) {
+async function runEquivalence(name: string, query: DocumentNode, json: string, schema: GraphQLSchema, expected: any, dir: string) {
   const ci = new ExecutionResultCodec(schema, query)
 
   const argoBytes = ci.jsToArgo(expected)
@@ -199,7 +201,17 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
     if (argoToJson !== json) {
       expect(argoToJson).toEqual(json)
     }
+
+    // Write out the argo bytes to a file with hex-encoded header as filename
+    const headerBytes = encoder.header.asUint8Array()
+    const hexHeader = Array.from(headerBytes)
+        .map((b) => b.toString(16))
+        .join('')
+    const argoFilePath = path.join(dir, `${name}-${hexHeader}.argo`)
+    fs.promises.writeFile(argoFilePath, argoBytes.uint8array)
   }
+
+  testDifferentOptions(new ArgoEncoder())
 
   let encoder = new ArgoEncoder()
   encoder.header.inlineEverything = true
@@ -225,4 +237,7 @@ async function runEquivalence(name: string, query: DocumentNode, json: string, s
   encoder = new ArgoEncoder()
   encoder.header.userFlags = BitSet.setBit(0n, 5)
   testDifferentOptions(encoder)
+
+  const wireFilePath = path.join(dir, `${name}.wire`)
+  fs.promises.writeFile(wireFilePath, Wire.print(ci.typer.rootWireType()))
 }

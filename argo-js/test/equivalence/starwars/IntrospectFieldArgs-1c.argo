@@ -1,0 +1,3 @@
+Šdata__schemaqueryTypefieldsnameheroargsepisodedescriptionIf omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.typekindENUMEpisodeofTypedefaultValuehumanidid of the humanNON_NULLSCALARStringdroidid of the droidäÒ
+#%
+)-#/1%

@@ -1,0 +1,25 @@
+{
+ data: {
+   __schema: {
+    queryType: {
+     fields: {
+        name: STRING<String>
+        args: {
+          name: STRING<String>
+          description: STRING<String>?
+          type: {
+           kind: STRING<__TypeKind>
+           name: STRING<String>?
+           ofType: {
+             kind: STRING<__TypeKind>
+             name: STRING<String>?
+            }?
+          }
+          defaultValue: STRING<String>?
+         }[]
+       }[]?
+    }
+   }
+  }?
+ errors?: DESC[]?
+}

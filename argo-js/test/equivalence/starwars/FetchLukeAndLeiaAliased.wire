@@ -1,0 +1,11 @@
+{
+ data: {
+   luke: {
+     name: STRING<String>?
+    }?
+   leia: {
+     name: STRING<String>?
+    }?
+  }?
+ errors?: DESC[]?
+}

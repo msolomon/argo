@@ -1,11 +1,12 @@
-import { Label } from './label'
-import { Wire } from './wire'
-import { writeFileSync } from 'fs'
-import { Buf, BufWrite } from './buf'
-import { jsonify } from './util'
-import { Path, addPath, pathToArray } from 'graphql/jsutils/Path'
-import { Header } from './header'
-import { BlockWriter, DeduplicatingBlockWriter } from './blockWriter'
+import {Label} from './label'
+import {Wire} from './wire'
+import {writeFileSync} from 'fs'
+import {Buf, BufWrite} from './buf'
+import {jsonify, uint8ArrayToBase64} from './util'
+import {addPath, Path, pathToArray} from 'graphql/jsutils/Path'
+import {Header} from './header'
+import {BlockWriter, DeduplicatingBlockWriter} from './blockWriter'
+
 
 /**
  * Encodes a JavaScript object (typically ExecutionResult) into a Argo message.
@@ -38,7 +39,6 @@ export class ArgoEncoder {
 
   getResult(): Buf {
     const header = this.header.asUint8Array()
-    this.track(undefined, 'header', this.buf, header)
 
     const shouldWriteBlocks = !this.header.inlineEverything
 
@@ -65,22 +65,27 @@ export class ArgoEncoder {
 
     // write the header
     buf.write(header)
+    this.track(undefined, 'header', buf, uint8ArrayToBase64(header))
 
     // write scalar blocks
     if (shouldWriteBlocks) {
       for (const [blockKey, writer] of this.writers.entries()) {
+        this.track(undefined, "block", buf, blockKey)
         buf.write(blockLengthHeaders.get(writer)) // write length of block
         for (const value of writer.valuesAsBytes) {
+          this.track(undefined, "block value", buf, uint8ArrayToBase64(value))
           buf.write(value) // write each value in the block
         }
       }
 
       // write message length
+      this.track(undefined, "core length label", buf, uint8ArrayToBase64(bufLength))
       buf.write(bufLength)
     }
 
     // write message data
     buf.writeBuf(this.buf)
+    this.track(undefined, "core bytes", buf, this.buf.length)
     if (buf.length != buf.capacity) throw 'Programmer error: incorrect result length ' + buf.length + ', expected ' + buf.capacity
     return buf
   }
@@ -138,7 +143,10 @@ export class ArgoEncoder {
 
   jsToArgoWithType(js: any, wt: Wire.Type): void {
     const result = this.writeArgo(undefined, js, wt)
-    if (this.DEBUG) writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
+    if (this.DEBUG) {
+      this.getResult() // trigger the rest of the trace
+      writeFileSync('/tmp/writelog.json', jsonify(this.tracked))
+    }
     return result
   }
 

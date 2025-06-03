@@ -1,0 +1,11 @@
+{
+ data: {
+   human: {
+     name: STRING<String>?
+    }?
+   droid: {
+     name: STRING<String>?
+    }?
+  }?
+ errors?: DESC[]?
+}

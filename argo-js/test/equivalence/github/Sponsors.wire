@@ -1,0 +1,77 @@
+{
+ data: {
+   organization: {
+     login: STRING<String>
+     name: STRING<String>?
+     repository: {
+       id: STRING<ID>
+       name: STRING<String>
+       description: STRING<String>?
+       url: STRING<URI>
+       updatedAt: STRING<DateTime>
+       forkCount: VARINT{Int}
+       openGraphImageUrl: STRING<URI>
+       issues: {
+        edges: {
+            node: {
+              author: {
+                login?: STRING<String>
+                company?: STRING<String>?
+                isHireable?: BOOLEAN
+                location?: STRING<String>?
+                organizations?: {
+                 nodes: {
+                     sponsors: {
+                      nodes: {
+                          login?: STRING<String>
+                          company?: STRING<String>?
+                          isHireable?: BOOLEAN
+                          location?: STRING<String>?
+                         }?[]?
+                     }
+                    }?[]?
+                }
+               }?
+             }?
+           }?[]?
+       }
+       stargazers: {
+        totalCount: VARINT{Int}
+        nodes: {
+            login: STRING<String>
+            company: STRING<String>?
+            isHireable: BOOLEAN
+            location: STRING<String>?
+            organizations: {
+             nodes: {
+                 sponsors: {
+                  nodes: {
+                      login?: STRING<String>
+                      company?: STRING<String>?
+                      isHireable?: BOOLEAN
+                      location?: STRING<String>?
+                     }?[]?
+                 }
+                }?[]?
+            }
+           }?[]?
+       }
+       readme: {
+         text?: STRING<String>?
+        }?
+       licenseInfo: {
+         id: STRING<ID>
+        }?
+       primaryLanguage: {
+         name: STRING<String>
+        }?
+       languages: {
+         nodes: {
+             name: STRING<String>
+            }?[]?
+        }?
+      }?
+    }?
+  }?
+ errors?: DESC[]?
+}
