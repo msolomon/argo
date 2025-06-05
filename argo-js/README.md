@@ -18,11 +18,11 @@ Tests may be run with `npm test` or `yarn test`.
 |---|---|---|
 | [InlineEverything](https://msolomon.github.io/argo/spec#inlineeverything)           | ✅ | |
 | [SelfDescribing](https://msolomon.github.io/argo/spec#selfdescribing)               | ✅ | |
-| [OutOfBandFieldErrors](https://msolomon.github.io/argo/spec#outofbandfielderrors)   | ✅ | |
-| [SelfDescribingErrors](https://msolomon.github.io/argo/spec#selfdescribingerrors)   | ⚠️ | Inline field errors not supported |
+| [OutOfBandFieldErrors](https://msolomon.github.io/argo/spec#outofbandfielderrors)   | ⚠️ | Inline field errors not supported |
+| [SelfDescribingErrors](https://msolomon.github.io/argo/spec#selfdescribingerrors)   | ⚠️ | Non-self-describing not supported |
 | [NullTerminatedStrings](https://msolomon.github.io/argo/spec#nullterminatedstrings) | ✅ | |
 | [NoDeduplication](https://msolomon.github.io/argo/spec#nodeduplication)             | ✅ | |
-| [HasUserFlags](https://msolomon.github.io/argo/spec#hasuserflags)                   | ⚠️ | No user flags implemented |
+| [HasUserFlags](https://msolomon.github.io/argo/spec#hasuserflags)                   | ✅ | No user flags implemented |
 
 ### Performance
 
