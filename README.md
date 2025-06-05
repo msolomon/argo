@@ -39,6 +39,7 @@ It is distributed on NPM under the name [argo-graphql](https://www.npmjs.com/pac
 
 These open-source implementations are maintained separately:
 
+- Go: [argo-go](https://github.com/beeper/argo-go) from Beeper
 - Erlang: [erlang-argo](https://github.com/WhatsApp/erlang-argo) from WhatsApp
 
 ## Authors and contributors
