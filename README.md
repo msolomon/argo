@@ -42,6 +42,10 @@ These open-source implementations are maintained separately:
 - Go: [argo-go](https://github.com/beeper/argo-go) from Beeper
 - Erlang: [erlang-argo](https://github.com/WhatsApp/erlang-argo) from WhatsApp
 
+## Conference talks
+- [Argo: Designing a Compact and Compressible Binary Serialization Format for GraphQL](https://www.youtube.com/watch?v=dwf0mh2b5Rc) at GraphQLConf 2023 by Mike Solomon.
+- [An Alternative to JSON Responses: Argo in WhatsApp](https://www.youtube.com/watch?v=KXRSMs-XfPo) at GraphQLConf 2026 by Kevin Gorham, Meta.
+
 ## Authors and contributors
 
 Argo was created and authored by [Mike Solomon](https://msol.io).
