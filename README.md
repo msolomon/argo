@@ -17,9 +17,13 @@ Argo\:
 - **Works best with code generation**, but also works well with interpretation
 - Does not currently support [GraphQL Input types](#sec-GraphQL-input-types)
 
-Compressed **Argo responses are typically 5%-15% smaller** than corresponding compressed JSON responses.
+Compressed **Argo responses are typically 5%-40% smaller** than corresponding compressed JSON responses.
 
-Uncompressed **Argo responses are typically 50-80% smaller** than corresponding JSON responses.
+Uncompressed **Argo responses are typically 50%-80% smaller** than corresponding JSON responses.
+
+[WhatsApp](https://www.whatsapp.com) is the largest user of Argo.
+Compressed WhatsApp Argo payloads are [25% smaller than JSON](https://youtu.be/KXRSMs-XfPo?si=oHUCagLxC83J3Uxn&t=802),
+and [5% smaller than WhatsApp's purpose-built binary protocol (WAP)](https://youtu.be/KXRSMs-XfPo?si=YekuAfjgV1Xb9_l3&t=909).
 
 ## Specification
 
