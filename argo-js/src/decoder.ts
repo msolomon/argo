@@ -1,7 +1,6 @@
 import { ExecutionResult } from 'graphql'
 import { Wire } from './wire'
 import { Label } from './label'
-import { writeFileSync } from 'fs'
 import { Buf, BufReadonly, BufRead } from './buf'
 import { Path, addPath, pathToArray } from 'graphql/jsutils/Path'
 import { jsonify } from './util'
@@ -50,7 +49,7 @@ export class ArgoDecoder {
       exn = e
     } finally {
       if (this.DEBUG) {
-        writeFileSync('/tmp/readlog.json', jsonify(this.tracked))
+        console.log(jsonify(this.tracked))
         console.table(this.counts)
       }
       if (exn) throw exn
